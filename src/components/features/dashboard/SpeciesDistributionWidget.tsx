@@ -150,19 +150,6 @@ export function SpeciesDistributionWidget({ gems }: SpeciesDistributionWidgetPro
           ))}
         </div>
       </div>
-
-      <div className='mt-8 pt-4 border-t border-slate-50'>
-        <div className='flex justify-between items-center opacity-40'>
-          <p className='text-[9px] font-black text-slate-400 uppercase tracking-widest'>
-            Scientific Distribution Model 1.0
-          </p>
-          <div className='flex gap-2'>
-            <div className='w-1 h-1 bg-slate-400 rounded-full'></div>
-            <div className='w-1 h-1 bg-slate-400 rounded-full'></div>
-            <div className='w-1 h-1 bg-slate-400 rounded-full'></div>
-          </div>
-        </div>
-      </div>
     </Card>
   )
 }

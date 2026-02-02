@@ -44,8 +44,9 @@ export function GemDetailPage() {
     clarityGrade: "Fine",
     species: "",
     selectedVariety: "",
-    notes: "",
     comments: "",
+    itemDescription: "",
+    specialNote: "",
   })
 
   const [speciesSearch, setSpeciesSearch] = useState("")
@@ -66,14 +67,32 @@ export function GemDetailPage() {
     if (gem) {
       const activeData = isT1 ? gem.test1 : isT2 ? gem.test2 : gem.finalApproval
       if (activeData) {
+        const obs = (activeData as any).observations || (activeData as any).finalObservations || {}
         setFormData((prev) => ({
           ...prev,
           ri: activeData.ri?.toString() || "",
           sg: activeData.sg?.toString() || "",
           hardness: activeData.hardness?.toString() || "",
+          species: obs.species || "",
+          selectedVariety:
+            (activeData as any).selectedVariety ||
+            (activeData as any).finalVariety ||
+            obs.variety ||
+            "",
+          comments: obs.comments || "",
+          itemDescription:
+            obs.itemDescription || (activeData as any).itemDescription || gem.itemDescription || "",
+          specialNote: obs.specialNote || "",
+          shape: obs.shape || "",
+          cut: obs.cut || "",
+          transparency: obs.transparency || "",
+          origin: obs.origin || "",
+          cuttingGrade: obs.cuttingGrade || "Fine",
+          polishingGrade: obs.polishingGrade || "Fine",
+          proportionGrade: obs.proportionGrade || "Fine",
+          clarityGrade: obs.clarityGrade || "Fine",
         }))
-        const obs = (activeData as any).observations || (activeData as any).finalObservations
-        if (obs?.species) {
+        if (obs.species) {
           setSpeciesSearch(obs.species)
         }
       }
@@ -155,8 +174,9 @@ export function GemDetailPage() {
       clarityGrade: obs.clarityGrade || "Fine",
       species: obs.species || "",
       selectedVariety: source.selectedVariety || source.finalVariety || obs.variety || "",
-      notes: source.notes || "",
       comments: obs.comments || "",
+      itemDescription: obs.itemDescription || source.itemDescription || "",
+      specialNote: obs.specialNote || "",
     })
   }
 
@@ -676,14 +696,44 @@ export function GemDetailPage() {
                         </div>
                       </div>
 
-                      <div className='space-y-1.5'>
-                        <label className='text-xs font-bold text-slate-500 uppercase'>Notes</label>
-                        <Textarea
-                          placeholder='Analysis notes, observations, etc.'
-                          value={formData.comments}
-                          onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-                          className='min-h-[80px]'
-                        />
+                      <div className='space-y-4'>
+                        <div className='space-y-1.5'>
+                          <label className='text-xs font-bold text-slate-500 uppercase'>
+                            Comments
+                          </label>
+                          <Textarea
+                            placeholder='Laboratory comments...'
+                            value={formData.comments}
+                            onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                            className='min-h-[60px]'
+                          />
+                        </div>
+                        <div className='space-y-1.5'>
+                          <label className='text-xs font-bold text-slate-500 uppercase'>
+                            Item Description
+                          </label>
+                          <Textarea
+                            placeholder='Detailed item description...'
+                            value={formData.itemDescription}
+                            onChange={(e) =>
+                              setFormData({ ...formData, itemDescription: e.target.value })
+                            }
+                            className='min-h-[60px]'
+                          />
+                        </div>
+                        <div className='space-y-1.5'>
+                          <label className='text-xs font-bold text-slate-500 uppercase'>
+                            Special Note
+                          </label>
+                          <Textarea
+                            placeholder='Special internal notes...'
+                            value={formData.specialNote}
+                            onChange={(e) =>
+                              setFormData({ ...formData, specialNote: e.target.value })
+                            }
+                            className='min-h-[60px]'
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -865,14 +915,40 @@ export function GemDetailPage() {
                     </div>
                   </div>
 
-                  <div className='mt-10 p-6 bg-slate-900 rounded-2xl relative overflow-hidden'>
-                    <div className='absolute top-0 right-0 w-32 h-32 bg-slate-800/50 rounded-full blur-3xl -mr-16 -mt-16'></div>
-                    <p className='text-[10px] uppercase font-black text-slate-500 mb-3 tracking-widest relative z-10'>
-                      Item Description (Permanent Record)
-                    </p>
-                    <p className='text-base text-slate-300 leading-relaxed font-light relative z-10 italic'>
-                      "{gem.finalApproval.itemDescription}"
-                    </p>
+                  <div className='mt-10 space-y-4'>
+                    <div className='p-6 bg-slate-900 rounded-2xl relative overflow-hidden'>
+                      <div className='absolute top-0 right-0 w-32 h-32 bg-slate-800/50 rounded-full blur-3xl -mr-16 -mt-16'></div>
+                      <p className='text-[10px] uppercase font-black text-slate-500 mb-3 tracking-widest relative z-10'>
+                        Item Description (Permanent Record)
+                      </p>
+                      <p className='text-base text-slate-300 leading-relaxed font-light relative z-10 italic'>
+                        "
+                        {gem.finalApproval.itemDescription ||
+                          gem.finalApproval.finalObservations?.itemDescription ||
+                          "N/A"}
+                        "
+                      </p>
+                    </div>
+
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                      <div className='p-5 bg-slate-50 rounded-2xl border border-slate-100'>
+                        <p className='text-[10px] uppercase font-black text-slate-400 mb-2 tracking-widest'>
+                          Laboratory Comments
+                        </p>
+                        <p className='text-sm text-slate-600'>
+                          {gem.finalApproval.finalObservations?.comments || "No comments provided"}
+                        </p>
+                      </div>
+                      <div className='p-5 bg-amber-50 rounded-2xl border border-amber-100'>
+                        <p className='text-[10px] uppercase font-black text-amber-600 mb-2 tracking-widest'>
+                          Special Note
+                        </p>
+                        <p className='text-sm text-slate-600 font-medium'>
+                          {gem.finalApproval.finalObservations?.specialNote ||
+                            "No special notes provided"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className='mt-8 pt-8 border-t border-slate-100 flex justify-end gap-3'>

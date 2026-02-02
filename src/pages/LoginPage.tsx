@@ -78,21 +78,6 @@ export function LoginPage() {
             {loading === "manual" ? <Loader2 className='animate-spin' size={20} /> : "Sign In"}
           </button>
         </form>
-
-        <div className='relative'>
-          <div className='absolute inset-0 flex items-center'>
-            <div className='w-full border-t border-slate-200'></div>
-          </div>
-          <div className='relative flex justify-center text-xs uppercase'>
-            <span className='bg-white px-2 text-slate-500 font-bold'>Or quick select</span>
-          </div>
-        </div>
-
-        <div className='pt-6 border-t border-slate-100'>
-          <p className='text-center text-xs text-slate-400 font-medium italic'>
-            "Scientific Integrity in Precious Stones"
-          </p>
-        </div>
       </Card>
     </div>
   )

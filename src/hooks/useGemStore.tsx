@@ -134,7 +134,6 @@ export function GemProvider({ children }: { children: ReactNode }) {
       sg: parseFloat(data.sg),
       hardness: parseFloat(data.hardness),
       selectedVariety: data.selectedVariety,
-      notes: data.notes,
       observations: {
         shape: data.shape,
         cut: data.cut,
@@ -144,6 +143,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
         species: data.species,
         variety: data.selectedVariety,
         comments: data.comments,
+        itemDescription: data.itemDescription,
+        specialNote: data.specialNote,
       },
     }
     await api.updateGem(gemId, {
@@ -160,7 +161,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
       sg: parseFloat(data.sg),
       hardness: parseFloat(data.hardness),
       finalVariety: data.selectedVariety,
-      itemDescription: data.notes || data.comments,
+      itemDescription: data.itemDescription || data.comments,
       finalObservations: {
         shape: data.shape,
         cut: data.cut,
@@ -173,6 +174,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
         proportionGrade: data.proportionGrade,
         clarityGrade: data.clarityGrade,
         comments: data.comments,
+        itemDescription: data.itemDescription,
+        specialNote: data.specialNote,
         cluster: data.clusterSize,
         stone: data.stoneSize,
       },

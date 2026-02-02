@@ -1,122 +1,121 @@
 export type UserRole = "ADMIN" | "HELPER" | "TESTER"
 
 export interface User {
-    id: string
-    name: string
-    role: UserRole
-    avatar: string
-    age?: number
-    dob?: string
-    idNumber?: string
-    address?: string
-    email?: string
-    phoneNumber?: string
-    isDeleted?: boolean
+  id: string
+  name: string
+  role: UserRole
+  avatar: string
+  age?: number
+  dob?: string
+  idNumber?: string
+  address?: string
+  email?: string
+  phoneNumber?: string
+  isDeleted?: boolean
 }
 
-
-
-
 export interface Customer {
-    _id: string
-    customerName: string
-    companyName: string
-    email: string
-    logo?: string
-    phoneNumber?: string
-    address?: string
-    isDeleted?: boolean
+  _id: string
+  customerName: string
+  companyName: string
+  email: string
+  logo?: string
+  phoneNumber?: string
+  address?: string
+  isDeleted?: boolean
 }
 
 export type GemStatus =
-    | "INTAKE"
-    | "READY_FOR_T1"
-    | "READY_FOR_T2"
-    | "READY_FOR_APPROVAL"
-    | "COMPLETED"
+  | "INTAKE"
+  | "READY_FOR_T1"
+  | "READY_FOR_T2"
+  | "READY_FOR_APPROVAL"
+  | "COMPLETED"
 
 export interface ObservationData {
-    shape?: string
-    cut?: string
-    transparency?: string
-    clarity?: string
-    origin?: string
-    species?: string
-    variety?: string
-    cluster?: string
-    stone?: string
-    cuttingGrade?: string
-    polishingGrade?: string
-    proportionGrade?: string
-    comments?: string
+  shape?: string
+  cut?: string
+  transparency?: string
+  clarity?: string
+  clarityGrade?: string
+  origin?: string
+  species?: string
+  variety?: string
+  cluster?: string
+  stone?: string
+  cuttingGrade?: string
+  polishingGrade?: string
+  proportionGrade?: string
+  comments?: string
+  itemDescription?: string
+  specialNote?: string
 }
 
 export interface Gem {
-    _id: string
-    gemId: string // GRC Number
-    status: GemStatus
-    updatedAt: string
+  _id: string
+  gemId: string // GRC Number
+  status: GemStatus
+  updatedAt: string
 
-    // Base Data
-    color?: string
-    emeraldWeight?: number
-    diamondWeight?: number
-    totalArticleWeight?: number
-    shape?: string
-    cut?: string
+  // Base Data
+  color?: string
+  emeraldWeight?: number
+  diamondWeight?: number
+  totalArticleWeight?: number
+  shape?: string
+  cut?: string
+  itemDescription?: string
+  imageUrl?: string
+  customerId?: string
+
+  intake: {
+    helperId?: string
+    timestamp?: Date
+  }
+
+  test1: {
+    ri?: number
+    sg?: number
+    hardness?: number
+    observations?: ObservationData
+    selectedVariety?: string
+    notes?: string
+    testerId?: string
+    timestamp?: Date
+  }
+
+  test2: {
+    ri?: number
+    sg?: number
+    hardness?: number
+    observations?: ObservationData
+    selectedVariety?: string
+    notes?: string
+    testerId?: string
+    timestamp?: Date
+  }
+
+  finalApproval: {
+    ri?: number
+    sg?: number
+    hardness?: number
+    finalObservations?: ObservationData
+    finalVariety?: string
     itemDescription?: string
-    imageUrl?: string
-    customerId?: string
-
-
-    intake: {
-        helperId?: string
-        timestamp?: Date
-    }
-
-    test1: {
-        ri?: number
-        sg?: number
-        hardness?: number
-        observations?: ObservationData
-        selectedVariety?: string
-        notes?: string
-        testerId?: string
-        timestamp?: Date
-    }
-
-    test2: {
-        ri?: number
-        sg?: number
-        hardness?: number
-        observations?: ObservationData
-        selectedVariety?: string
-        notes?: string
-        testerId?: string
-        timestamp?: Date
-    }
-
-    finalApproval: {
-        ri?: number
-        sg?: number
-        hardness?: number
-        finalObservations?: ObservationData
-        finalVariety?: string
-        itemDescription?: string
-        reportUrl?: string
-        qrCode?: string
-        approverId?: string
-        timestamp?: Date
-    }
+    reportUrl?: string
+    qrCode?: string
+    approverId?: string
+    timestamp?: Date
+  }
 }
 
 export interface GemReference {
-    species: string
-    variety: string
-    refractiveIndexMin: number
-    refractiveIndexMax: number
-    specificGravityMin: number
-    specificGravityMax: number
-    hardnessMin: number
-    hardnessMax: number
+  species: string
+  variety: string
+  refractiveIndexMin: number
+  refractiveIndexMax: number
+  specificGravityMin: number
+  specificGravityMax: number
+  hardnessMin: number
+  hardnessMax: number
 }
