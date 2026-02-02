@@ -21,8 +21,10 @@ export function GemDetailPage() {
     references: globalReferences,
     species: globalSpecies,
     handleTestSubmit,
+    handleRequestCorrection,
     handleApproval,
     handleOverride,
+    refreshGems,
   } = useGem()
   const navigate = useNavigate()
 
@@ -156,6 +158,23 @@ export function GemDetailPage() {
     }
   }
 
+  const handleImageUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !gem) return
+
+    setIsSubmitting(true)
+    try {
+      const formData = new FormData()
+      formData.append("image", file)
+      await api.updateGem(gem._id, formData)
+      await refreshGems()
+    } catch (error) {
+      console.error("Failed to update image:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const copyValues = (source: any) => {
     const obs = source.observations || source.finalObservations || {}
     setFormData({
@@ -230,12 +249,29 @@ export function GemDetailPage() {
                 Intake Details
               </h3>
               {gem.imageUrl && (
-                <div className='mb-4 relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-white'>
+                <div className='mb-4 relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-white group'>
                   <img
-                    src={`${api.BASE_URL}${gem.imageUrl}`}
+                    src={
+                      gem.imageUrl.startsWith("http")
+                        ? gem.imageUrl
+                        : `${api.BASE_URL}${gem.imageUrl}`
+                    }
                     alt={gem.gemId}
                     className='h-full w-full object-cover animate-in fade-in zoom-in duration-700'
                   />
+                  {(user?.role === "ADMIN" || user?.role === "HELPER") && (
+                    <div className='absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
+                      <label className='cursor-pointer bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-white/30 transition-all'>
+                        Change Image
+                        <input
+                          type='file'
+                          className='hidden'
+                          accept='image/*'
+                          onChange={handleImageUpdate}
+                        />
+                      </label>
+                    </div>
+                  )}
                 </div>
               )}
               {customer && (
@@ -392,16 +428,31 @@ export function GemDetailPage() {
                       <span className='text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded'>
                         TESTER 1
                       </span>
-                      {isApproval && (
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='h-6 text-[10px]'
-                          onClick={() => copyValues(gem.test1)}
-                        >
-                          Copy Data
-                        </Button>
-                      )}
+                      <div className='flex items-center gap-1'>
+                        {isApproval && (
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            className='h-6 text-[10px]'
+                            onClick={() => copyValues(gem.test1)}
+                          >
+                            Copy Data
+                          </Button>
+                        )}
+                        {user?.role === "ADMIN" && (
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            className='h-6 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-50'
+                            onClick={() => {
+                              const note = window.prompt("Enter correction note for Tester 1:")
+                              if (note) handleRequestCorrection(gem._id, "test1", note)
+                            }}
+                          >
+                            Correct
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <div className='text-xs space-y-1'>
                       <p>
@@ -410,6 +461,44 @@ export function GemDetailPage() {
                       <p>
                         Var: <strong>{gem.test1.selectedVariety}</strong>
                       </p>
+                      {gem.test1.correctionRequested && (
+                        <div className='mt-2 p-2 bg-red-50 rounded border border-red-100'>
+                          <p className='text-[9px] font-bold text-red-600 uppercase'>
+                            Correction Requested
+                          </p>
+                          <p className='text-[10px] text-red-800 italic'>
+                            {gem.test1.correctionNote}
+                          </p>
+                        </div>
+                      )}
+                      {gem.test1.history && gem.test1.history.length > 0 && (
+                        <div className='mt-3 pt-3 border-t border-slate-100'>
+                          <p className='text-[9px] font-bold text-slate-400 uppercase mb-2'>
+                            Resubmission History
+                          </p>
+                          <div className='space-y-1 max-h-32 overflow-y-auto pr-1'>
+                            {gem.test1.history
+                              .slice()
+                              .reverse()
+                              .map((h: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className='text-[10px] bg-white p-2 rounded border border-slate-100 opacity-80'
+                                >
+                                  <div className='flex justify-between mb-1'>
+                                    <span className='font-bold'>
+                                      #{(gem.test1?.history?.length || 0) - idx}
+                                    </span>
+                                    <span className='text-[8px] text-slate-400'>
+                                      {new Date(h.timestamp).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  RI: {h.ri} | SG: {h.sg} | Var: {h.selectedVariety}
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </Card>
                 )}
@@ -419,16 +508,31 @@ export function GemDetailPage() {
                       <span className='text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded'>
                         TESTER 2
                       </span>
-                      {isApproval && (
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='h-6 text-[10px]'
-                          onClick={() => copyValues(gem.test2)}
-                        >
-                          Copy Data
-                        </Button>
-                      )}
+                      <div className='flex items-center gap-1'>
+                        {isApproval && (
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            className='h-6 text-[10px]'
+                            onClick={() => copyValues(gem.test2)}
+                          >
+                            Copy Data
+                          </Button>
+                        )}
+                        {user?.role === "ADMIN" && (
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            className='h-6 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-50'
+                            onClick={() => {
+                              const note = window.prompt("Enter correction note for Tester 2:")
+                              if (note) handleRequestCorrection(gem._id, "test2", note)
+                            }}
+                          >
+                            Correct
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <div className='text-xs space-y-1'>
                       <p>
@@ -437,6 +541,44 @@ export function GemDetailPage() {
                       <p>
                         Var: <strong>{gem.test2.selectedVariety}</strong>
                       </p>
+                      {gem.test2.correctionRequested && (
+                        <div className='mt-2 p-2 bg-red-50 rounded border border-red-100'>
+                          <p className='text-[9px] font-bold text-red-600 uppercase'>
+                            Correction Requested
+                          </p>
+                          <p className='text-[10px] text-red-800 italic'>
+                            {gem.test2.correctionNote}
+                          </p>
+                        </div>
+                      )}
+                      {gem.test2?.history && gem.test2.history.length > 0 && (
+                        <div className='mt-3 pt-3 border-t border-slate-100'>
+                          <p className='text-[9px] font-bold text-slate-400 uppercase mb-2'>
+                            Resubmission History
+                          </p>
+                          <div className='space-y-1 max-h-32 overflow-y-auto pr-1'>
+                            {gem.test2.history
+                              .slice()
+                              .reverse()
+                              .map((h: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className='text-[10px] bg-white p-2 rounded border border-slate-100 opacity-80'
+                                >
+                                  <div className='flex justify-between mb-1'>
+                                    <span className='font-bold'>
+                                      #{(gem.test2?.history?.length || 0) - idx}
+                                    </span>
+                                    <span className='text-[8px] text-slate-400'>
+                                      {new Date(h.timestamp).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  RI: {h.ri} | SG: {h.sg} | Var: {h.selectedVariety}
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </Card>
                 )}

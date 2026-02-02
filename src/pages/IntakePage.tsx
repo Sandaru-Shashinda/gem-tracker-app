@@ -30,7 +30,8 @@ export function IntakePage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [testers, setTesters] = useState<User[]>([])
-  const [selectedTester, setSelectedTester] = useState("")
+  const [selectedTester1, setSelectedTester1] = useState("")
+  const [selectedTester2, setSelectedTester2] = useState("")
   const [customers, setCustomers] = useState<Customer[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState("")
 
@@ -78,7 +79,8 @@ export function IntakePage() {
       await handleIntake(
         {
           ...formData,
-          testerId: selectedTester || undefined,
+          testerId1: selectedTester1 || undefined,
+          testerId2: selectedTester2 || undefined,
           customerId: selectedCustomer || undefined,
         },
         image || undefined,
@@ -158,36 +160,64 @@ export function IntakePage() {
               />
             </div>
 
-            <div className='space-y-2'>
-              <label className='text-sm font-medium'>Assign Customer</label>
-              <Select value={selectedCustomer} onValueChange={setSelectedCustomer} required>
-                <SelectTrigger className='w-full h-11 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium text-slate-700'>
-                  <SelectValue placeholder='Select a customer...' />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer._id} value={customer._id}>
-                      {customer.customerName} ({customer.companyName})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className='space-y-4'>
+              <h3 className='text-sm font-semibold text-slate-700 border-b pb-2'>
+                Workflow Assignment
+              </h3>
 
-            <div className='space-y-2'>
-              <label className='text-sm font-medium'>Assign Tester</label>
-              <Select value={selectedTester} onValueChange={setSelectedTester} required>
-                <SelectTrigger className='w-full h-11 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium text-slate-700'>
-                  <SelectValue placeholder='Select a tester...' />
-                </SelectTrigger>
-                <SelectContent>
-                  {testers.map((tester) => (
-                    <SelectItem key={tester.id} value={tester.id}>
-                      {tester.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className='space-y-2'>
+                <label className='text-sm font-medium'>Customer</label>
+                <Select value={selectedCustomer} onValueChange={setSelectedCustomer} required>
+                  <SelectTrigger className='w-full'>
+                    <SelectValue placeholder='Select a customer...' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer._id} value={customer._id}>
+                        {customer.customerName} ({customer.companyName})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-2'>
+                  <label className='text-sm font-medium text-blue-600 font-bold'>
+                    Tester 1 (Initial Analysis)
+                  </label>
+                  <Select value={selectedTester1} onValueChange={setSelectedTester1} required>
+                    <SelectTrigger className='w-full border-blue-200'>
+                      <SelectValue placeholder='Assign Tester 1...' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {testers.map((tester) => (
+                        <SelectItem key={tester.id} value={tester.id}>
+                          {tester.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className='space-y-2'>
+                  <label className='text-sm font-medium text-purple-600 font-bold'>
+                    Tester 2 (Secondary Analysis)
+                  </label>
+                  <Select value={selectedTester2} onValueChange={setSelectedTester2} required>
+                    <SelectTrigger className='w-full border-purple-200'>
+                      <SelectValue placeholder='Assign Tester 2...' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {testers.map((tester) => (
+                        <SelectItem key={tester.id} value={tester.id}>
+                          {tester.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
             <div className='space-y-2'>

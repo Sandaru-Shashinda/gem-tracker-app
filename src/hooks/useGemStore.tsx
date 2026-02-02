@@ -21,12 +21,14 @@ interface GemContextType {
       diamondWeight: string
       totalArticleWeight: string
       itemDescription: string
-      testerId?: string
+      testerId1?: string
+      testerId2?: string
       customerId?: string
     },
     image?: File,
   ) => Promise<void>
   handleTestSubmit: (gemId: string, stage: "test1" | "test2", data: any) => Promise<void>
+  handleRequestCorrection: (gemId: string, stage: "test1" | "test2", note: string) => Promise<void>
 
   handleApproval: (gemId: string, data: any) => Promise<void>
   handleOverride: (gemId: string, status: any) => Promise<void>
@@ -101,7 +103,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
       diamondWeight: string
       totalArticleWeight: string
       itemDescription: string
-      testerId?: string
+      testerId1?: string
+      testerId2?: string
       customerId?: string
     },
     image?: File,
@@ -113,8 +116,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
     formData.append("diamondWeight", data.diamondWeight)
     formData.append("totalArticleWeight", data.totalArticleWeight)
     formData.append("itemDescription", data.itemDescription)
-    if (data.testerId) {
-      formData.append("testerId", data.testerId)
+    if (data.testerId1) {
+      formData.append("testerId1", data.testerId1)
+    }
+    if (data.testerId2) {
+      formData.append("testerId2", data.testerId2)
     }
     if (data.customerId) {
       formData.append("customerId", data.customerId)
@@ -201,6 +207,18 @@ export function GemProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const handleRequestCorrection = async (gemId: string, stage: "test1" | "test2", note: string) => {
+    setRefreshing(true)
+    try {
+      await api.requestCorrection(gemId, stage, note)
+      await refreshGems()
+    } catch (err) {
+      console.error("Failed to request correction:", err)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   return (
     <GemContext.Provider
       value={{
@@ -216,6 +234,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
         refreshSpecies,
         handleIntake,
         handleTestSubmit,
+        handleRequestCorrection,
         handleApproval,
         handleOverride,
       }}

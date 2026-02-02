@@ -67,6 +67,9 @@ export interface Gem {
   itemDescription?: string
   imageUrl?: string
   customerId?: string
+  currentAssignee?: string
+  assignedTester1?: string
+  assignedTester2?: string
 
   intake: {
     helperId?: string
@@ -82,6 +85,9 @@ export interface Gem {
     notes?: string
     testerId?: string
     timestamp?: Date
+    correctionRequested?: boolean
+    correctionNote?: string
+    history?: any[]
   }
 
   test2: {
@@ -93,6 +99,9 @@ export interface Gem {
     notes?: string
     testerId?: string
     timestamp?: Date
+    correctionRequested?: boolean
+    correctionNote?: string
+    history?: any[]
   }
 
   finalApproval: {

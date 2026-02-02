@@ -53,7 +53,7 @@ export function GemTable({
           return imageUrl ? (
             <div className='h-12 w-12 rounded-lg overflow-hidden border border-slate-200'>
               <img
-                src={`${api.BASE_URL}${imageUrl}`}
+                src={imageUrl.startsWith("http") ? imageUrl : `${api.BASE_URL}${imageUrl}`}
                 alt={gemId}
                 className='h-full w-full object-cover'
               />
