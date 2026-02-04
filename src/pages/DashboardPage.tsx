@@ -5,8 +5,9 @@ import { SpeciesDistributionWidget } from "@/components/features/dashboard/Speci
 import { FileText, Activity, CheckCircle, AlertCircle } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { useGem } from "@/hooks/useGemStore"
-import { api } from "@/lib/api"
+import { BASE_URL } from "@/lib/api/config"
 import { GemTimeline } from "@/components/features/gems/GemTimeline"
+import { GEM_STATUSES } from "@/lib/types"
 
 export function DashboardPage() {
   const { user, gems } = useGem()
@@ -14,13 +15,13 @@ export function DashboardPage() {
   const stats = useMemo(() => {
     return {
       total: gems.length,
-      pending: gems.filter((g) => g.status !== "COMPLETED").length,
-      completed: gems.filter((g) => g.status === "COMPLETED").length,
+      pending: gems.filter((g) => g.status !== GEM_STATUSES.DONE).length,
+      completed: gems.filter((g) => g.status === GEM_STATUSES.DONE).length,
       myPending: gems.filter((g) => {
-        if (user?.role === "HELPER") return g.status === "INTAKE"
+        if (user?.role === "HELPER") return g.status === GEM_STATUSES.TOOK_IN
         if (user?.role === "TESTER")
-          return g.status === "READY_FOR_T1" || g.status === "READY_FOR_T2"
-        if (user?.role === "ADMIN") return g.status === "READY_FOR_APPROVAL"
+          return g.status === GEM_STATUSES.READY_FOR_T1 || g.status === GEM_STATUSES.READY_FOR_T2
+        if (user?.role === "ADMIN") return g.status === GEM_STATUSES.READY_FOR_APPROVAL
         return false
       }).length,
     }
@@ -66,7 +67,7 @@ export function DashboardPage() {
                         <div className='h-10 w-10 shrink-0 rounded bg-slate-100 overflow-hidden border border-slate-200'>
                           {gem.imageUrl ? (
                             <img
-                              src={`${api.BASE_URL}${gem.imageUrl}`}
+                              src={`${BASE_URL}${gem.imageUrl}`}
                               alt={gem.gemId}
                               className='h-full w-full object-cover'
                             />

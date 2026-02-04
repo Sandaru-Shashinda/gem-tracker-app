@@ -33,6 +33,16 @@ export default function App() {
           }
         />
         <Route
+          path='/intake/:id'
+          element={
+            user?.role === "HELPER" || user?.role === "ADMIN" ? (
+              <IntakePage />
+            ) : (
+              <Navigate to='/dashboard' replace />
+            )
+          }
+        />
+        <Route
           path='/stats'
           element={user?.role === "ADMIN" ? <StatsPage /> : <Navigate to='/dashboard' replace />}
         />

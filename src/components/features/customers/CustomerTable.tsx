@@ -4,7 +4,7 @@ import { Edit2, Trash2, Building2, MapPin, Mail, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Customer } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
-import { api } from "@/lib/api"
+import { BASE_URL } from "@/lib/api/config"
 
 interface CustomerTableProps {
   data: Customer[]
@@ -42,7 +42,7 @@ export function CustomerTable({
               <div className='w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center border border-slate-200'>
                 {customer.logo ? (
                   <img
-                    src={`${api.BASE_URL}/${customer.logo}`} // Assuming logo path is relative to base url or needs API_BASE_URL
+                    src={`${BASE_URL}/${customer.logo}`} // Assuming logo path is relative to base url or needs API_BASE_URL
                     alt={customer.customerName}
                     className='w-full h-full object-cover'
                   />

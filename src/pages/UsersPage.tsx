@@ -2,13 +2,13 @@ import { useState, useEffect } from "react"
 import { Users, UserPlus } from "lucide-react"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Button } from "@/components/ui/button"
-import { api } from "@/lib/api"
+import { usersApi } from "@/lib/api/users"
 import type { User } from "@/lib/types"
 import { UserTable } from "@/components/features/users/UserTable"
 import { CreateUserModal } from "@/components/features/users/CreateUserModal"
 import { EditUserModal } from "@/components/features/users/EditUserModal"
 import { DeleteUserDialog } from "@/components/features/users/DeleteUserDialog"
-import type { UserFormValues } from "@/lib/validations/user"
+import type { UserFormValues, EditUserFormValues } from "@/lib/validations/user"
 
 export function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
@@ -26,7 +26,7 @@ export function UsersPage() {
   const loadUsers = async () => {
     setIsLoading(true)
     try {
-      const data = await api.getUsers()
+      const data = await usersApi.getUsers()
       setUsers(data)
     } catch (error) {
       console.error("Failed to load users:", error)
@@ -46,7 +46,7 @@ export function UsersPage() {
         ...values,
         age: values.age ? parseInt(values.age) : undefined,
       }
-      await api.createUser(data)
+      await usersApi.createUser(data)
       await loadUsers()
       setIsCreateModalOpen(false)
     } catch (error) {
@@ -56,7 +56,7 @@ export function UsersPage() {
     }
   }
 
-  const handleUpdateUser = async (values: UserFormValues) => {
+  const handleUpdateUser = async (values: EditUserFormValues) => {
     if (!editingUser) return
     setIsSubmitting(true)
     try {
@@ -64,7 +64,7 @@ export function UsersPage() {
         ...values,
         age: values.age ? parseInt(values.age) : undefined,
       }
-      await api.updateUser(editingUser.id, data)
+      await usersApi.updateUser(editingUser.id, data)
       setEditingUser(null)
       await loadUsers()
     } catch (error) {
@@ -78,7 +78,7 @@ export function UsersPage() {
     if (!userToDelete) return
     setIsDeleting(true)
     try {
-      await api.deleteUser(userToDelete)
+      await usersApi.deleteUser(userToDelete)
       setUserToDelete(null)
       await loadUsers()
     } catch (error) {

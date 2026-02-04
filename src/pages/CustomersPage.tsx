@@ -7,7 +7,7 @@ import { CustomerTable } from "@/components/features/customers/CustomerTable"
 import { CreateCustomerModal } from "@/components/features/customers/CreateCustomerModal"
 import { EditCustomerModal } from "@/components/features/customers/EditCustomerModal"
 import { DeleteCustomerDialog } from "@/components/features/customers/DeleteCustomerDialog"
-import { api } from "@/lib/api"
+import { customersApi } from "@/lib/api/customers"
 import { useGem } from "@/hooks/useGemStore"
 import type { Customer } from "@/lib/types"
 
@@ -31,7 +31,7 @@ export function CustomersPage() {
   const loadCustomers = async () => {
     setIsLoading(true)
     try {
-      const { customers: data, total } = await api.getCustomers(
+      const { customers: data, total } = await customersApi.getCustomers(
         pagination.pageIndex + 1,
         pagination.pageSize,
         search,
@@ -53,7 +53,7 @@ export function CustomersPage() {
     if (!deletingCustomerId) return
     setIsDeleting(true)
     try {
-      await api.deleteCustomer(deletingCustomerId)
+      await customersApi.deleteCustomer(deletingCustomerId)
       setDeletingCustomerId(null)
       loadCustomers()
     } catch (error) {

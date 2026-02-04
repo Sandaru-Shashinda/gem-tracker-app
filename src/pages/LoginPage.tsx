@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom"
 import { Microscope, Loader2, Eye, EyeOff } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { useGem } from "@/hooks/useGemStore"
-import { api } from "@/lib/api"
+import { usersApi } from "@/lib/api/users"
 
 export function LoginPage() {
   const { user, setUser } = useGem()
@@ -20,7 +20,7 @@ export function LoginPage() {
     setLoading("manual")
     setError(null)
     try {
-      const loggedInUser = await api.login(email, password)
+      const loggedInUser = await usersApi.login(email, password)
       setUser(loggedInUser)
     } catch (err: any) {
       setError(err.message || "Login failed")

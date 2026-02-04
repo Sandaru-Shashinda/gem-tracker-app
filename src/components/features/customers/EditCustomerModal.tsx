@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Upload } from "lucide-react"
-import { api } from "@/lib/api"
+import { customersApi } from "@/lib/api/customers"
+import { BASE_URL } from "@/lib/api/config"
 import type { Customer } from "@/lib/types"
 
 interface EditCustomerModalProps {
@@ -47,7 +48,7 @@ export function EditCustomerModal({
         address: customer.address || "",
       })
       if (customer.logo) {
-        setLogoPreview(`${api.BASE_URL}/${customer.logo}`) // Ensure correct logo path
+        setLogoPreview(`${BASE_URL}/${customer.logo}`) // Ensure correct logo path
       } else {
         setLogoPreview(null)
       }
@@ -82,7 +83,7 @@ export function EditCustomerModal({
         data.append("logo", logo)
       }
 
-      await api.updateCustomer(customer._id, data)
+      await customersApi.updateCustomer(customer._id, data)
       onSuccess()
       onOpenChange(false)
     } catch (error) {

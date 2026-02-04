@@ -25,12 +25,21 @@ export interface Customer {
   isDeleted?: boolean
 }
 
-export type GemStatus =
-  | "INTAKE"
-  | "READY_FOR_T1"
-  | "READY_FOR_T2"
-  | "READY_FOR_APPROVAL"
-  | "COMPLETED"
+export const GEM_STATUSES = {
+  DRAFT_INTAKE: "DRAFT_INTAKE",
+  TOOK_IN: "TOOK_IN",
+  DRAFT_TEST_1: "DRAFT_TEST_1",
+  READY_FOR_T1: "READY_FOR_T1",
+  DRAFT_TEST_2: "DRAFT_TEST_2",
+  READY_FOR_T2: "READY_FOR_T2",
+  READY_FOR_APPROVAL: "READY_FOR_APPROVAL",
+  DRAFT_APPROVAL: "DRAFT_APPROVAL",
+  SUBMITTED_FOR_REPORT: "SUBMITTED_FOR_REPORT",
+  REQUEST_CHANGES: "REQUEST_CHANGES",
+  DONE: "COMPLETED",
+}
+
+export type GemStatus = (typeof GEM_STATUSES)[keyof typeof GEM_STATUSES]
 
 export interface ObservationData {
   shape?: string
@@ -59,9 +68,7 @@ export interface Gem {
 
   // Base Data
   color?: string
-  emeraldWeight?: number
-  diamondWeight?: number
-  totalArticleWeight?: number
+  weight?: number
   shape?: string
   cut?: string
   itemDescription?: string

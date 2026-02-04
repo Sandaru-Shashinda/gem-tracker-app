@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import type { Gem } from "@/lib/types"
+import { GEM_STATUSES } from "@/lib/types"
 
 interface SpeciesDistributionWidgetProps {
   gems: Gem[]
@@ -21,7 +22,7 @@ const COLORS = [
 
 export function SpeciesDistributionWidget({ gems }: SpeciesDistributionWidgetProps) {
   const stats = useMemo(() => {
-    const completedGems = gems.filter((g) => g.status === "COMPLETED")
+    const completedGems = gems.filter((g) => g.status === GEM_STATUSES.DONE)
     const totalCompleted = completedGems.length
 
     if (totalCompleted === 0) return []
@@ -121,7 +122,7 @@ export function SpeciesDistributionWidget({ gems }: SpeciesDistributionWidgetPro
           {/* Center Info */}
           <div className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none'>
             <span className='text-2xl font-black text-slate-900 leading-none'>
-              {gems.filter((g) => g.status === "COMPLETED").length}
+              {gems.filter((g) => g.status === GEM_STATUSES.DONE).length}
             </span>
             <span className='text-[10px] font-black text-slate-400 uppercase tracking-tighter mt-1'>
               Total Samples

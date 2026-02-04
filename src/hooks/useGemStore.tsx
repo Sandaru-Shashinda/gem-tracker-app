@@ -1,7 +1,11 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import type { ReactNode } from "react"
-import type { User, Gem, GemReference } from "@/lib/types"
-import { api } from "@/lib/api"
+import type { User, Gem, GemReference, GemStatus } from "@/lib/types"
+import { GEM_STATUSES } from "@/lib/types"
+import { gemsApi } from "@/lib/api/gems"
+import { usersApi } from "@/lib/api/users"
+import { referencesApi } from "@/lib/api/references"
+import { reportsApi } from "@/lib/api/reports"
 
 interface GemContextType {
   user: User | null
@@ -16,28 +20,40 @@ interface GemContextType {
   refreshSpecies: () => Promise<void>
   handleIntake: (
     data: {
-      color: string
-      emeraldWeight: string
-      diamondWeight: string
-      totalArticleWeight: string
-      itemDescription: string
+      color?: string
+      weight?: number
+      itemDescription?: string
       testerId1?: string
       testerId2?: string
       customerId?: string
+      status?: GemStatus
     },
     image?: File,
+    id?: string,
   ) => Promise<void>
-  handleTestSubmit: (gemId: string, stage: "test1" | "test2", data: any) => Promise<void>
+  getGemById: (id: string) => Promise<Gem>
+  handleTestSubmit: (
+    gemId: string,
+    stage: "test1" | "test2",
+    data: any,
+    status?: GemStatus,
+  ) => Promise<void>
   handleRequestCorrection: (gemId: string, stage: "test1" | "test2", note: string) => Promise<void>
 
-  handleApproval: (gemId: string, data: any) => Promise<void>
+  handleApproval: (gemId: string, data: any, status?: GemStatus) => Promise<void>
   handleOverride: (gemId: string, status: any) => Promise<void>
+  handleSaveDraft: (
+    gemId: string,
+    stage: "test1" | "test2" | "finalApproval",
+    data: any,
+    status: GemStatus,
+  ) => Promise<void>
 }
 
 const GemContext = createContext<GemContextType | undefined>(undefined)
 
 export function GemProvider({ children }: { children: ReactNode }) {
-  const [user, setUserState] = useState<User | null>(api.getCurrentUser())
+  const [user, setUserState] = useState<User | null>(usersApi.getCurrentUser())
   const [gems, setGems] = useState<Gem[]>([])
   const [references, setReferences] = useState<GemReference[]>([])
   const [species, setSpecies] = useState<string[]>([])
@@ -45,14 +61,14 @@ export function GemProvider({ children }: { children: ReactNode }) {
   const [refreshing, setRefreshing] = useState(false)
 
   const setUser = (u: User | null) => {
-    if (!u) api.logout()
+    if (!u) usersApi.logout()
     setUserState(u)
   }
 
   const refreshGems = async () => {
     setRefreshing(true)
     try {
-      const data = await api.getGems()
+      const data = await gemsApi.getGems()
       // Handle both paginated ({ gems: [], ... }) and legacy ([]) responses
       const gemsData = Array.isArray(data) ? data : data.gems || []
       setGems(gemsData)
@@ -66,7 +82,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
   const refreshReferences = async () => {
     setRefreshing(true)
     try {
-      const data = await api.getReferences()
+      const data = await referencesApi.getReferences()
       setReferences(data)
     } catch (err) {
       console.error("Failed to fetch references:", err)
@@ -78,7 +94,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
   const refreshSpecies = async () => {
     setRefreshing(true)
     try {
-      const data = await api.getSpecies()
+      const data = await referencesApi.getSpecies()
       setSpecies(data)
     } catch (err) {
       console.error("Failed to fetch species:", err)
@@ -98,24 +114,22 @@ export function GemProvider({ children }: { children: ReactNode }) {
 
   const handleIntake = async (
     data: {
-      color: string
-      emeraldWeight: string
-      diamondWeight: string
-      totalArticleWeight: string
-      itemDescription: string
+      color?: string
+      weight?: number
+      itemDescription?: string
       testerId1?: string
       testerId2?: string
       customerId?: string
+      status?: GemStatus
     },
     image?: File,
+    id?: string,
   ) => {
     if (!user) return
     const formData = new FormData()
-    formData.append("color", data.color)
-    formData.append("emeraldWeight", data.emeraldWeight)
-    formData.append("diamondWeight", data.diamondWeight)
-    formData.append("totalArticleWeight", data.totalArticleWeight)
-    formData.append("itemDescription", data.itemDescription)
+    if (data.color) formData.append("color", data.color)
+    if (data.weight !== undefined) formData.append("weight", data.weight.toString())
+    if (data.itemDescription) formData.append("itemDescription", data.itemDescription)
     if (data.testerId1) {
       formData.append("testerId1", data.testerId1)
     }
@@ -125,15 +139,31 @@ export function GemProvider({ children }: { children: ReactNode }) {
     if (data.customerId) {
       formData.append("customerId", data.customerId)
     }
+    if (data.status) {
+      formData.append("status", data.status)
+    }
     if (image) {
       formData.append("image", image)
     }
 
-    await api.createGem(formData)
+    if (id) {
+      await gemsApi.updateGem(id, formData)
+    } else {
+      await gemsApi.createGem(formData)
+    }
     await refreshGems()
   }
 
-  const handleTestSubmit = async (gemId: string, stage: "test1" | "test2", data: any) => {
+  const getGemById = async (id: string) => {
+    return gemsApi.getGemById(id)
+  }
+
+  const handleTestSubmit = async (
+    gemId: string,
+    stage: "test1" | "test2",
+    data: any,
+    status?: GemStatus,
+  ) => {
     if (!user) return
     const update = {
       ri: parseFloat(data.ri),
@@ -153,14 +183,15 @@ export function GemProvider({ children }: { children: ReactNode }) {
         specialNote: data.specialNote,
       },
     }
-    await api.updateGem(gemId, {
+    await gemsApi.updateGem(gemId, {
       [stage]: update,
-      status: stage === "test1" ? "READY_FOR_T2" : "READY_FOR_APPROVAL",
+      status:
+        status || (stage === "test1" ? GEM_STATUSES.READY_FOR_T2 : GEM_STATUSES.READY_FOR_APPROVAL),
     })
     await refreshGems()
   }
 
-  const handleApproval = async (gemId: string, data: any) => {
+  const handleApproval = async (gemId: string, data: any, status?: GemStatus) => {
     if (!user) return
     const update = {
       ri: parseFloat(data.ri),
@@ -186,19 +217,80 @@ export function GemProvider({ children }: { children: ReactNode }) {
         stone: data.stoneSize,
       },
     }
-    await api.updateGem(gemId, { finalApproval: update, status: "COMPLETED" })
+    await gemsApi.updateGem(gemId, {
+      finalApproval: update,
+      status: status || GEM_STATUSES.DONE,
+    })
     try {
-      await api.generateReport(gemId)
+      await reportsApi.generateReport(gemId)
     } catch (err) {
       console.error("Failed to generate report:", err)
     }
     await refreshGems()
   }
 
+  const handleSaveDraft = async (
+    gemId: string,
+    stage: "test1" | "test2" | "finalApproval",
+    data: any,
+    status: GemStatus,
+  ) => {
+    if (!user) return
+    let update: any = {}
+    if (stage === "finalApproval") {
+      update = {
+        ri: parseFloat(data.ri),
+        sg: parseFloat(data.sg),
+        hardness: parseFloat(data.hardness),
+        finalVariety: data.selectedVariety,
+        itemDescription: data.itemDescription || data.comments,
+        finalObservations: {
+          shape: data.shape,
+          cut: data.cut,
+          transparency: data.transparency,
+          origin: data.origin,
+          species: data.species,
+          variety: data.selectedVariety,
+          cuttingGrade: data.cuttingGrade,
+          polishingGrade: data.polishingGrade,
+          proportionGrade: data.proportionGrade,
+          clarityGrade: data.clarityGrade,
+          comments: data.comments,
+          itemDescription: data.itemDescription,
+          specialNote: data.specialNote,
+          cluster: data.clusterSize,
+          stone: data.stoneSize,
+        },
+      }
+    } else {
+      update = {
+        ri: parseFloat(data.ri),
+        sg: parseFloat(data.sg),
+        hardness: parseFloat(data.hardness),
+        selectedVariety: data.selectedVariety,
+        observations: {
+          shape: data.shape,
+          cut: data.cut,
+          transparency: data.transparency,
+          clarity: data.clarityGrade,
+          origin: data.origin,
+          species: data.species,
+          variety: data.selectedVariety,
+          comments: data.comments,
+          itemDescription: data.itemDescription,
+          specialNote: data.specialNote,
+        },
+      }
+    }
+
+    await gemsApi.saveDraft(gemId, { [stage]: update, status })
+    await refreshGems()
+  }
+
   const handleOverride = async (gemId: string, status: any) => {
     setRefreshing(true)
     try {
-      await api.updateGem(gemId, { status })
+      await gemsApi.updateGem(gemId, { status })
       await refreshGems()
     } catch (err) {
       console.error("Failed to override status:", err)
@@ -210,7 +302,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
   const handleRequestCorrection = async (gemId: string, stage: "test1" | "test2", note: string) => {
     setRefreshing(true)
     try {
-      await api.requestCorrection(gemId, stage, note)
+      await gemsApi.requestCorrection(gemId, stage, note)
       await refreshGems()
     } catch (err) {
       console.error("Failed to request correction:", err)
@@ -233,10 +325,12 @@ export function GemProvider({ children }: { children: ReactNode }) {
         refreshReferences,
         refreshSpecies,
         handleIntake,
+        getGemById,
         handleTestSubmit,
         handleRequestCorrection,
         handleApproval,
         handleOverride,
+        handleSaveDraft,
       }}
     >
       {children}

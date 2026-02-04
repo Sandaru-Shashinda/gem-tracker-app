@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useGem } from "@/hooks/useGemStore"
-import { api } from "@/lib/api"
+import { gemsApi } from "@/lib/api/gems"
+import { usersApi } from "@/lib/api/users"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { GemTable } from "@/components/features/gems/GemTable"
 import {
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { RefreshCcw, X } from "lucide-react"
 import type { Gem, User } from "@/lib/types"
+import { GEM_STATUSES } from "@/lib/types"
 import type { PaginationState } from "@tanstack/react-table"
 
 export function QueuePage() {
@@ -25,7 +27,6 @@ export function QueuePage() {
     pageSize: 10,
   })
   const [isLoading, setIsLoading] = useState(false)
-
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [assigneeFilter, setAssigneeFilter] = useState<string>("all")
   const [gemIdFilter, setGemIdFilter] = useState<string>("")
@@ -57,7 +58,11 @@ export function QueuePage() {
       if (dateRange.start) filters.startDate = dateRange.start
       if (dateRange.end) filters.endDate = dateRange.end
 
-      const data: any = await api.getGems(pagination.pageIndex + 1, pagination.pageSize, filters)
+      const data: any = await gemsApi.getGems(
+        pagination.pageIndex + 1,
+        pagination.pageSize,
+        filters,
+      )
 
       // Handle response structure { gems: [], total: ... }
       if (data.gems) {
@@ -88,7 +93,7 @@ export function QueuePage() {
 
   useEffect(() => {
     if (user?.role === "ADMIN" || user?.role === "HELPER") {
-      api.getUsers().then(setUsers).catch(console.error)
+      usersApi.getUsers().then(setUsers).catch(console.error)
     }
   }, [user?.role])
 
@@ -137,11 +142,16 @@ export function QueuePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='all'>All Statuses</SelectItem>
-                <SelectItem value='INTAKE'>Intake</SelectItem>
-                <SelectItem value='READY_FOR_T1'>Ready for T1</SelectItem>
-                <SelectItem value='READY_FOR_T2'>Ready for T2</SelectItem>
-                <SelectItem value='READY_FOR_APPROVAL'>Ready for Approval</SelectItem>
-                <SelectItem value='COMPLETED'>Completed</SelectItem>
+                <SelectItem value={GEM_STATUSES.DRAFT_INTAKE}>Draft Intake</SelectItem>
+                <SelectItem value={GEM_STATUSES.TOOK_IN}>Took In</SelectItem>
+                <SelectItem value={GEM_STATUSES.READY_FOR_T1}>Ready for T1</SelectItem>
+                <SelectItem value={GEM_STATUSES.READY_FOR_T2}>Ready for T2</SelectItem>
+                <SelectItem value={GEM_STATUSES.READY_FOR_APPROVAL}>Ready for Approval</SelectItem>
+                <SelectItem value={GEM_STATUSES.SUBMITTED_FOR_REPORT}>
+                  Submitted for Report
+                </SelectItem>
+                <SelectItem value={GEM_STATUSES.REQUEST_CHANGES}>Changes Requested</SelectItem>
+                <SelectItem value={GEM_STATUSES.DONE}>Completed</SelectItem>
               </SelectContent>
             </Select>
           </div>

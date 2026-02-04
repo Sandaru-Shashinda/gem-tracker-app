@@ -2,11 +2,11 @@ import { useMemo } from "react"
 import { createColumnHelper, type PaginationState } from "@tanstack/react-table"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { api } from "@/lib/api"
-import type { Gem, GemStatus } from "@/lib/types"
+import { BASE_URL } from "@/lib/api/config"
+import { type Gem, GEM_STATUSES } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
 import { useNavigate } from "react-router-dom"
+import { StatusBadge } from "@/components/shared/common/StatusBadge"
 
 interface GemTableProps {
   data: Gem[]
@@ -29,20 +29,6 @@ export function GemTable({
 }: GemTableProps) {
   const navigate = useNavigate()
 
-  const getStatusVariant = (status: GemStatus) => {
-    switch (status) {
-      case "COMPLETED":
-        return "green"
-      case "READY_FOR_T1":
-      case "READY_FOR_T2":
-        return "secondary"
-      case "READY_FOR_APPROVAL":
-        return "outline"
-      default:
-        return "secondary"
-    }
-  }
-
   const columns = useMemo(
     () => [
       columnHelper.accessor("imageUrl", {
@@ -53,7 +39,7 @@ export function GemTable({
           return imageUrl ? (
             <div className='h-12 w-12 rounded-lg overflow-hidden border border-slate-200'>
               <img
-                src={imageUrl.startsWith("http") ? imageUrl : `${api.BASE_URL}${imageUrl}`}
+                src={imageUrl.startsWith("http") ? imageUrl : `${BASE_URL}${imageUrl}`}
                 alt={gemId}
                 className='h-full w-full object-cover'
               />
@@ -71,11 +57,7 @@ export function GemTable({
       }),
       columnHelper.accessor("status", {
         header: "Status",
-        cell: (info) => (
-          <Badge variant={getStatusVariant(info.getValue())}>
-            {info.getValue().replace(/_/g, " ")}
-          </Badge>
-        ),
+        cell: (info) => <StatusBadge status={info.getValue()} />,
       }),
       columnHelper.display({
         id: "intakeInfo",
@@ -84,7 +66,7 @@ export function GemTable({
           const gem = info.row.original
           return (
             <div className='text-sm text-slate-500'>
-              {gem.color} / {gem.emeraldWeight}ct
+              {gem.color} / {gem.weight}ct
             </div>
           )
         },
@@ -100,17 +82,26 @@ export function GemTable({
       columnHelper.display({
         id: "actions",
         header: "Action",
-        cell: (info) => (
-          <div className='flex justify-end'>
-            <Button
-              variant='ghost'
-              onClick={() => navigate(`/gems/${info.row.original._id}`)}
-              className='text-blue-600 hover:text-blue-900'
-            >
-              View
-            </Button>
-          </div>
-        ),
+        cell: (info) => {
+          const gem = info.row.original
+          const isDraft = gem.status === GEM_STATUSES.DRAFT_INTAKE
+
+          return (
+            <div className='flex justify-end'>
+              <Button
+                variant='ghost'
+                onClick={() => navigate(isDraft ? `/intake/${gem._id}` : `/gems/${gem._id}`)}
+                className={
+                  isDraft
+                    ? "text-amber-600 hover:text-amber-900"
+                    : "text-blue-600 hover:text-blue-900"
+                }
+              >
+                {isDraft ? "Edit" : "View"}
+              </Button>
+            </div>
+          )
+        },
       }),
     ],
     [navigate],

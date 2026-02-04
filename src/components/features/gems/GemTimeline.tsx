@@ -1,4 +1,4 @@
-import type { Gem } from "@/lib/types"
+import { type Gem, GEM_STATUSES } from "@/lib/types"
 import { CheckCircle2, Clock, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -26,45 +26,47 @@ export function GemTimeline({ gem }: GemTimelineProps) {
     {
       id: "READY_FOR_T1",
       label: "Test 1",
-      status:
-        gem.status === "READY_FOR_T1"
-          ? "current"
-          : gem.test1?.timestamp ||
-              ["READY_FOR_T2", "READY_FOR_APPROVAL", "COMPLETED"].includes(gem.status)
-            ? "completed"
-            : "pending",
+      status: [GEM_STATUSES.READY_FOR_T1, GEM_STATUSES.DRAFT_TEST_1].includes(gem.status)
+        ? "current"
+        : gem.test1?.timestamp ||
+            [
+              GEM_STATUSES.READY_FOR_T2,
+              GEM_STATUSES.READY_FOR_APPROVAL,
+              GEM_STATUSES.DONE,
+            ].includes(gem.status)
+          ? "completed"
+          : "pending",
       timestamp: gem.test1?.timestamp,
       helperText: "Basic analysis",
     },
     {
       id: "READY_FOR_T2",
       label: "Test 2",
-      status:
-        gem.status === "READY_FOR_T2"
-          ? "current"
-          : gem.test2?.timestamp || ["READY_FOR_APPROVAL", "COMPLETED"].includes(gem.status)
-            ? "completed"
-            : "pending",
+      status: [GEM_STATUSES.READY_FOR_T2, GEM_STATUSES.DRAFT_TEST_2].includes(gem.status)
+        ? "current"
+        : gem.test2?.timestamp ||
+            [GEM_STATUSES.READY_FOR_APPROVAL, GEM_STATUSES.DONE].includes(gem.status)
+          ? "completed"
+          : "pending",
       timestamp: gem.test2?.timestamp,
       helperText: "Second verification",
     },
     {
       id: "READY_FOR_APPROVAL",
       label: "Approval",
-      status:
-        gem.status === "READY_FOR_APPROVAL"
-          ? "current"
-          : gem.finalApproval?.timestamp || gem.status === "COMPLETED"
-            ? "completed"
-            : "pending",
+      status: [GEM_STATUSES.READY_FOR_APPROVAL, GEM_STATUSES.DRAFT_APPROVAL].includes(gem.status)
+        ? "current"
+        : gem.finalApproval?.timestamp || gem.status === GEM_STATUSES.DONE
+          ? "completed"
+          : "pending",
       timestamp: gem.finalApproval?.timestamp,
       helperText: "Final review",
     },
     {
-      id: "COMPLETED",
+      id: GEM_STATUSES.DONE,
       label: "Completed",
-      status: gem.status === "COMPLETED" ? "completed" : "pending",
-      timestamp: gem.status === "COMPLETED" ? gem.updatedAt : undefined,
+      status: gem.status === GEM_STATUSES.DONE ? "completed" : "pending",
+      timestamp: gem.status === GEM_STATUSES.DONE ? gem.updatedAt : undefined,
       helperText: "Report ready",
     },
   ]

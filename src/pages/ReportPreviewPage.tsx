@@ -3,7 +3,7 @@ import QRCode from "react-qr-code"
 import { useGem } from "@/hooks/useGemStore"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { api } from "@/lib/api"
+import { BASE_URL } from "@/lib/api/config"
 import { ImageIcon } from "lucide-react"
 
 export function ReportPreviewPage() {
@@ -51,7 +51,7 @@ export function ReportPreviewPage() {
             <div className='aspect-square overflow-hidden bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shadow-inner'>
               {gem.imageUrl ? (
                 <img
-                  src={`${api.BASE_URL}${gem.imageUrl}`}
+                  src={`${BASE_URL}${gem.imageUrl}`}
                   alt={gem.gemId}
                   className='h-full w-full object-cover'
                 />

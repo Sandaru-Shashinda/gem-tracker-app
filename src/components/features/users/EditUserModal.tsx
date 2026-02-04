@@ -19,14 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { userSchema, type UserFormValues } from "@/lib/validations/user"
+import { editUserSchema, type EditUserFormValues } from "@/lib/validations/user"
 import type { User } from "@/lib/types"
 
 interface EditUserModalProps {
   user: User | null
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: UserFormValues) => Promise<void>
+  onSubmit: (data: EditUserFormValues) => Promise<void>
   isSubmitting: boolean
 }
 
@@ -37,8 +37,8 @@ export function EditUserModal({
   onSubmit,
   isSubmitting,
 }: EditUserModalProps) {
-  const form = useForm<UserFormValues>({
-    resolver: zodResolver(userSchema),
+  const form = useForm<EditUserFormValues>({
+    resolver: zodResolver(editUserSchema),
     mode: "onChange",
   })
 
@@ -76,7 +76,7 @@ export function EditUserModal({
     }
   }, [user, reset])
 
-  const handleFormSubmit = async (data: UserFormValues) => {
+  const handleFormSubmit = async (data: EditUserFormValues) => {
     console.log("Submitting User Data:", data)
     await onSubmit(data)
   }

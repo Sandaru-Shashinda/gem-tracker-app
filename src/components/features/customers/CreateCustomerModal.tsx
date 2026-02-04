@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Upload } from "lucide-react"
-import { api } from "@/lib/api"
+import { customersApi } from "@/lib/api/customers"
 import { customerSchema, type CustomerFormValues } from "@/lib/validations/customer"
 
 interface CreateCustomerModalProps {
@@ -67,7 +67,7 @@ export function CreateCustomerModal({ isOpen, onOpenChange, onSuccess }: CreateC
         data.append("logo", logo)
       }
 
-      await api.createCustomer(data)
+      await customersApi.createCustomer(data)
       onSuccess()
       onOpenChange(false)
       reset()

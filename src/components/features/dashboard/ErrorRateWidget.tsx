@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import type { Gem } from "@/lib/types"
+import { GEM_STATUSES } from "@/lib/types"
 
 interface ErrorRateWidgetProps {
   gems: Gem[]
@@ -12,7 +13,7 @@ export function ErrorRateWidget({ gems }: ErrorRateWidgetProps) {
       string,
       { name: string; total: number; errors: number; testerId: string }
     > = {}
-    const completed = gems.filter((g) => g.status === "COMPLETED")
+    const completed = gems.filter((g) => g.status === GEM_STATUSES.DONE)
 
     completed.forEach((g) => {
       const final = g.finalApproval?.finalVariety
