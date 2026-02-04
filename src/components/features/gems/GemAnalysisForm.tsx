@@ -34,7 +34,7 @@ export function GemAnalysisForm({
         </h3>
 
         {/* R.I., S.G., Hardness */}
-        <div className='grid grid-cols-3 gap-4'>
+        <div className='grid grid-cols-2 gap-4'>
           {scientificFields.slice(0, 3).map((field) => (
             <FormField
               key={field.name}
@@ -71,7 +71,7 @@ export function GemAnalysisForm({
         />
 
         {/* Measurements */}
-        <div className='grid grid-cols-3 gap-4'>
+        <div className='grid grid-cols-2 gap-4'>
           {scientificFields.slice(6, 9).map((field) => (
             <FormField
               key={field.name}
@@ -106,7 +106,7 @@ export function GemAnalysisForm({
         </div>
 
         {/* Origin and Cutting Grade */}
-        <div className='grid grid-cols-2 gap-4'>
+        <div className='grid grid-cols-1 gap-4'>
           {identificationFields.slice(2, 4).map((field) => (
             <FormField
               key={field.name}

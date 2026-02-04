@@ -37,11 +37,8 @@ export function GemIntakeAndHistory({
   isApproval,
 }: GemIntakeAndHistoryProps) {
   return (
-    <div className='lg:col-span-1 space-y-6'>
+    <div className='lg:col-span-2 space-y-6'>
       <Card className='p-5 bg-slate-50 border-slate-200'>
-        <h3 className='text-xs font-bold text-slate-500 uppercase tracking-wider mb-4'>
-          Intake Details
-        </h3>
         {gem.imageUrl && (
           <div className='mb-4 relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-white group'>
             <img
@@ -73,13 +70,13 @@ export function GemIntakeAndHistory({
             <p className='text-[10px] text-slate-500'>{customer.companyName}</p>
           </div>
         )}
-        <div className='space-y-3 text-sm'>
-          <div className='flex justify-between border-b border-slate-200 pb-1'>
-            <span className='text-slate-500'>Color:</span>{" "}
+        <div className='space-y-3 text-sm grid grid-cols-2 gap-4'>
+          <div className='flex border-b border-slate-200 pb-1'>
+            <span className='text-slate-500 pr-2'>Color:</span>{" "}
             <span className='font-bold'>{gem.color}</span>
           </div>
-          <div className='flex justify-between border-b border-slate-200 pb-1'>
-            <span className='text-slate-500'>Weight:</span>{" "}
+          <div className='flex border-b border-slate-200 pb-1'>
+            <span className='text-slate-500 pr-2'>Weight:</span>{" "}
             <span className='font-bold'>{gem.weight}</span>
           </div>
           <div className='pt-2'>
@@ -198,7 +195,7 @@ export function GemIntakeAndHistory({
       )}
 
       {/* Historical Blocks */}
-      {(gem.test1?.ri || gem.test2?.ri) && (
+      {(gem.test1?.ri || gem.test2?.ri) && user?.role === "ADMIN" && (
         <div className='space-y-4'>
           {gem.test1?.ri && (
             <Card className='p-4 border-l-4 border-l-blue-500 shadow-sm'>
@@ -234,11 +231,167 @@ export function GemIntakeAndHistory({
               </div>
               <div className='text-xs space-y-1'>
                 <p>
-                  RI: <strong>{gem.test1.ri}</strong> | SG: <strong>{gem.test1.sg}</strong>
+                  RI: <strong>{gem.test1.ri}</strong> | SG: <strong>{gem.test1.sg}</strong> |
+                  Hardness: <strong>{gem.test1.hardness}</strong>
                 </p>
-                <p>
-                  Var: <strong>{gem.test1.selectedVariety}</strong>
-                </p>
+                <div className='mt-3 space-y-3'>
+                  {/* Identification */}
+                  <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                        Identification
+                      </span>
+                    </div>
+                    <div className='grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]'>
+                      <div>
+                        <span className='text-slate-400 text-[10px]'>Species:</span>{" "}
+                        <span className='font-bold text-slate-700'>
+                          {gem.test1.observations?.species || "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className='text-slate-400 text-[10px]'>Variety:</span>{" "}
+                        <span className='font-bold text-slate-700'>
+                          {gem.test1.observations?.variety || "-"}
+                        </span>
+                      </div>
+                      <div className='col-span-2'>
+                        <span className='text-slate-400 text-[10px]'>Origin:</span>{" "}
+                        <span className='font-bold text-slate-700'>
+                          {gem.test1.observations?.origin || "-"}
+                        </span>
+                      </div>
+                      <div className='col-span-2 flex gap-6 pt-1 border-t border-slate-200/50 mt-1'>
+                        <div>
+                          <span className='text-slate-400 text-[10px]'>Shape:</span>{" "}
+                          <span className='font-medium text-slate-700'>
+                            {gem.test1.observations?.shape || "-"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className='text-slate-400 text-[10px]'>Cut:</span>{" "}
+                          <span className='font-medium text-slate-700'>
+                            {gem.test1.observations?.cut || "-"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Measurements & Properties */}
+                  <div className='grid grid-cols-2 gap-3'>
+                    <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                      <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>
+                        Dimensions
+                      </p>
+                      <p className='font-mono text-[11px] font-medium text-slate-600 tracking-tight'>
+                        {gem.test1.observations?.messurementX} x{" "}
+                        {gem.test1.observations?.messurementY} x{" "}
+                        {gem.test1.observations?.messurementZ}
+                      </p>
+                      <p className='text-[9px] text-slate-400 mt-0.5'>mm</p>
+                    </div>
+                    <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                      <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>
+                        Transparency
+                      </p>
+                      <p className='font-medium text-[11px] text-slate-700'>
+                        {gem.test1.observations?.transparency || "-"}
+                      </p>
+                      {gem.test1.observations?.spectroscopy && (
+                        <p className='text-[9px] text-slate-500 mt-1 truncate'>
+                          Spec: {gem.test1.observations?.spectroscopy}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Grading */}
+                  <div className='bg-indigo-50/30 p-2.5 rounded-lg border border-indigo-50'>
+                    <div className='flex justify-between items-center mb-2'>
+                      <span className='text-[9px] font-bold text-indigo-400 uppercase tracking-wider'>
+                        Grading Report
+                      </span>
+                      {gem.test1.observations?.grade && (
+                        <Badge
+                          variant='secondary'
+                          className='h-4 text-[9px] px-2 bg-indigo-100 text-indigo-700 border-indigo-200'
+                        >
+                          {gem.test1.observations?.grade}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className='grid grid-cols-4 gap-2 text-[10px] text-center'>
+                      <div className='p-1.5 bg-white rounded-md border border-slate-100 shadow-sm'>
+                        <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
+                          Cut
+                        </span>
+                        <span className='font-bold text-slate-700'>
+                          {gem.test1.observations?.cuttingGrade || "-"}
+                        </span>
+                      </div>
+                      <div className='p-1.5 bg-white rounded-md border border-slate-100 shadow-sm'>
+                        <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
+                          Polish
+                        </span>
+                        <span className='font-bold text-slate-700'>
+                          {gem.test1.observations?.polishingGrade || "-"}
+                        </span>
+                      </div>
+                      <div className='p-1.5 bg-white rounded-md border border-slate-100 shadow-sm'>
+                        <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
+                          Sym
+                        </span>
+                        <span className='font-bold text-slate-700'>
+                          {gem.test1.observations?.proportionGrade || "-"}
+                        </span>
+                      </div>
+                      <div className='p-1.5 bg-white rounded-md border border-slate-100 shadow-sm'>
+                        <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
+                          Clarity
+                        </span>
+                        <span className='font-bold text-slate-700'>
+                          {gem.test1.observations?.clarityGrade || "-"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {gem.test1.observations?.itemDescription && (
+                    <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                      <p className='text-[9px] font-bold text-slate-500 uppercase mb-1'>
+                        Item Description
+                      </p>
+                      <p className='text-[10px] text-slate-700 leading-relaxed font-serif italic'>
+                        {gem.test1.observations?.itemDescription}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Comments */}
+                  {gem.test1.observations?.comments && (
+                    <div className='bg-yellow-50/50 p-2.5 rounded-lg border border-yellow-100/50'>
+                      <p className='text-[9px] font-bold text-yellow-600/80 uppercase mb-1'>
+                        Comments
+                      </p>
+                      <p className='text-[10px] text-yellow-800 leading-relaxed'>
+                        {gem.test1.observations?.comments}
+                      </p>
+                    </div>
+                  )}
+                  {/* Special Note */}
+                  {gem.test1.observations?.specialNote && (
+                    <div className='bg-orange-50/50 p-2.5 rounded-lg border border-orange-100/50'>
+                      <p className='text-[9px] font-bold text-orange-600/80 uppercase mb-1'>
+                        Special Note
+                      </p>
+                      <p className='text-[10px] text-orange-800 leading-relaxed'>
+                        {gem.test1.observations?.specialNote}
+                      </p>
+                    </div>
+                  )}
+                </div>
                 {gem.test1.correctionRequested && (
                   <div className='mt-2 p-2 bg-red-50 rounded border border-red-100'>
                     <p className='text-[9px] font-bold text-red-600 uppercase'>
@@ -312,11 +465,167 @@ export function GemIntakeAndHistory({
               </div>
               <div className='text-xs space-y-1'>
                 <p>
-                  RI: <strong>{gem.test2.ri}</strong> | SG: <strong>{gem.test2.sg}</strong>
+                  RI: <strong>{gem.test2.ri}</strong> | SG: <strong>{gem.test2.sg}</strong> |
+                  Hardness: <strong>{gem.test2.hardness}</strong>
                 </p>
-                <p>
-                  Var: <strong>{gem.test2.selectedVariety}</strong>
-                </p>
+                <div className='mt-3 space-y-3'>
+                  {/* Identification */}
+                  <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-[10px] font-bold text-slate-500 uppercase tracking-wider'>
+                        Identification
+                      </span>
+                    </div>
+                    <div className='grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]'>
+                      <div>
+                        <span className='text-slate-400 text-[10px]'>Species:</span>{" "}
+                        <span className='font-bold text-slate-700'>
+                          {gem.test2.observations?.species || "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className='text-slate-400 text-[10px]'>Variety:</span>{" "}
+                        <span className='font-bold text-slate-700'>
+                          {gem.test2.observations?.variety || "-"}
+                        </span>
+                      </div>
+                      <div className='col-span-2'>
+                        <span className='text-slate-400 text-[10px]'>Origin:</span>{" "}
+                        <span className='font-bold text-slate-700'>
+                          {gem.test2.observations?.origin || "-"}
+                        </span>
+                      </div>
+                      <div className='col-span-2 flex gap-6 pt-1 border-t border-slate-200/50 mt-1'>
+                        <div>
+                          <span className='text-slate-400 text-[10px]'>Shape:</span>{" "}
+                          <span className='font-medium text-slate-700'>
+                            {gem.test2.observations?.shape || "-"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className='text-slate-400 text-[10px]'>Cut:</span>{" "}
+                          <span className='font-medium text-slate-700'>
+                            {gem.test2.observations?.cut || "-"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Measurements & Properties */}
+                  <div className='grid grid-cols-2 gap-3'>
+                    <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                      <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>
+                        Dimensions
+                      </p>
+                      <p className='font-mono text-[11px] font-medium text-slate-600 tracking-tight'>
+                        {gem.test2.observations?.messurementX} x{" "}
+                        {gem.test2.observations?.messurementY} x{" "}
+                        {gem.test2.observations?.messurementZ}
+                      </p>
+                      <p className='text-[9px] text-slate-400 mt-0.5'>mm</p>
+                    </div>
+                    <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                      <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>
+                        Transparency
+                      </p>
+                      <p className='font-medium text-[11px] text-slate-700'>
+                        {gem.test2.observations?.transparency || "-"}
+                      </p>
+                      {gem.test2.observations?.spectroscopy && (
+                        <p className='text-[9px] text-slate-500 mt-1 truncate'>
+                          Spec: {gem.test2.observations?.spectroscopy}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Grading */}
+                  <div className='bg-purple-50/30 p-2.5 rounded-lg border border-purple-50'>
+                    <div className='flex justify-between items-center mb-2'>
+                      <span className='text-[9px] font-bold text-purple-400 uppercase tracking-wider'>
+                        Grading Report
+                      </span>
+                      {gem.test2.observations?.grade && (
+                        <Badge
+                          variant='secondary'
+                          className='h-4 text-[9px] px-2 bg-purple-100 text-purple-700 border-purple-200'
+                        >
+                          {gem.test2.observations?.grade}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className='grid grid-cols-4 gap-2 text-[10px] text-center'>
+                      <div className='p-1.5 bg-white rounded-md border border-slate-100 shadow-sm'>
+                        <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
+                          Cut
+                        </span>
+                        <span className='font-bold text-slate-700'>
+                          {gem.test2.observations?.cuttingGrade || "-"}
+                        </span>
+                      </div>
+                      <div className='p-1.5 bg-white rounded-md border border-slate-100 shadow-sm'>
+                        <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
+                          Polish
+                        </span>
+                        <span className='font-bold text-slate-700'>
+                          {gem.test2.observations?.polishingGrade || "-"}
+                        </span>
+                      </div>
+                      <div className='p-1.5 bg-white rounded-md border border-slate-100 shadow-sm'>
+                        <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
+                          Sym
+                        </span>
+                        <span className='font-bold text-slate-700'>
+                          {gem.test2.observations?.proportionGrade || "-"}
+                        </span>
+                      </div>
+                      <div className='p-1.5 bg-white rounded-md border border-slate-100 shadow-sm'>
+                        <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
+                          Clarity
+                        </span>
+                        <span className='font-bold text-slate-700'>
+                          {gem.test2.observations?.clarityGrade || "-"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {gem.test2.observations?.itemDescription && (
+                    <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                      <p className='text-[9px] font-bold text-slate-500 uppercase mb-1'>
+                        Item Description
+                      </p>
+                      <p className='text-[10px] text-slate-700 leading-relaxed font-serif italic'>
+                        {gem.test2.observations?.itemDescription}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Comments */}
+                  {gem.test2.observations?.comments && (
+                    <div className='bg-yellow-50/50 p-2.5 rounded-lg border border-yellow-100/50'>
+                      <p className='text-[9px] font-bold text-yellow-600/80 uppercase mb-1'>
+                        Comments
+                      </p>
+                      <p className='text-[10px] text-yellow-800 leading-relaxed'>
+                        {gem.test2.observations?.comments}
+                      </p>
+                    </div>
+                  )}
+                  {/* Special Note */}
+                  {gem.test2.observations?.specialNote && (
+                    <div className='bg-orange-50/50 p-2.5 rounded-lg border border-orange-100/50'>
+                      <p className='text-[9px] font-bold text-orange-600/80 uppercase mb-1'>
+                        Special Note
+                      </p>
+                      <p className='text-[10px] text-orange-800 leading-relaxed'>
+                        {gem.test2.observations?.specialNote}
+                      </p>
+                    </div>
+                  )}
+                </div>
                 {gem.test2.correctionRequested && (
                   <div className='mt-2 p-2 bg-red-50 rounded border border-red-100'>
                     <p className='text-[9px] font-bold text-red-600 uppercase'>

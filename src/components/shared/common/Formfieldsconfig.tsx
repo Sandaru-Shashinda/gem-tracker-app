@@ -1,6 +1,7 @@
 import { type FieldConfig } from "@/components/shared/common/FormField"
 
 export const GRADE_OPTIONS = [
+  { value: "Ex", label: "Excellent" },
   { value: "Fine", label: "Fine" },
   { value: "Good", label: "Good" },
   { value: "Fair", label: "Fair" },
@@ -8,8 +9,16 @@ export const GRADE_OPTIONS = [
 ]
 
 export const SIMPLE_GRADE_OPTIONS = [
+  { value: "Ex", label: "Excellent" },
   { value: "Fine", label: "Fine" },
   { value: "Good", label: "Good" },
+]
+
+export const CLARITY_OPTIONS = [
+  { value: "Clean", label: "Clean" },
+  { value: "Fine", label: "Fine" },
+  { value: "Good", label: "Good" },
+  { value: "Fair", label: "Fair" },
 ]
 
 interface FormFieldsConfigParams {
@@ -157,9 +166,10 @@ export function getFormFieldsConfig({
     {
       name: "spectroscopy",
       label: "Spectroscopy",
-      type: "text",
+      type: "textarea",
       placeholder: "Spectroscopy details",
       className: "",
+      rows: 60,
     },
     {
       name: "origin",
@@ -208,7 +218,7 @@ export function getFormFieldsConfig({
       label: "Clarity",
       type: "select",
       placeholder: "Grade",
-      options: SIMPLE_GRADE_OPTIONS,
+      options: CLARITY_OPTIONS,
       className: "",
     },
   ]

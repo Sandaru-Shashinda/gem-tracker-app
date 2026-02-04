@@ -50,9 +50,6 @@ export function DashboardPage() {
         </div>
 
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-          <div className='lg:col-span-1'>
-            <SpeciesDistributionWidget gems={gems} />
-          </div>
           <div className='space-y-6 lg:col-span-2'>
             <Card className='p-6 h-full flex flex-col'>
               <h3 className='font-semibold text-lg mb-4 flex items-center gap-2'>
@@ -91,6 +88,10 @@ export function DashboardPage() {
                 })}
               </div>
             </Card>
+          </div>
+
+          <div className='lg:col-span-1'>
+            <SpeciesDistributionWidget gems={gems} />
           </div>
         </div>
       </div>
