@@ -181,6 +181,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
         comments: data.comments,
         itemDescription: data.itemDescription,
         specialNote: data.specialNote,
+        grade: data.grade,
+        spectroscopy: data.spectroscopy,
+        messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
+        messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
+        messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
       },
     }
     await gemsApi.updateGem(gemId, {
@@ -213,8 +218,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
         comments: data.comments,
         itemDescription: data.itemDescription,
         specialNote: data.specialNote,
-        cluster: data.clusterSize,
-        stone: data.stoneSize,
+        grade: data.grade,
+        spectroscopy: data.spectroscopy,
+        messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
+        messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
+        messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
       },
     }
     await gemsApi.updateGem(gemId, {
@@ -258,8 +266,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
           comments: data.comments,
           itemDescription: data.itemDescription,
           specialNote: data.specialNote,
-          cluster: data.clusterSize,
-          stone: data.stoneSize,
+          grade: data.grade,
+          spectroscopy: data.spectroscopy,
+          messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
+          messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
+          messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
         },
       }
     } else {
@@ -279,6 +290,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
           comments: data.comments,
           itemDescription: data.itemDescription,
           specialNote: data.specialNote,
+          grade: data.grade,
+          spectroscopy: data.spectroscopy,
+          messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
+          messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
+          messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
         },
       }
     }

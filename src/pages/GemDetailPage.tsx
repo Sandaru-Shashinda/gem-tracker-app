@@ -3,17 +3,10 @@ import { useForm, type SubmitHandler } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { testSchema, type TestFormValues } from "@/lib/validations/test"
 import { useParams, useNavigate } from "react-router-dom"
-import { Microscope, Search, ArrowLeft, ShieldCheck, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { useGem } from "@/hooks/useGemStore"
 import { gemsApi } from "@/lib/api/gems"
 import { customersApi } from "@/lib/api/customers"
@@ -21,9 +14,9 @@ import { referencesApi } from "@/lib/api/references"
 import { type GemReference, type Customer, type GemStatus, GEM_STATUSES } from "@/lib/types"
 import { GemTimeline } from "@/components/features/gems/GemTimeline"
 import { GemIntakeAndHistory } from "@/components/features/gems/GemIntakeAndHistory"
-import { GemFinalAudit } from "@/components/features/gems/GemFinalAudit"
-import { StatusBadge } from "@/components/shared/common/StatusBadge"
-import { FormField } from "@/components/shared/common/FormField"
+import { GemDetailHeader } from "@/components/features/gems/GemDetailHeader"
+import { GemWorkflowStatus } from "@/components/features/gems/GemWorkflowStatus"
+import { GemAnalysisForm } from "@/components/features/gems/GemAnalysisForm"
 import { getFormFieldsConfig } from "@/components/shared/common/Formfieldsconfig"
 
 export function GemDetailPage() {
@@ -36,7 +29,6 @@ export function GemDetailPage() {
     handleTestSubmit,
     handleRequestCorrection,
     handleApproval,
-    handleOverride,
     handleSaveDraft,
     loading,
     refreshGems,
@@ -45,19 +37,19 @@ export function GemDetailPage() {
 
   const gem = gems.find((g: any) => g._id === id)
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting, isValid },
-  } = useForm<TestFormValues>({
+  const form = useForm<TestFormValues>({
     resolver: zodResolver(testSchema) as any,
     defaultValues: {},
     mode: "onChange",
   })
+
+  const {
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { isSubmitting, isValid },
+  } = form
 
   // Watch fields for suggestions
   const watchedRi = watch("ri")
@@ -79,6 +71,8 @@ export function GemDetailPage() {
   const filteredVarieties = globalReferences.filter((r) =>
     r.variety.toLowerCase().includes(varietySearch.toLowerCase()),
   )
+
+  const isHelper = user?.role === "HELPER"
 
   const isT1 =
     gem?.status === GEM_STATUSES.READY_FOR_T1 || gem?.status === GEM_STATUSES.DRAFT_TEST_1
@@ -125,14 +119,17 @@ export function GemDetailPage() {
           specialNote: obs.specialNote || "",
           shape: obs.shape || "",
           cut: obs.cut || "",
-          clusterSize: obs.cluster || "",
-          stoneSize: obs.stone || "",
+          messurementX: obs.messurementX?.toString() || "",
+          messurementY: obs.messurementY?.toString() || "",
+          messurementZ: obs.messurementZ?.toString() || "",
           transparency: obs.transparency || "",
           origin: obs.origin || "",
           cuttingGrade: obs.cuttingGrade || "Fine",
           polishingGrade: obs.polishingGrade || "Fine",
           proportionGrade: obs.proportionGrade || "Fine",
           clarityGrade: obs.clarityGrade || "Fine",
+          grade: obs.grade || "",
+          spectroscopy: obs.spectroscopy || "",
         })
         if (obs.species) {
           setSpeciesSearch(obs.species)
@@ -262,17 +259,6 @@ export function GemDetailPage() {
     }
   }
 
-  const handleOverrideRequest = async (gemId: string, status: string) => {
-    setIsActionLoading(true)
-    try {
-      await handleOverride(gemId, status as GemStatus)
-    } catch (error) {
-      console.error("Override failed:", error)
-    } finally {
-      setIsActionLoading(false)
-    }
-  }
-
   const copyValues = (source: any) => {
     const obs = source.observations || source.finalObservations || {}
     const newValues = {
@@ -281,14 +267,17 @@ export function GemDetailPage() {
       hardness: source.hardness?.toString() || "",
       shape: obs.shape || "",
       cut: obs.cut || "",
-      clusterSize: obs.cluster || "",
-      stoneSize: obs.stone || "",
+      messurementX: obs.messurementX?.toString() || "",
+      messurementY: obs.messurementY?.toString() || "",
+      messurementZ: obs.messurementZ?.toString() || "",
       transparency: obs.transparency || "",
       origin: obs.origin || "",
       cuttingGrade: obs.cuttingGrade || "Fine",
       polishingGrade: obs.polishingGrade || "Fine",
       proportionGrade: obs.proportionGrade || "Fine",
       clarityGrade: obs.clarityGrade || "Fine",
+      grade: obs.grade || "",
+      spectroscopy: obs.spectroscopy || "",
       species: obs.species || "",
       selectedVariety: source.selectedVariety || source.finalVariety || obs.variety || "",
       comments: obs.comments || "",
@@ -303,29 +292,7 @@ export function GemDetailPage() {
   return (
     <MainLayout>
       <div className='space-y-6'>
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-4'>
-            <Button variant='outline' size='icon' onClick={() => navigate(-1)}>
-              <ArrowLeft className='h-4 w-4' />
-            </Button>
-            <div>
-              <h2 className='text-2xl font-bold text-slate-800'>Processing: {gem.gemId}</h2>
-              <p className='text-sm text-slate-500'>
-                Updated: {new Date(gem.updatedAt).toLocaleString()}
-              </p>
-            </div>
-            <StatusBadge status={gem.status} />
-          </div>
-          {gem.status === GEM_STATUSES.DONE && (
-            <Button
-              variant='default'
-              className='bg-emerald-600 hover:bg-emerald-700'
-              onClick={() => navigate(`/reports/${gem._id}`)}
-            >
-              View Report Certificate
-            </Button>
-          )}
-        </div>
+        <GemDetailHeader gem={gem} />
 
         <Card className='p-8 bg-white shadow-sm border-slate-100 overflow-hidden'>
           <GemTimeline gem={gem} />
@@ -350,131 +317,18 @@ export function GemDetailPage() {
 
           {/* Main Column */}
           <div className='lg:col-span-3'>
-            {((isT1 || isT2) && canTest) || (isApproval && canApprove) ? (
+            {isHelper && <GemWorkflowStatus gem={gem} />}
+
+            {(isT1 || isT2 || canApprove) && (
               <Card className='p-6'>
                 <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-                    {/* Scientific Measurements Section */}
-                    <div className='space-y-6'>
-                      <h3 className='font-bold text-slate-900 flex items-center gap-2 border-b pb-2'>
-                        <Microscope size={18} className='text-blue-600' /> Scientific Measurements
-                      </h3>
-
-                      {/* R.I., S.G., Hardness */}
-                      <div className='grid grid-cols-3 gap-4'>
-                        {scientificFields.slice(0, 3).map((field) => (
-                          <FormField
-                            key={field.name}
-                            config={field}
-                            register={register}
-                            errors={errors}
-                            control={control}
-                            setValue={setValue}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Shape and Cut */}
-                      <div className='grid grid-cols-2 gap-4'>
-                        {scientificFields.slice(3, 5).map((field) => (
-                          <FormField
-                            key={field.name}
-                            config={field}
-                            register={register}
-                            errors={errors}
-                            control={control}
-                            setValue={setValue}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Transparency */}
-                      <FormField
-                        config={scientificFields[5]}
-                        register={register}
-                        errors={errors}
-                        control={control}
-                        setValue={setValue}
-                      />
-
-                      {/* Cluster and Stone Size */}
-                      <div className='grid grid-cols-2 gap-4'>
-                        {scientificFields.slice(6, 8).map((field) => (
-                          <FormField
-                            key={field.name}
-                            config={field}
-                            register={register}
-                            errors={errors}
-                            control={control}
-                            setValue={setValue}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Identification & Grading Section */}
-                    <div className='space-y-6'>
-                      <h3 className='font-bold text-slate-900 flex items-center gap-2 border-b pb-2'>
-                        <Search size={18} className='text-amber-600' /> Identification & Grading
-                      </h3>
-
-                      {/* Species and Variety */}
-                      <div className='grid grid-cols-2 gap-4'>
-                        {identificationFields.slice(0, 2).map((field) => (
-                          <FormField
-                            key={field.name}
-                            config={field}
-                            register={register}
-                            errors={errors}
-                            control={control}
-                            setValue={setValue}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Origin and Cutting Grade */}
-                      <div className='grid grid-cols-2 gap-4'>
-                        {identificationFields.slice(2, 4).map((field) => (
-                          <FormField
-                            key={field.name}
-                            config={field}
-                            register={register}
-                            errors={errors}
-                            control={control}
-                            setValue={setValue}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Polishing, Proportion, Clarity */}
-                      <div className='grid grid-cols-3 gap-3'>
-                        {gradingFields.map((field) => (
-                          <FormField
-                            key={field.name}
-                            config={field}
-                            register={register}
-                            errors={errors}
-                            control={control}
-                            setValue={setValue}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Text Fields */}
-                      <div className='space-y-4'>
-                        {textFields.map((field) => (
-                          <FormField
-                            key={field.name}
-                            config={field}
-                            register={register}
-                            errors={errors}
-                            control={control}
-                            setValue={setValue}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  <GemAnalysisForm
+                    form={form}
+                    scientificFields={scientificFields}
+                    identificationFields={identificationFields}
+                    gradingFields={gradingFields}
+                    textFields={textFields}
+                  />
 
                   <div className='flex justify-end gap-4 pt-4 border-t'>
                     <Button
@@ -485,8 +339,6 @@ export function GemDetailPage() {
                     >
                       {isSubmitting || isActionLoading ? (
                         <Loader2 className='animate-spin h-6 w-6' />
-                      ) : isApproval ? (
-                        "Finalize Certificate"
                       ) : (
                         "Submit Lab Analysis"
                       )}
@@ -504,54 +356,9 @@ export function GemDetailPage() {
                         "Save Draft"
                       )}
                     </Button>
-
-                    {user?.role === "ADMIN" && (
-                      <div className='flex items-center gap-2 bg-red-50 px-4 rounded-lg border border-red-100'>
-                        <ShieldCheck size={16} className='text-red-600' />
-                        <Select
-                          value={gem.status}
-                          onValueChange={(value) => handleOverrideRequest(gem._id, value)}
-                        >
-                          <SelectTrigger className='h-8 text-[10px] w-28 bg-white border-blue-200 text-blue-700 font-bold'>
-                            <SelectValue placeholder='Status' />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={GEM_STATUSES.READY_FOR_T1}>RST T1</SelectItem>
-                            <SelectItem value={GEM_STATUSES.READY_FOR_T2}>RST T2</SelectItem>
-                            <SelectItem value={GEM_STATUSES.READY_FOR_APPROVAL}>RST APP</SelectItem>
-                            <SelectItem value={GEM_STATUSES.DONE}>DONE</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
                   </div>
                 </form>
               </Card>
-            ) : gem.status === GEM_STATUSES.DONE && user?.role === "ADMIN" ? (
-              <GemFinalAudit
-                gem={gem}
-                onNavigateToReport={(id) => navigate(`/reports/${id}`)}
-                onHandleOverride={handleOverrideRequest}
-              />
-            ) : (
-              <div className='h-full min-h-[500px] flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-slate-200 shadow-sm'>
-                <div className='w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6'>
-                  <Microscope className='text-slate-300' size={40} />
-                </div>
-                <h3 className='text-xl font-bold text-slate-800 mb-2'>
-                  {gem.status === GEM_STATUSES.DONE ? "Workflow Finalized" : "Pending Next Stage"}
-                </h3>
-                <p className='text-slate-500 text-center max-w-sm'>
-                  {gem.status === GEM_STATUSES.DONE ? (
-                    "The scientific analysis is complete. You can view or print the official certificate above."
-                  ) : (
-                    <>
-                      This record is currently in <StatusBadge status={gem.status} />. Please wait
-                      for the assigned staff to complete their tasks.
-                    </>
-                  )}
-                </p>
-              </div>
             )}
           </div>
         </div>

@@ -42,19 +42,21 @@ export const GEM_STATUSES = {
 export type GemStatus = (typeof GEM_STATUSES)[keyof typeof GEM_STATUSES]
 
 export interface ObservationData {
+  grade?: string
   shape?: string
   cut?: string
   transparency?: string
-  clarity?: string
-  clarityGrade?: string
-  origin?: string
+  messurementX?: number
+  messurementY?: number
+  messurementZ?: number
   species?: string
   variety?: string
-  cluster?: string
-  stone?: string
+  spectroscopy?: string
+  origin?: string
   cuttingGrade?: string
   polishingGrade?: string
   proportionGrade?: string
+  clarityGrade?: string
   comments?: string
   itemDescription?: string
   specialNote?: string

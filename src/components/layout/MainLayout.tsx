@@ -33,7 +33,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             </div>
           </div>
         )}
-        <div className='max-w-6xl mx-auto'>{children}</div>
+        <div className='mx-auto px-4'>{children}</div>
 
         {refreshing && !loading && (
           <div className='fixed bottom-4 left-4 z-50 bg-white/80 backdrop-blur-md border border-slate-200 rounded-full px-3 py-1.5 shadow-sm flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2'>

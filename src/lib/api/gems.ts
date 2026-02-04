@@ -47,14 +47,14 @@ export const gemsApi = {
 
     if (!(updates instanceof FormData)) {
       if (updates.test1) {
-        endpoint = `${API_BASE_URL}/gems/${gemId}/test`
-        payload = { ...updates.test1 }
+        endpoint = `${API_BASE_URL}/gems/${gemId}/test1`
+        payload = { ...updates.test1, status: updates.status }
       } else if (updates.test2) {
-        endpoint = `${API_BASE_URL}/gems/${gemId}/test`
-        payload = { ...updates.test2 }
+        endpoint = `${API_BASE_URL}/gems/${gemId}/test2`
+        payload = { ...updates.test2, status: updates.status }
       } else if (updates.finalApproval) {
-        endpoint = `${API_BASE_URL}/gems/${gemId}/approve`
-        payload = updates.finalApproval
+        endpoint = `${API_BASE_URL}/gems/${gemId}/final-approval`
+        payload = { ...updates.finalApproval, status: updates.status }
       }
     }
 

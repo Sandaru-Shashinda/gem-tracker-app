@@ -2,22 +2,15 @@ import { ShieldCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { type Gem, GEM_STATUSES } from "@/lib/types"
+
+import { type Gem } from "@/lib/types"
 
 interface GemFinalAuditProps {
   gem: Gem
   onNavigateToReport: (gemId: string) => void
-  onHandleOverride: (gemId: string, status: string) => void
 }
 
-export function GemFinalAudit({ gem, onNavigateToReport, onHandleOverride }: GemFinalAuditProps) {
+export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
   if (!gem.finalApproval) return null
 
   return (
@@ -186,26 +179,9 @@ export function GemFinalAudit({ gem, onNavigateToReport, onHandleOverride }: Gem
           </div>
         </div>
 
-        <div className='mt-8 pt-8 border-t border-slate-100 flex justify-end gap-3'>
-          <Button variant='outline' className='mr-auto' onClick={() => onNavigateToReport(gem._id)}>
-            View Certificate
-          </Button>
-          <div className='flex items-center gap-2 bg-red-50 px-5 py-2.5 rounded-xl border border-red-100'>
-            <ShieldCheck size={18} className='text-red-600' />
-            <span className='text-[10px] font-black text-red-800 mr-2'>SYSTEM OVERRIDE</span>
-            <Select value={gem.status} onValueChange={(value) => onHandleOverride(gem._id, value)}>
-              <SelectTrigger className='h-8 text-[10px] w-28 bg-white border-blue-200 text-blue-700 font-bold'>
-                <SelectValue placeholder='Status' />
-              </SelectTrigger>
-              <SelectContent padding-x-0>
-                <SelectItem value={GEM_STATUSES.READY_FOR_T1}>RST T1</SelectItem>
-                <SelectItem value={GEM_STATUSES.READY_FOR_T2}>RST T2</SelectItem>
-                <SelectItem value={GEM_STATUSES.READY_FOR_APPROVAL}>RST APP</SelectItem>
-                <SelectItem value={GEM_STATUSES.DONE}>DONE</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <Button variant='outline' onClick={() => onNavigateToReport(gem._id)}>
+          View Certificate
+        </Button>
       </Card>
     </div>
   )

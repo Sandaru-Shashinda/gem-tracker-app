@@ -86,17 +86,27 @@ export function getFormFieldsConfig({
       className: "",
     },
     {
-      name: "clusterSize",
-      label: "Cluster Size (mm)",
-      type: "text",
-      placeholder: "20.88 x 19.05...",
+      name: "messurementX",
+      label: "Measurement X",
+      type: "number",
+      step: "0.01",
+      placeholder: "L",
       className: "",
     },
     {
-      name: "stoneSize",
-      label: "Stone Size (mm)",
-      type: "text",
-      placeholder: "14.25 x 12.25...",
+      name: "messurementY",
+      label: "Measurement Y",
+      type: "number",
+      step: "0.01",
+      placeholder: "W",
+      className: "",
+    },
+    {
+      name: "messurementZ",
+      label: "Measurement Z",
+      type: "number",
+      step: "0.01",
+      placeholder: "D",
       className: "",
     },
   ]
@@ -145,10 +155,28 @@ export function getFormFieldsConfig({
       renderItem: (reference) => reference.variety,
     },
     {
+      name: "spectroscopy",
+      label: "Spectroscopy",
+      type: "text",
+      placeholder: "Spectroscopy details",
+      className: "",
+    },
+    {
       name: "origin",
       label: "Origin",
       type: "text",
       placeholder: "Colombia",
+      className: "",
+    },
+  ]
+
+  const gradingFields: FieldConfig[] = [
+    {
+      name: "grade",
+      label: "Grade",
+      type: "select",
+      placeholder: "Select Grade",
+      options: GRADE_OPTIONS,
       className: "",
     },
     {
@@ -159,9 +187,6 @@ export function getFormFieldsConfig({
       options: GRADE_OPTIONS,
       className: "",
     },
-  ]
-
-  const gradingFields: FieldConfig[] = [
     {
       name: "polishingGrade",
       label: "Polishing",
