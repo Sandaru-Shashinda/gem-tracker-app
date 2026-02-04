@@ -5,7 +5,6 @@ import { GEM_STATUSES } from "@/lib/types"
 import { gemsApi } from "@/lib/api/gems"
 import { usersApi } from "@/lib/api/users"
 import { referencesApi } from "@/lib/api/references"
-import { reportsApi } from "@/lib/api/reports"
 
 interface GemContextType {
   user: User | null
@@ -66,6 +65,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshGems = async () => {
+    if (!user) return
     setRefreshing(true)
     try {
       const data = await gemsApi.getGems()
@@ -80,6 +80,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshReferences = async () => {
+    if (!user) return
     setRefreshing(true)
     try {
       const data = await referencesApi.getReferences()
@@ -92,6 +93,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshSpecies = async () => {
+    if (!user) return
     setRefreshing(true)
     try {
       const data = await referencesApi.getSpecies()
@@ -104,13 +106,20 @@ export function GemProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const init = async () => {
-      setLoading(true)
-      await Promise.all([refreshGems(), refreshReferences(), refreshSpecies()])
+    if (user) {
+      const init = async () => {
+        setLoading(true)
+        await Promise.all([refreshGems(), refreshReferences(), refreshSpecies()])
+        setLoading(false)
+      }
+      init()
+    } else {
+      setGems([])
+      setReferences([])
+      setSpecies([])
       setLoading(false)
     }
-    init()
-  }, [])
+  }, [user])
 
   const handleIntake = async (
     data: {
@@ -228,15 +237,15 @@ export function GemProvider({ children }: { children: ReactNode }) {
         messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
       },
     }
-    await gemsApi.updateGem(gemId, {
-      finalApproval: update,
+    await gemsApi.submitApproval(gemId, {
+      ...update,
       status: status || GEM_STATUSES.DONE,
     })
-    try {
-      await reportsApi.generateReport(gemId)
-    } catch (err) {
-      console.error("Failed to generate report:", err)
-    }
+    // try {
+    //   await reportsApi.generateReport(gemId)
+    // } catch (err) {
+    //   console.error("Failed to generate report:", err)
+    // }
     await refreshGems()
   }
 

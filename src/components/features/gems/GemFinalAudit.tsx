@@ -81,20 +81,6 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
                   {gem.finalApproval.finalObservations?.transparency}
                 </span>
               </div>
-              <div className='pt-2 grid grid-cols-2 gap-4'>
-                <div>
-                  <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>Cluster Size</p>
-                  <p className='text-xs font-bold text-slate-800'>
-                    {gem.finalApproval.finalObservations?.cluster} mm
-                  </p>
-                </div>
-                <div>
-                  <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>Stone Size</p>
-                  <p className='text-xs font-bold text-slate-800'>
-                    {gem.finalApproval.finalObservations?.stone} mm
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
 

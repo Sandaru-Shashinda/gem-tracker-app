@@ -1,205 +1,177 @@
 import { useParams } from "react-router-dom"
-import QRCode from "react-qr-code"
+import { useEffect, useState } from "react"
 import { useGem } from "@/hooks/useGemStore"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { BASE_URL } from "@/lib/api/config"
-import { ImageIcon } from "lucide-react"
+import { reportsApi } from "@/lib/api/reports"
+import { Loader2, AlertCircle } from "lucide-react"
+import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
+import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
+import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
+import type { Gem } from "@/lib/types"
+
+interface ReportData {
+  _id: string
+  reportId: string
+  reportType: "small" | "medium" | "large"
+  isClientDataAdd?: boolean
+  gemId: string | Gem
+}
 
 export function ReportPreviewPage() {
   const { id } = useParams<{ id: string }>()
-  const { gems } = useGem()
-  const gem = gems.find((g) => g._id === id)
+  const { gems, refreshGems } = useGem()
 
-  if (!gem) {
+  const [report, setReport] = useState<ReportData | null>(null)
+  const [gem, setGem] = useState<Gem | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return
+      setLoading(true)
+      setError(null)
+
+      try {
+        // 1. Try to fetch as a Report ID
+        let reportData: ReportData | null = null
+        try {
+          reportData = await reportsApi.getReportById(id)
+          setReport(reportData)
+        } catch (e) {
+          // It's might be a Gem ID, or the report search failed
+        }
+
+        // 2. Identify the Gem
+        let targetGem: Gem | null = null
+
+        if (reportData) {
+          targetGem =
+            typeof reportData.gemId === "object"
+              ? (reportData.gemId as Gem)
+              : gems.find((g) => g._id === reportData.gemId) || null
+        }
+
+        // 3. Fallback: Search globally if gem not found yet
+        if (!targetGem) {
+          // Search by internal _id or human readable gemId
+          targetGem = gems.find((g) => g._id === id || g.gemId === id) || null
+
+          // If still not found, try to refresh store once
+          if (!targetGem && gems.length === 0) {
+            await refreshGems()
+            // Check again after refresh
+            // Note: gems from useGem might still be empty if the component doesn't re-render immediately with new context
+            // But we can try to fetch the specific gem from API if we really need it
+          }
+        }
+
+        setGem(targetGem)
+
+        if (!reportData && !targetGem) {
+          setError("The requested report or gem could not be found.")
+        }
+      } catch (err) {
+        console.error("Fetch error:", err)
+        setError("An error occurred while verifying the report.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [id, gems.length])
+
+  if (loading) {
     return (
-      <div className='flex items-center justify-center min-h-screen bg-slate-50'>
-        <p className='text-slate-500'>Report not found or invalid ID.</p>
+      <div className='flex flex-col items-center justify-center min-h-screen bg-slate-50 gap-4'>
+        <Loader2 className='w-8 h-8 animate-spin text-blue-600' />
+        <p className='text-slate-500 font-medium'>Verifying Report Authenticity...</p>
       </div>
     )
   }
 
-  const finalData = gem.finalApproval
-  const obs = finalData?.finalObservations || {}
+  if (error || !gem) {
+    return (
+      <div className='flex items-center justify-center min-h-screen bg-slate-50 px-4'>
+        <div className='bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center'>
+          <div className='w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4'>
+            <AlertCircle className='w-8 h-8' />
+          </div>
+          <h2 className='text-xl font-bold text-slate-900 mb-2'>Invalid Report</h2>
+          <p className='text-slate-500 mb-6'>
+            {error || "This GRC ID does not match our records."}
+          </p>
+          <div className='text-[10px] text-slate-400 font-mono bg-slate-50 p-2 rounded'>
+            ID: {id}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-  // Construct a verification URL (assuming the app is hosted)
-  // For local dev, it's window.location.href or similar
-  // In production, it would be https://gem-tracker.com/verify/${id}
-  const verificationUrl = `${window.location.origin}/reports/${id}`
+  // Determine which UI to show
+  // If we have a report, use its type. Default to 'medium' for gem-only views
+  const reportType = report?.reportType || "medium"
+  const includeLogo = report?.isClientDataAdd ?? true
 
   return (
-    <div className='min-h-screen bg-slate-100 py-10 px-4 flex justify-center'>
-      <Card className='w-full max-w-4xl bg-white shadow-xl overflow-hidden print:shadow-none print:w-full'>
-        {/* Header */}
-        <div className='bg-slate-900 text-white p-8 flex justify-between items-center'>
-          <div>
-            <h1 className='text-3xl font-serif font-bold tracking-wider mb-2'>GEM REPORT</h1>
-            <p className='text-slate-400 text-sm tracking-widest uppercase'>
-              Official Laboratory Certification
-            </p>
+    <div className='min-h-screen bg-slate-100/50 py-12 px-4'>
+      <div className='max-w-6xl mx-auto'>
+        {/* Status Header */}
+        <div className='flex flex-col items-center mb-10 text-center'>
+          <div className='bg-emerald-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-emerald-200 mb-4 animate-bounce'>
+            Verified Authentic
           </div>
-          <div className='text-right'>
-            <p className='text-2xl font-mono font-bold text-emerald-400'>{gem.gemId}</p>
-            <p className='text-xs text-slate-400 mt-1'>{new Date().toLocaleDateString()}</p>
-          </div>
+          <h1 className='text-2xl font-serif font-bold text-slate-900'>
+            Official Gemological Identification
+          </h1>
+          <p className='text-slate-500 text-sm mt-1'>
+            Gemological Report of Ceylon Digital Verification
+          </p>
         </div>
-
-        {/* Content */}
-        <div className='p-10 grid grid-cols-1 md:grid-cols-3 gap-10'>
-          {/* Left Column: Image & Authenticity */}
-          <div className='md:col-span-1 space-y-8'>
-            <div className='aspect-square overflow-hidden bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shadow-inner'>
-              {gem.imageUrl ? (
-                <img
-                  src={`${BASE_URL}${gem.imageUrl}`}
-                  alt={gem.gemId}
-                  className='h-full w-full object-cover'
-                />
-              ) : (
-                <div className='text-center'>
-                  <ImageIcon className='w-12 h-12 mx-auto text-slate-200 mb-2' />
-                  <span className='text-[10px] font-bold text-slate-300 uppercase tracking-widest'>
-                    No Image Available
-                  </span>
-                </div>
-              )}
+        <div className='flex justify-center'>
+          {/* Reuse the configured report components for the verification page */}
+          {reportType === "large" ? (
+            <div className='scale-[0.85] origin-top'>
+              <LargeReportPreview
+                gem={gem}
+                includeLogo={includeLogo}
+                reportId={report?._id || gem._id}
+              />
             </div>
-
-            <div className='text-center space-y-4'>
-              <div className='p-4 border border-slate-200 rounded-xl bg-slate-50'>
-                <p className='text-[10px] font-bold text-slate-400 uppercase mb-2'>
-                  Scan to Verify
-                </p>
-                <div className='bg-white p-2 inline-block rounded shadow-sm'>
-                  <QRCode value={verificationUrl} size={120} />
-                </div>
-                <p className='text-[10px] text-slate-400 mt-2 break-all font-mono'>{id}</p>
-              </div>
+          ) : reportType === "small" ? (
+            <div className='scale-[0.9] origin-top'>
+              <SmallReportPreview
+                gem={gem}
+                includeLogo={includeLogo}
+                reportId={report?._id || gem._id}
+              />
             </div>
-          </div>
-
-          {/* Right Column: Details */}
-          <div className='md:col-span-2 space-y-8'>
-            {/* Main Identification */}
-            <div className='border-b border-slate-100 pb-8'>
-              <div className='flex items-center gap-4 mb-4'>
-                <Badge className='bg-emerald-600 hover:bg-emerald-700 text-base py-1 px-4'>
-                  {finalData?.finalVariety || "Unknown Variety"}
-                </Badge>
-                <span className='text-xl text-slate-700 italic font-serif'>
-                  {obs.species || "Unknown Species"}
-                </span>
-              </div>
-              <p className='text-slate-600 leading-relaxed italic'>
-                "{finalData?.itemDescription || gem.itemDescription}"
-              </p>
+          ) : (
+            <div className='scale-[0.85] origin-top'>
+              <MediumReportPreview
+                gem={gem}
+                includeLogo={includeLogo}
+                reportId={report?._id || gem._id}
+              />
             </div>
-
-            {/* Technical Specs */}
-            <div className='grid grid-cols-2 gap-y-6 gap-x-10'>
-              <div>
-                <p className='text-xs font-bold text-slate-400 uppercase mb-1'>Details</p>
-                <ul className='space-y-2 text-sm text-slate-700'>
-                  <li className='flex justify-between border-b border-slate-50 pb-1'>
-                    <span>Color</span>
-                    <span className='font-bold'>{gem.color}</span>
-                  </li>
-                  <li className='flex justify-between border-b border-slate-50 pb-1'>
-                    <span>Shape</span>
-                    <span className='font-bold'>{obs.shape || "-"}</span>
-                  </li>
-                  <li className='flex justify-between border-b border-slate-50 pb-1'>
-                    <span>Cut</span>
-                    <span className='font-bold'>{obs.cut || "-"}</span>
-                  </li>
-                  <li className='flex justify-between border-b border-slate-50 pb-1'>
-                    <span>Transparency</span>
-                    <span className='font-bold'>{obs.transparency || "-"}</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <p className='text-xs font-bold text-slate-400 uppercase mb-1'>Measurements</p>
-                <ul className='space-y-2 text-sm text-slate-700'>
-                  <li className='flex justify-between border-b border-slate-50 pb-1'>
-                    <span>Weight (Total)</span>
-                    <span className='font-bold'>{gem.totalArticleWeight} g</span>
-                  </li>
-                  <li className='flex justify-between border-b border-slate-50 pb-1'>
-                    <span>Dimensions</span>
-                    <span className='font-bold'>{obs.stone || "-"} mm</span>
-                  </li>
-                  <li className='flex justify-between border-b border-slate-50 pb-1'>
-                    <span>Refractive Index</span>
-                    <span className='font-bold'>{finalData?.ri || "-"}</span>
-                  </li>
-                  <li className='flex justify-between border-b border-slate-50 pb-1'>
-                    <span>Specific Gravity</span>
-                    <span className='font-bold'>{finalData?.sg || "-"}</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Origin & Grading */}
-            <div className='bg-slate-50 p-6 rounded-xl border border-slate-100'>
-              <div className='grid grid-cols-2 gap-6'>
-                <div>
-                  <p className='text-[10px] font-bold text-slate-400 uppercase mb-1'>Origin</p>
-                  <p className='text-lg font-bold text-slate-800'>
-                    {obs.origin || "Not Specified"}
-                  </p>
-                </div>
-                <div>
-                  <p className='text-[10px] font-bold text-slate-400 uppercase mb-1'>Hardness</p>
-                  <p className='text-lg font-bold text-slate-800'>{finalData?.hardness || "-"}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer / Notes */}
-            <div className='pt-4'>
-              <p className='text-[10px] text-slate-400'>
-                This report is for identification purposes only. The results are based on the
-                scientific measurements available at the time of testing.
-              </p>
-            </div>
-          </div>
+          )}
         </div>
-      </Card>
-
-      {/* Print Button Wrapper */}
-      <div className='fixed bottom-8 right-8 print:hidden'>
-        <button
-          onClick={() => window.print()}
-          className='bg-slate-900 text-white p-4 rounded-full shadow-lg hover:bg-slate-800 transition-all'
-        >
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            width='24'
-            height='24'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-          >
-            <polyline points='6 9 6 2 18 2 18 9'></polyline>
-            <path d='M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2'></path>
-            <rect x='6' y='14' width='12' height='8'></rect>
-          </svg>
-        </button>
+        {/* Footer Info */}
+        <div className='mt-20 text-center text-slate-400 space-y-2'>
+          <p className='text-xs'>
+            © {new Date().getFullYear()} Gemological Report of Ceylon (Pvt) Ltd. All Rights
+            Reserved.
+          </p>
+          <p className='text-[10px]'>Verification Date: {new Date().toLocaleString()}</p>
+        </div>
       </div>
 
       <style>{`
         @media print {
           @page { margin: 0; }
           body { background: white; -webkit-print-color-adjust: exact; }
-          .print\\:hidden { display: none; }
-          .print\\:shadow-none { box-shadow: none; }
-          .print\\:w-full { width: 100%; max-width: none; }
+          .bg-slate-100\\/50 { background: white !important; }
         }
       `}</style>
     </div>

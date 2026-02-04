@@ -9,6 +9,8 @@ import { UsersPage } from "./pages/UsersPage"
 import { CustomersPage } from "./pages/CustomersPage"
 import { useGem } from "./hooks/useGemStore"
 import { ReportPreviewPage } from "./pages/ReportPreviewPage"
+import { ReportsPage } from "./pages/ReportsPage"
+import { ReportConfigurationPage } from "./pages/ReportConfigurationPage"
 
 export default function App() {
   const { user } = useGem()
@@ -60,7 +62,27 @@ export default function App() {
             )
           }
         />
+        <Route
+          path='/reports'
+          element={
+            user?.role === "ADMIN" || user?.role === "HELPER" ? (
+              <ReportsPage />
+            ) : (
+              <Navigate to='/dashboard' replace />
+            )
+          }
+        />
         <Route path='/reports/:id' element={<ReportPreviewPage />} />
+        <Route
+          path='/reports/:id/configure'
+          element={
+            user?.role === "ADMIN" || user?.role === "HELPER" ? (
+              <ReportConfigurationPage />
+            ) : (
+              <Navigate to='/dashboard' replace />
+            )
+          }
+        />
 
         {/* Catch-all redirect */}
         <Route path='*' element={<Navigate to='/' replace />} />

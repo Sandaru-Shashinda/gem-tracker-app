@@ -1,9 +1,19 @@
-import { Search, Activity, Building2 } from "lucide-react"
+import { useState } from "react"
+import { Search, Activity, Building2, AlertCircle } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { BASE_URL } from "@/lib/api/config"
 import { type Gem, type Customer, type GemReference } from "@/lib/types"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 
 interface GemIntakeAndHistoryProps {
   gem: Gem
@@ -36,6 +46,23 @@ export function GemIntakeAndHistory({
   onHandleRequestCorrection,
   isApproval,
 }: GemIntakeAndHistoryProps) {
+  const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false)
+  const [correctionStage, setCorrectionStage] = useState<"test1" | "test2" | null>(null)
+  const [correctionNote, setCorrectionNote] = useState("")
+
+  const openCorrectionModal = (stage: "test1" | "test2") => {
+    setCorrectionStage(stage)
+    setCorrectionNote("")
+    setIsCorrectionModalOpen(true)
+  }
+
+  const submitCorrection = () => {
+    if (correctionStage && correctionNote.trim()) {
+      onHandleRequestCorrection(gem._id, correctionStage, correctionNote)
+      setIsCorrectionModalOpen(false)
+    }
+  }
+
   return (
     <div className='lg:col-span-2 space-y-6'>
       <Card className='p-5 bg-slate-50 border-slate-200'>
@@ -219,10 +246,7 @@ export function GemIntakeAndHistory({
                       variant='ghost'
                       size='sm'
                       className='h-6 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-50'
-                      onClick={() => {
-                        const note = window.prompt("Enter correction note for Tester 1:")
-                        if (note) onHandleRequestCorrection(gem._id, "test1", note)
-                      }}
+                      onClick={() => openCorrectionModal("test1")}
                     >
                       Correct
                     </Button>
@@ -453,10 +477,7 @@ export function GemIntakeAndHistory({
                       variant='ghost'
                       size='sm'
                       className='h-6 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-50'
-                      onClick={() => {
-                        const note = window.prompt("Enter correction note for Tester 2:")
-                        if (note) onHandleRequestCorrection(gem._id, "test2", note)
-                      }}
+                      onClick={() => openCorrectionModal("test2")}
                     >
                       Correct
                     </Button>
@@ -667,6 +688,48 @@ export function GemIntakeAndHistory({
           )}
         </div>
       )}
+
+      {/* Correction Request Modal */}
+      <Dialog open={isCorrectionModalOpen} onOpenChange={setIsCorrectionModalOpen}>
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2'>
+              <AlertCircle className='h-5 w-5 text-red-500' />
+              Request Correction
+            </DialogTitle>
+            <DialogDescription>
+              Specify what needs to be corrected for{" "}
+              <span className='font-bold uppercase tracking-tight text-slate-900'>
+                {correctionStage === "test1" ? "Tester 1" : "Tester 2"}
+              </span>{" "}
+              submission.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='py-4'>
+            <Textarea
+              placeholder='Enter your correction instructions here...'
+              value={correctionNote}
+              onChange={(e) => setCorrectionNote(e.target.value)}
+              className='min-h-[120px] text-sm focus-visible:ring-red-500'
+            />
+          </div>
+
+          <DialogFooter className='sm:justify-end gap-2'>
+            <Button variant='outline' onClick={() => setIsCorrectionModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={submitCorrection}
+              disabled={!correctionNote.trim()}
+              className='bg-red-600 hover:bg-red-700'
+            >
+              Send Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

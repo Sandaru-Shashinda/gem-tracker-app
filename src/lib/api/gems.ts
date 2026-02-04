@@ -67,6 +67,15 @@ export const gemsApi = {
     return response.json()
   },
 
+  submitApproval: async (gemId: string, updates: any): Promise<Gem> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/gems/${gemId}/final-approval`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    })
+    if (!response.ok) throw new Error("Failed to submit approval")
+    return response.json()
+  },
+
   requestCorrection: async (
     gemId: string,
     stage: "test1" | "test2",

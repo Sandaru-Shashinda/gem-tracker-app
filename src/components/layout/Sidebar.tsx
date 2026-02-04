@@ -9,6 +9,7 @@ import {
   Microscope,
   Users,
   Building2,
+  FileText,
   ChevronLeft,
   ChevronRight,
   type LucideIcon,
@@ -87,7 +88,10 @@ export function Sidebar() {
           <NavButton icon={Plus} label='Intake Gem' to='/intake' collapsed={collapsed} />
         )}
         {(user.role === "ADMIN" || user.role === "HELPER") && (
-          <NavButton icon={Building2} label='Customers' to='/customers' collapsed={collapsed} />
+          <>
+            <NavButton icon={Building2} label='Customers' to='/customers' collapsed={collapsed} />
+            <NavButton icon={FileText} label='Reports' to='/reports' collapsed={collapsed} />
+          </>
         )}
         {user.role === "ADMIN" && (
           <>

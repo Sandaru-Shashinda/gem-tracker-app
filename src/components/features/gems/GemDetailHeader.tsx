@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/common/StatusBadge"
-import { GEM_STATUSES, type Gem } from "@/lib/types"
+import { type Gem } from "@/lib/types"
 
 interface GemDetailHeaderProps {
   gem: Gem
@@ -24,15 +24,15 @@ export function GemDetailHeader({ gem }: GemDetailHeaderProps) {
       </div>
       <StatusBadge status={gem.status} />
 
-      {gem.status === GEM_STATUSES.DONE && (
+      {/* {gem.status === GEM_STATUSES.DONE && (
         <Button
           variant='default'
           className='bg-emerald-600 hover:bg-emerald-700'
-          onClick={() => navigate(`/reports/${gem._id}`)}
+          onClick={() => navigate(`/reports/${gem._id}/configure`)}
         >
           View Report Certificate
         </Button>
-      )}
+      )} */}
     </div>
   )
 }

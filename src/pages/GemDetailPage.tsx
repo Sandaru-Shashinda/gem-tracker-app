@@ -73,6 +73,7 @@ export function GemDetailPage() {
   )
 
   const isHelper = user?.role === "HELPER"
+  const isAdmin = user?.role === "ADMIN"
 
   const isT1 =
     gem?.status === GEM_STATUSES.READY_FOR_T1 || gem?.status === GEM_STATUSES.DRAFT_TEST_1
@@ -212,7 +213,7 @@ export function GemDetailPage() {
         status = GEM_STATUSES.SUBMITTED_FOR_REPORT
       }
 
-      if (isApproval && canApprove) {
+      if (isAdmin) {
         await handleApproval(gem!._id, data, status)
         navigate("/queue")
       } else if (canTest) {
@@ -343,21 +344,22 @@ export function GemDetailPage() {
                         "Submit Lab Analysis"
                       )}
                     </Button>
-                    {gem?.status !== GEM_STATUSES.SUBMITTED_FOR_REPORT && (
-                      <Button
-                        type='button'
-                        variant='outline'
-                        className='h-12 px-8 font-bold border-blue-200 text-blue-700 hover:bg-blue-50'
-                        onClick={handleDraft}
-                        disabled={isSubmitting || isActionLoading}
-                      >
-                        {isActionLoading ? (
-                          <Loader2 className='animate-spin h-5 w-5' />
-                        ) : (
-                          "Save Draft"
-                        )}
-                      </Button>
-                    )}
+                    {gem?.status !== GEM_STATUSES.SUBMITTED_FOR_REPORT &&
+                      gem?.status !== GEM_STATUSES.DONE && (
+                        <Button
+                          type='button'
+                          variant='outline'
+                          className='h-12 px-8 font-bold border-blue-200 text-blue-700 hover:bg-blue-50'
+                          onClick={handleDraft}
+                          disabled={isSubmitting || isActionLoading}
+                        >
+                          {isActionLoading ? (
+                            <Loader2 className='animate-spin h-5 w-5' />
+                          ) : (
+                            "Save Draft"
+                          )}
+                        </Button>
+                      )}
                   </div>
                 </form>
               </Card>
