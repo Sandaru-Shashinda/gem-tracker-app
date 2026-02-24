@@ -1,9 +1,9 @@
 import { useState } from "react"
 import QRCode from "react-qr-code"
-import { BASE_URL } from "@/lib/api/config"
 import { ImageIcon, Repeat } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Gem } from "@/lib/types"
+import { GemImage } from "../gems/GemImage"
 
 interface SmallReportPreviewProps {
   gem: Gem
@@ -17,6 +17,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
 
   const [cardSide, setCardSide] = useState<"front" | "back">("front")
+  const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
 
   return (
     <div className='flex flex-col items-center justify-start font-serif text-slate-900'>
@@ -211,8 +212,8 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
             {/* Right Image/QR Column */}
             <div className='w-[140px] flex flex-col items-center justify-between pl-3 border-l border-slate-100 py-2'>
               <div className='w-[120px] h-[120px] bg-white rounded-lg border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm'>
-                {gem.imageUrl ? (
-                  <img src={`${BASE_URL}${gem.imageUrl}`} className='w-full h-full object-cover' />
+                {firstImageId ? (
+                  <GemImage imageId={firstImageId} className='w-full h-full' />
                 ) : (
                   <ImageIcon className='w-8 h-8 text-slate-200' />
                 )}

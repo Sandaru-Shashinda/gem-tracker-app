@@ -1,10 +1,12 @@
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type { ReactNode } from "react"
 import type { User, Gem, GemReference, GemStatus } from "@/lib/types"
 import { GEM_STATUSES } from "@/lib/types"
 import { gemsApi } from "@/lib/api/gems"
 import { usersApi } from "@/lib/api/users"
 import { referencesApi } from "@/lib/api/references"
+import { uploadImage } from "@/lib/api/images"
+import { compressImage } from "@/lib/image-utils"
 
 interface GemContextType {
   user: User | null
@@ -27,8 +29,9 @@ interface GemContextType {
       customerId?: string
       status?: GemStatus
     },
-    image?: File,
+    images?: File[],
     id?: string,
+    existingImageIds?: string[],
   ) => Promise<void>
   getGemById: (id: string) => Promise<Gem>
   handleTestSubmit: (
@@ -64,12 +67,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
     setUserState(u)
   }
 
-  const refreshGems = async () => {
+  const refreshGems = useCallback(async () => {
     if (!user) return
     setRefreshing(true)
     try {
       const data = await gemsApi.getGems()
-      // Handle both paginated ({ gems: [], ... }) and legacy ([]) responses
       const gemsData = Array.isArray(data) ? data : data.gems || []
       setGems(gemsData)
     } catch (err) {
@@ -77,9 +79,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
     } finally {
       setRefreshing(false)
     }
-  }
+  }, [user])
 
-  const refreshReferences = async () => {
+  const refreshReferences = useCallback(async () => {
     if (!user) return
     setRefreshing(true)
     try {
@@ -90,9 +92,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
     } finally {
       setRefreshing(false)
     }
-  }
+  }, [user])
 
-  const refreshSpecies = async () => {
+  const refreshSpecies = useCallback(async () => {
     if (!user) return
     setRefreshing(true)
     try {
@@ -103,162 +105,126 @@ export function GemProvider({ children }: { children: ReactNode }) {
     } finally {
       setRefreshing(false)
     }
-  }
+  }, [user])
+
+  const lastInitUserId = useRef<string | null>(null)
 
   useEffect(() => {
-    if (user) {
+    if (user && lastInitUserId.current !== user.id) {
+      lastInitUserId.current = user.id
       const init = async () => {
         setLoading(true)
         await Promise.all([refreshGems(), refreshReferences(), refreshSpecies()])
         setLoading(false)
       }
       init()
-    } else {
+    } else if (!user) {
+      lastInitUserId.current = null
       setGems([])
       setReferences([])
       setSpecies([])
       setLoading(false)
     }
-  }, [user])
+  }, [user, refreshGems, refreshReferences, refreshSpecies])
 
-  const handleIntake = async (
-    data: {
-      color?: string
-      weight?: number
-      itemDescription?: string
-      testerId1?: string
-      testerId2?: string
-      customerId?: string
-      status?: GemStatus
+  const handleIntake = useCallback(
+    async (
+      data: {
+        color?: string
+        weight?: number
+        itemDescription?: string
+        testerId1?: string
+        testerId2?: string
+        customerId?: string
+        status?: GemStatus
+      },
+      images?: File[],
+      id?: string,
+      existingImageIds: string[] = [],
+    ) => {
+      if (!user) return
+
+      let newImageIds: string[] = []
+      if (images && images.length > 0) {
+        try {
+          const uploadPromises = images.map(async (file) => {
+            const compressed = await compressImage(file, 30)
+            const uploaded = await uploadImage({
+              file: compressed,
+              category: "gem",
+            })
+            return uploaded._id
+          })
+          newImageIds = await Promise.all(uploadPromises)
+        } catch (err) {
+          console.error("Failed to upload images during intake:", err)
+          throw new Error("One or more image uploads failed")
+        }
+      }
+
+      const payload = {
+        ...data,
+        imageIds: [...existingImageIds, ...newImageIds],
+      }
+
+      if (id) {
+        await gemsApi.updateGem(id, payload)
+      } else {
+        await gemsApi.createGem(payload)
+      }
+      await refreshGems()
     },
-    image?: File,
-    id?: string,
-  ) => {
-    if (!user) return
-    const formData = new FormData()
-    if (data.color) formData.append("color", data.color)
-    if (data.weight !== undefined) formData.append("weight", data.weight.toString())
-    if (data.itemDescription) formData.append("itemDescription", data.itemDescription)
-    if (data.testerId1) {
-      formData.append("testerId1", data.testerId1)
-    }
-    if (data.testerId2) {
-      formData.append("testerId2", data.testerId2)
-    }
-    if (data.customerId) {
-      formData.append("customerId", data.customerId)
-    }
-    if (data.status) {
-      formData.append("status", data.status)
-    }
-    if (image) {
-      formData.append("image", image)
-    }
+    [user, refreshGems],
+  )
 
-    if (id) {
-      await gemsApi.updateGem(id, formData)
-    } else {
-      await gemsApi.createGem(formData)
-    }
-    await refreshGems()
-  }
-
-  const getGemById = async (id: string) => {
+  const getGemById = useCallback(async (id: string) => {
     return gemsApi.getGemById(id)
-  }
+  }, [])
 
-  const handleTestSubmit = async (
-    gemId: string,
-    stage: "test1" | "test2",
-    data: any,
-    status?: GemStatus,
-  ) => {
-    if (!user) return
-    const update = {
-      ri: parseFloat(data.ri),
-      sg: parseFloat(data.sg),
-      hardness: parseFloat(data.hardness),
-      selectedVariety: data.selectedVariety,
-      observations: {
-        shape: data.shape,
-        cut: data.cut,
-        transparency: data.transparency,
-        cuttingGrade: data.cuttingGrade,
-        polishingGrade: data.polishingGrade,
-        proportionGrade: data.proportionGrade,
-        clarityGrade: data.clarityGrade,
-        origin: data.origin,
-        species: data.species,
-        variety: data.selectedVariety,
-        comments: data.comments,
-        itemDescription: data.itemDescription,
-        specialNote: data.specialNote,
-        grade: data.grade,
-        spectroscopy: data.spectroscopy,
-        messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
-        messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
-        messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
-      },
-    }
-    await gemsApi.updateGem(gemId, {
-      [stage]: update,
-      status:
-        status || (stage === "test1" ? GEM_STATUSES.READY_FOR_T2 : GEM_STATUSES.READY_FOR_APPROVAL),
-    })
-    await refreshGems()
-  }
+  const handleTestSubmit = useCallback(
+    async (gemId: string, stage: "test1" | "test2", data: any, status?: GemStatus) => {
+      if (!user) return
+      const update = {
+        ri: parseFloat(data.ri),
+        sg: parseFloat(data.sg),
+        hardness: parseFloat(data.hardness),
+        selectedVariety: data.selectedVariety,
+        observations: {
+          shape: data.shape,
+          cut: data.cut,
+          transparency: data.transparency,
+          cuttingGrade: data.cuttingGrade,
+          polishingGrade: data.polishingGrade,
+          proportionGrade: data.proportionGrade,
+          clarityGrade: data.clarityGrade,
+          origin: data.origin,
+          species: data.species,
+          variety: data.selectedVariety,
+          comments: data.comments,
+          itemDescription: data.itemDescription,
+          specialNote: data.specialNote,
+          grade: data.grade,
+          spectroscopy: data.spectroscopy,
+          messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
+          messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
+          messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
+        },
+      }
+      await gemsApi.updateGem(gemId, {
+        [stage]: update,
+        status:
+          status ||
+          (stage === "test1" ? GEM_STATUSES.READY_FOR_T2 : GEM_STATUSES.READY_FOR_APPROVAL),
+      })
+      await refreshGems()
+    },
+    [user, refreshGems],
+  )
 
-  const handleApproval = async (gemId: string, data: any, status?: GemStatus) => {
-    if (!user) return
-    const update = {
-      ri: parseFloat(data.ri),
-      sg: parseFloat(data.sg),
-      hardness: parseFloat(data.hardness),
-      finalVariety: data.selectedVariety,
-      itemDescription: data.itemDescription || data.comments,
-      finalObservations: {
-        shape: data.shape,
-        cut: data.cut,
-        transparency: data.transparency,
-        origin: data.origin,
-        species: data.species,
-        variety: data.selectedVariety,
-        cuttingGrade: data.cuttingGrade,
-        polishingGrade: data.polishingGrade,
-        proportionGrade: data.proportionGrade,
-        clarityGrade: data.clarityGrade,
-        comments: data.comments,
-        itemDescription: data.itemDescription,
-        specialNote: data.specialNote,
-        grade: data.grade,
-        spectroscopy: data.spectroscopy,
-        messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
-        messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
-        messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
-      },
-    }
-    await gemsApi.submitApproval(gemId, {
-      ...update,
-      status: status || GEM_STATUSES.DONE,
-    })
-    // try {
-    //   await reportsApi.generateReport(gemId)
-    // } catch (err) {
-    //   console.error("Failed to generate report:", err)
-    // }
-    await refreshGems()
-  }
-
-  const handleSaveDraft = async (
-    gemId: string,
-    stage: "test1" | "test2" | "finalApproval",
-    data: any,
-    status: GemStatus,
-  ) => {
-    if (!user) return
-    let update: any = {}
-    if (stage === "finalApproval") {
-      update = {
+  const handleApproval = useCallback(
+    async (gemId: string, data: any, status?: GemStatus) => {
+      if (!user) return
+      const update = {
         ri: parseFloat(data.ri),
         sg: parseFloat(data.sg),
         hardness: parseFloat(data.hardness),
@@ -285,84 +251,158 @@ export function GemProvider({ children }: { children: ReactNode }) {
           messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
         },
       }
-    } else {
-      update = {
-        ri: parseFloat(data.ri),
-        sg: parseFloat(data.sg),
-        hardness: parseFloat(data.hardness),
-        selectedVariety: data.selectedVariety,
-        observations: {
-          shape: data.shape,
-          cut: data.cut,
-          transparency: data.transparency,
-          cuttingGrade: data.cuttingGrade,
-          polishingGrade: data.polishingGrade,
-          proportionGrade: data.proportionGrade,
-          clarityGrade: data.clarityGrade,
-          origin: data.origin,
-          species: data.species,
-          variety: data.selectedVariety,
-          comments: data.comments,
-          itemDescription: data.itemDescription,
-          specialNote: data.specialNote,
-          grade: data.grade,
-          spectroscopy: data.spectroscopy,
-          messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
-          messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
-          messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
-        },
+      await gemsApi.submitApproval(gemId, {
+        ...update,
+        status: status || GEM_STATUSES.DONE,
+      })
+      await refreshGems()
+    },
+    [user, refreshGems],
+  )
+
+  const handleSaveDraft = useCallback(
+    async (
+      gemId: string,
+      stage: "test1" | "test2" | "finalApproval",
+      data: any,
+      status: GemStatus,
+    ) => {
+      if (!user) return
+      let update: any = {}
+      if (stage === "finalApproval") {
+        update = {
+          ri: parseFloat(data.ri),
+          sg: parseFloat(data.sg),
+          hardness: parseFloat(data.hardness),
+          finalVariety: data.selectedVariety,
+          itemDescription: data.itemDescription || data.comments,
+          finalObservations: {
+            shape: data.shape,
+            cut: data.cut,
+            transparency: data.transparency,
+            origin: data.origin,
+            species: data.species,
+            variety: data.selectedVariety,
+            cuttingGrade: data.cuttingGrade,
+            polishingGrade: data.polishingGrade,
+            proportionGrade: data.proportionGrade,
+            clarityGrade: data.clarityGrade,
+            comments: data.comments,
+            itemDescription: data.itemDescription,
+            specialNote: data.specialNote,
+            grade: data.grade,
+            spectroscopy: data.spectroscopy,
+            messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
+            messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
+            messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
+          },
+        }
+      } else {
+        update = {
+          ri: parseFloat(data.ri),
+          sg: parseFloat(data.sg),
+          hardness: parseFloat(data.hardness),
+          selectedVariety: data.selectedVariety,
+          observations: {
+            shape: data.shape,
+            cut: data.cut,
+            transparency: data.transparency,
+            cuttingGrade: data.cuttingGrade,
+            polishingGrade: data.polishingGrade,
+            proportionGrade: data.proportionGrade,
+            clarityGrade: data.clarityGrade,
+            origin: data.origin,
+            species: data.species,
+            variety: data.selectedVariety,
+            comments: data.comments,
+            itemDescription: data.itemDescription,
+            specialNote: data.specialNote,
+            grade: data.grade,
+            spectroscopy: data.spectroscopy,
+            messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
+            messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
+            messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
+          },
+        }
       }
-    }
 
-    await gemsApi.saveDraft(gemId, { [stage]: update, status })
-    await refreshGems()
-  }
-
-  const handleOverride = async (gemId: string, status: any) => {
-    setRefreshing(true)
-    try {
-      await gemsApi.updateGem(gemId, { status })
+      await gemsApi.saveDraft(gemId, { [stage]: update, status })
       await refreshGems()
-    } catch (err) {
-      console.error("Failed to override status:", err)
-    } finally {
-      setRefreshing(false)
-    }
-  }
+    },
+    [user, refreshGems],
+  )
 
-  const handleRequestCorrection = async (gemId: string, stage: "test1" | "test2", note: string) => {
-    setRefreshing(true)
-    try {
-      await gemsApi.requestCorrection(gemId, stage, note)
-      await refreshGems()
-    } catch (err) {
-      console.error("Failed to request correction:", err)
-    } finally {
-      setRefreshing(false)
-    }
-  }
+  const handleOverride = useCallback(
+    async (gemId: string, status: any) => {
+      setRefreshing(true)
+      try {
+        await gemsApi.updateGem(gemId, { status })
+        await refreshGems()
+      } catch (err) {
+        console.error("Failed to override status:", err)
+      } finally {
+        setRefreshing(false)
+      }
+    },
+    [refreshGems],
+  )
+
+  const handleRequestCorrection = useCallback(
+    async (gemId: string, stage: "test1" | "test2", note: string) => {
+      setRefreshing(true)
+      try {
+        await gemsApi.requestCorrection(gemId, stage, note)
+        await refreshGems()
+      } catch (err) {
+        console.error("Failed to request correction:", err)
+      } finally {
+        setRefreshing(false)
+      }
+    },
+    [refreshGems],
+  )
 
   return (
     <GemContext.Provider
-      value={{
-        user,
-        setUser,
-        loading,
-        refreshing,
-        gems,
-        references,
-        species,
-        refreshGems,
-        refreshReferences,
-        refreshSpecies,
-        handleIntake,
-        getGemById,
-        handleTestSubmit,
-        handleRequestCorrection,
-        handleApproval,
-        handleOverride,
-        handleSaveDraft,
-      }}
+      value={useMemo(
+        () => ({
+          user,
+          setUser,
+          loading,
+          refreshing,
+          gems,
+          references,
+          species,
+          refreshGems,
+          refreshReferences,
+          refreshSpecies,
+          handleIntake,
+          getGemById,
+          handleTestSubmit,
+          handleRequestCorrection,
+          handleApproval,
+          handleOverride,
+          handleSaveDraft,
+        }),
+        [
+          user,
+          loading,
+          refreshing,
+          gems,
+          references,
+          species,
+          refreshGems,
+          refreshReferences,
+          refreshSpecies,
+          handleIntake,
+          getGemById,
+          handleTestSubmit,
+          handleRequestCorrection,
+          handleApproval,
+          handleOverride,
+          handleSaveDraft,
+        ],
+      )}
     >
       {children}
     </GemContext.Provider>

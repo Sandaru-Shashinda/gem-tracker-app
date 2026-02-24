@@ -1,9 +1,9 @@
-import React from "react"
+import React, { useState } from "react"
 import QRCode from "react-qr-code"
-import { BASE_URL } from "@/lib/api/config"
 import { ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Gem } from "@/lib/types"
+import { GemImage } from "../gems/GemImage"
 
 interface MediumReportPreviewProps {
   gem: Gem
@@ -16,7 +16,7 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
   const obs = finalData.finalObservations || {}
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
 
-  const [view, setView] = React.useState<"inner" | "outer">("inner")
+  const [view, setView] = useState<"inner" | "outer">("inner")
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return new Date().toLocaleDateString("en-GB")
@@ -25,10 +25,11 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
 
   // Common styles
   const goldText = "text-[#b2945b]"
+  const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
 
   return (
     <div className='flex flex-col items-center'>
-      {/* View Toggle */}
+      {/* ... toggle code unchanged ... */}
       <div className='flex items-center gap-2 mb-6 bg-slate-100 p-1 rounded-lg'>
         <button
           onClick={() => setView("inner")}
@@ -148,11 +149,8 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
 
               {/* Image Box */}
               <div className='w-[200px] h-[200px] border border-slate-200 bg-white flex items-center justify-center p-2 relative shadow-sm mb-2'>
-                {gem.imageUrl ? (
-                  <img
-                    src={`${BASE_URL}${gem.imageUrl}`}
-                    className='w-full h-full object-contain'
-                  />
+                {firstImageId ? (
+                  <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
                 ) : (
                   <ImageIcon className='w-12 h-12 text-slate-300' />
                 )}

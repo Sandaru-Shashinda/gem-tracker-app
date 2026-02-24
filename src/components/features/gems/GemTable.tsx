@@ -8,6 +8,8 @@ import DataTable from "@/components/shared/data-table/DataTable"
 import { useNavigate } from "react-router-dom"
 import { StatusBadge } from "@/components/shared/common/StatusBadge"
 
+import { GemImage } from "./GemImage"
+
 interface GemTableProps {
   data: Gem[]
   pagination: PaginationState
@@ -31,26 +33,26 @@ export function GemTable({
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor("imageUrl", {
-        header: "Image",
-        cell: (info) => {
-          const imageUrl = info.getValue()
-          const gemId = info.row.original.gemId
-          return imageUrl ? (
-            <div className='h-12 w-12 rounded-lg overflow-hidden border border-slate-200'>
-              <img
-                src={imageUrl.startsWith("http") ? imageUrl : `${BASE_URL}${imageUrl}`}
-                alt={gemId}
-                className='h-full w-full object-cover'
-              />
-            </div>
-          ) : (
-            <div className='h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400'>
-              <Search className='w-4 h-4' />
-            </div>
-          )
-        },
-      }),
+      // columnHelper.display({
+      //   id: "image",
+      //   header: "Image",
+      //   cell: (info) => {
+      //     const gem = info.row.original
+      //     const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
+
+      //     return (
+      //       <div className='h-12 w-12 rounded-lg overflow-hidden border border-slate-200'>
+      //         {firstImageId ? (
+      //           <GemImage imageId={firstImageId} className='h-full w-full' alt={gem.gemId} />
+      //         ) : (
+      //           <div className='h-full w-full bg-slate-100 flex items-center justify-center text-slate-400'>
+      //             <Search className='w-4 h-4' />
+      //           </div>
+      //         )}
+      //       </div>
+      //     )
+      //   },
+      // }),
       columnHelper.accessor("gemId", {
         header: "Gem ID",
         cell: (info) => <span className='font-medium text-slate-900'>{info.getValue()}</span>,

@@ -74,7 +74,8 @@ export interface Gem {
   shape?: string
   cut?: string
   itemDescription?: string
-  imageUrl?: string
+  imageUrl?: string // Backwards compatibility or generated on frontend
+  images?: string[] // Array of image IDs for separate fetching
   customerId?: string
   currentAssignee?: string
   assignedTester1?: string

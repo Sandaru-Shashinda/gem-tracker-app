@@ -5,9 +5,9 @@ import { SpeciesDistributionWidget } from "@/components/features/dashboard/Speci
 import { FileText, Activity, CheckCircle, AlertCircle } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { useGem } from "@/hooks/useGemStore"
-import { BASE_URL } from "@/lib/api/config"
 import { GemTimeline } from "@/components/features/gems/GemTimeline"
 import { GEM_STATUSES } from "@/lib/types"
+import { GemImage } from "@/components/features/gems/GemImage"
 
 export function DashboardPage() {
   const { user, gems } = useGem()
@@ -58,15 +58,16 @@ export function DashboardPage() {
               </h3>
               <div className='overflow-y-auto pr-2 -mr-2 flex-1 space-y-5'>
                 {gems.slice(0, 5).map((gem) => {
+                  const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
                   return (
                     <Card key={gem._id} className='group p-4 pb-10'>
                       <div className='flex items-center gap-3 mb-4'>
                         <div className='h-10 w-10 shrink-0 rounded bg-slate-100 overflow-hidden border border-slate-200'>
-                          {gem.imageUrl ? (
-                            <img
-                              src={`${BASE_URL}${gem.imageUrl}`}
+                          {firstImageId ? (
+                            <GemImage
+                              imageId={firstImageId}
                               alt={gem.gemId}
-                              className='h-full w-full object-cover'
+                              className='h-full w-full'
                             />
                           ) : (
                             <div className='h-full w-full flex items-center justify-center text-slate-300'>

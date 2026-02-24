@@ -1,9 +1,9 @@
-import React from "react"
+import React, { useState } from "react"
 import QRCode from "react-qr-code"
-import { BASE_URL } from "@/lib/api/config"
 import { ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Gem } from "@/lib/types"
+import { GemImage } from "../gems/GemImage"
 
 interface LargeReportPreviewProps {
   gem: Gem
@@ -17,7 +17,7 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
 
   // Toggle state
-  const [view, setView] = React.useState<"inner" | "outer">("inner")
+  const [view, setView] = useState<"inner" | "outer">("inner")
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return new Date().toLocaleDateString("en-GB")
@@ -26,10 +26,11 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
 
   // Common font base for the report - replicating the serif style
   const fontBase = "font-serif text-[#1a1a1a]"
+  const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
 
   return (
     <div className='flex flex-col items-center'>
-      {/* View Toggle */}
+      {/* ... toggle code unchanged ... */}
       <div className='flex items-center gap-2 mb-6 bg-slate-100 p-1 rounded-lg'>
         <button
           onClick={() => setView("inner")}
@@ -61,7 +62,7 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
              INNER VIEW (Data + Spread)
              ========================================================================= */
           <>
-            {/* LEFT PAGE (Interior Left) */}
+            {/* LEFT PAGE (Interior Left fully unchanged) */}
             <div className='flex-1 py-14 px-12 relative border-r border-[#e5e5e5]'>
               {/* Header Title */}
               <div className='mb-6'>
@@ -166,9 +167,9 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
               <div className='flex flex-col items-center text-center mt-8'>
                 {/* Main Image */}
                 <div className='mb-4'>
-                  {gem.imageUrl ? (
-                    <img
-                      src={`${BASE_URL}${gem.imageUrl}`}
+                  {firstImageId ? (
+                    <GemImage
+                      imageId={firstImageId}
                       alt='Gem'
                       className='w-[180px] h-[180px] object-contain drop-shadow-xl'
                     />
@@ -194,16 +195,14 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
                 <div className='mt-8 grid grid-cols-2 gap-x-12 gap-y-4'>
                   {/* Mocking secondary views by reusing main image or placeholders */}
                   <div className='w-20 h-20 opacity-80'>
-                    <img
-                      src={`${BASE_URL}${gem.imageUrl}`}
-                      className='w-full h-full object-contain'
-                    />
+                    {firstImageId && (
+                      <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
+                    )}
                   </div>
                   <div className='w-20 h-20 opacity-80 transform scale-x-[-1]'>
-                    <img
-                      src={`${BASE_URL}${gem.imageUrl}`}
-                      className='w-full h-full object-contain'
-                    />
+                    {firstImageId && (
+                      <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
+                    )}
                   </div>
                 </div>
                 <p className={`${fontBase} text-[10px] mt-2 italic text-slate-500`}>

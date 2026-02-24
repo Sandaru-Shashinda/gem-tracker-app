@@ -34,7 +34,7 @@ export const gemsApi = {
   createGem: async (gemData: any): Promise<Gem> => {
     const response = await fetchWithAuth(`${API_BASE_URL}/gems/intake`, {
       method: "POST",
-      body: gemData instanceof FormData ? gemData : JSON.stringify(gemData),
+      body: JSON.stringify(gemData),
     })
     if (!response.ok) throw new Error("Failed to create gem")
     return response.json()
@@ -45,25 +45,32 @@ export const gemsApi = {
     const method = "PUT"
     let payload = updates
 
-    if (!(updates instanceof FormData)) {
-      if (updates.test1) {
-        endpoint = `${API_BASE_URL}/gems/${gemId}/test1`
-        payload = { ...updates.test1, status: updates.status }
-      } else if (updates.test2) {
-        endpoint = `${API_BASE_URL}/gems/${gemId}/test2`
-        payload = { ...updates.test2, status: updates.status }
-      } else if (updates.finalApproval) {
-        endpoint = `${API_BASE_URL}/gems/${gemId}/final-approval`
-        payload = { ...updates.finalApproval, status: updates.status }
-      }
+    if (updates.test1) {
+      endpoint = `${API_BASE_URL}/gems/${gemId}/test1`
+      payload = { ...updates.test1, status: updates.status }
+    } else if (updates.test2) {
+      endpoint = `${API_BASE_URL}/gems/${gemId}/test2`
+      payload = { ...updates.test2, status: updates.status }
+    } else if (updates.finalApproval) {
+      endpoint = `${API_BASE_URL}/gems/${gemId}/final-approval`
+      payload = { ...updates.finalApproval, status: updates.status }
     }
 
     const response = await fetchWithAuth(endpoint, {
       method: method,
-      body: payload instanceof FormData ? payload : JSON.stringify(payload),
+      body: JSON.stringify(payload),
     })
 
     if (!response.ok) throw new Error("Failed to update gem")
+    return response.json()
+  },
+
+  addGemImages: async (gemId: string, imageIds: string[]): Promise<Gem> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/gems/${gemId}/images`, {
+      method: "POST",
+      body: JSON.stringify({ imageIds }),
+    })
+    if (!response.ok) throw new Error("Failed to add images")
     return response.json()
   },
 
@@ -96,5 +103,12 @@ export const gemsApi = {
     })
     if (!response.ok) throw new Error("Failed to save draft")
     return response.json()
+  },
+
+  deleteGem: async (id: string): Promise<void> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/gems/${id}`, {
+      method: "DELETE",
+    })
+    if (!response.ok) throw new Error("Failed to delete gem")
   },
 }

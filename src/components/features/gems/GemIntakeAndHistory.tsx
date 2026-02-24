@@ -1,10 +1,12 @@
 import { useState } from "react"
-import { Search, Activity, Building2, AlertCircle } from "lucide-react"
+import { Search, Activity, Building2, AlertCircle, Eye, X, Plus } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { BASE_URL } from "@/lib/api/config"
 import { type Gem, type Customer, type GemReference } from "@/lib/types"
+import { gemsApi } from "@/lib/api/gems"
+import { getImageById } from "@/lib/api/images"
+import { useGem } from "@/hooks/useGemStore"
 import {
   Dialog,
   DialogContent,
@@ -30,6 +32,8 @@ interface GemIntakeAndHistoryProps {
   onHandleRequestCorrection: (gemId: string, stage: "test1" | "test2", note: string) => void
   isApproval: boolean
 }
+
+import { GemImage } from "./GemImage"
 
 export function GemIntakeAndHistory({
   gem,
@@ -63,25 +67,116 @@ export function GemIntakeAndHistory({
     }
   }
 
+  const { refreshGems } = useGem()
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [activeImageId, setActiveImageId] = useState<string | null>(
+    gem.images && gem.images.length > 0 ? gem.images[0] : null,
+  )
+
+  const handleRemoveImage = async (imgId: string) => {
+    if (!confirm("Are you sure you want to remove this image?")) return
+    try {
+      const remainingIds = (gem.images || []).filter((id) => id !== imgId)
+      await gemsApi.updateGem(gem._id, { imageIds: remainingIds })
+      await refreshGems()
+      if (activeImageId === imgId) {
+        setActiveImageId(remainingIds[0] || null)
+      }
+    } catch (err) {
+      console.error("Failed to remove image:", err)
+    }
+  }
+
+  const images = gem.images || []
+  const firstImageId = activeImageId || (images.length > 0 ? images[0] : null)
+
   return (
     <div className='lg:col-span-2 space-y-6'>
       <Card className='p-5 bg-slate-50 border-slate-200'>
-        {gem.imageUrl && (
-          <div className='mb-4 relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-white group'>
-            <img
-              src={gem.imageUrl.startsWith("http") ? gem.imageUrl : `${BASE_URL}${gem.imageUrl}`}
-              alt={gem.gemId}
-              className='h-full w-full object-cover animate-in fade-in zoom-in duration-700'
-            />
-            {(user?.role === "ADMIN" || user?.role === "HELPER") && (
-              <div className='absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
-                <label className='cursor-pointer bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-white/30 transition-all'>
-                  Change Image
-                  <input type='file' className='hidden' accept='image/*' onChange={onImageUpdate} />
-                </label>
+        {firstImageId ? (
+          <div className='space-y-3'>
+            <div className='relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-white group'>
+              <GemImage
+                imageId={firstImageId}
+                alt={gem.gemId}
+                className='h-full w-full object-cover animate-in fade-in zoom-in duration-700'
+              />
+              <div className='absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2'>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='bg-white/20 hover:bg-white/30 backdrop-blur-md text-white rounded-full'
+                  onClick={async () => {
+                    if (firstImageId) {
+                      try {
+                        const imgData = await getImageById(firstImageId)
+                        setSelectedImage(imgData.url)
+                      } catch (err) {
+                        console.error("Failed to fetch image for view:", err)
+                      }
+                    }
+                  }}
+                >
+                  <Eye size={18} />
+                </Button>
+                {(user?.role === "ADMIN" || user?.role === "HELPER") && (
+                  <label className='cursor-pointer p-2 bg-blue-600/80 hover:bg-blue-600 rounded-full text-white transition-all'>
+                    <Plus size={18} />
+                    <input
+                      type='file'
+                      className='hidden'
+                      accept='image/*'
+                      multiple
+                      onChange={onImageUpdate}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {images.length > 1 && (
+              <div className='flex gap-2 overflow-x-auto pb-2 scrollbar-hide'>
+                {images.map((imgId) => (
+                  <div
+                    key={imgId}
+                    className={`relative shrink-0 w-16 h-12 rounded-lg border-2 overflow-hidden transition-all cursor-pointer ${
+                      activeImageId === imgId ? "border-blue-500" : "border-transparent"
+                    }`}
+                    onClick={() => setActiveImageId(imgId)}
+                  >
+                    <GemImage imageId={imgId} className='w-full h-full object-cover' />
+                    {(user?.role === "ADMIN" || user?.role === "HELPER") && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveImage(imgId)
+                        }}
+                        className='absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 hover:opacity-100'
+                      >
+                        <X size={8} />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
+        ) : (
+          (user?.role === "ADMIN" || user?.role === "HELPER") && (
+            <div className='mb-4 flex items-center justify-center aspect-video w-full rounded-xl border-2 border-dashed border-slate-200 bg-white group'>
+              <label className='cursor-pointer flex flex-col items-center gap-2 text-slate-400 group-hover:text-blue-500 transition-colors'>
+                <Plus size={24} />
+                <span className='text-[10px] font-bold uppercase tracking-wider'>Add Images</span>
+                <input
+                  type='file'
+                  className='hidden'
+                  accept='image/*'
+                  multiple
+                  onChange={onImageUpdate}
+                />
+              </label>
+            </div>
+          )
         )}
         {customer && (
           <div className='mb-4 p-3 bg-white rounded-lg border border-slate-200'>
@@ -728,6 +823,28 @@ export function GemIntakeAndHistory({
               Send Request
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Image Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className='max-w-4xl p-0 bg-transparent border-none'>
+          <DialogHeader className='hidden'>
+            <DialogTitle>View Image</DialogTitle>
+          </DialogHeader>
+          <div className='relative w-full aspect-auto flex items-center justify-center'>
+            <img
+              src={selectedImage || ""}
+              alt='Selected gem'
+              className='max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl'
+            />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className='absolute -top-12 right-0 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-all'
+            >
+              <X size={24} />
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

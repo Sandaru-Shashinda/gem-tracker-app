@@ -11,6 +11,8 @@ import { useGem } from "@/hooks/useGemStore"
 import { gemsApi } from "@/lib/api/gems"
 import { customersApi } from "@/lib/api/customers"
 import { referencesApi } from "@/lib/api/references"
+import { uploadImage } from "@/lib/api/images"
+import { compressImage } from "@/lib/image-utils"
 import { type GemReference, type Customer, type GemStatus, GEM_STATUSES } from "@/lib/types"
 import { GemTimeline } from "@/components/features/gems/GemTimeline"
 import { GemIntakeAndHistory } from "@/components/features/gems/GemIntakeAndHistory"
@@ -244,17 +246,26 @@ export function GemDetailPage() {
   }
 
   const handleImageUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !gem) return
+    const files = e.target.files
+    if (!files || files.length === 0 || !gem) return
 
     setIsActionLoading(true)
     try {
-      const formData = new FormData()
-      formData.append("image", file)
-      await gemsApi.updateGem(gem._id, formData)
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const compressedImage = await compressImage(file, 30)
+        const uploadedImage = await uploadImage({
+          file: compressedImage,
+          category: "gem",
+          metadata: { gemId: gem.gemId },
+        })
+        return uploadedImage._id
+      })
+
+      const newImageIds = await Promise.all(uploadPromises)
+      await gemsApi.addGemImages(gem._id, newImageIds)
       await refreshGems()
     } catch (error) {
-      console.error("Failed to update image:", error)
+      console.error("Failed to update images:", error)
     } finally {
       setIsActionLoading(false)
     }
