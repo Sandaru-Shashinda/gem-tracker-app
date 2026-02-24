@@ -1,11 +1,11 @@
 import { useState } from "react"
-import { Search, Activity, Building2, AlertCircle, Eye, X, Plus } from "lucide-react"
+import { Search, Activity, Building2, AlertCircle, Eye, X, Plus, Loader2 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { type Gem, type Customer, type GemReference } from "@/lib/types"
 import { gemsApi } from "@/lib/api/gems"
-import { getImageById } from "@/lib/api/images"
+import { getImageById, deleteImage } from "@/lib/api/images"
 import { useGem } from "@/hooks/useGemStore"
 import {
   Dialog,
@@ -15,6 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Textarea } from "@/components/ui/textarea"
 
 interface GemIntakeAndHistoryProps {
@@ -72,18 +82,33 @@ export function GemIntakeAndHistory({
   const [activeImageId, setActiveImageId] = useState<string | null>(
     gem.images && gem.images.length > 0 ? gem.images[0] : null,
   )
+  const [imageToDeleteId, setImageToDeleteId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  const handleRemoveImage = async (imgId: string) => {
-    if (!confirm("Are you sure you want to remove this image?")) return
+  const handleRemoveImage = (imgId: string) => {
+    setImageToDeleteId(imgId)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!imageToDeleteId) return
+    setIsDeleting(true)
     try {
-      const remainingIds = (gem.images || []).filter((id) => id !== imgId)
+      // First delete the image from the database
+      await deleteImage(imageToDeleteId)
+
+      const remainingIds = (gem.images || []).filter((id) => id !== imageToDeleteId)
       await gemsApi.updateGem(gem._id, { imageIds: remainingIds })
+
       await refreshGems()
-      if (activeImageId === imgId) {
+      if (activeImageId === imageToDeleteId) {
         setActiveImageId(remainingIds[0] || null)
       }
     } catch (err) {
       console.error("Failed to remove image:", err)
+      alert("Failed to delete image from database")
+    } finally {
+      setIsDeleting(false)
+      setImageToDeleteId(null)
     }
   }
 
@@ -847,6 +872,38 @@ export function GemIntakeAndHistory({
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={imageToDeleteId !== null}
+        onOpenChange={(open) => !open && setImageToDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This image will be permanently deleted from the
+              database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className='bg-red-600 hover:bg-red-700 text-white'
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

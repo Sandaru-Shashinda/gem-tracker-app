@@ -13,6 +13,16 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Textarea } from "../components/ui/textarea"
 import { BASE_URL } from "@/lib/api/config"
 import { useGem } from "@/hooks/useGemStore"
@@ -22,7 +32,7 @@ import { type User, type Customer, GEM_STATUSES } from "@/lib/types"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
-import { getImageById } from "@/lib/api/images"
+import { getImageById, deleteImage } from "@/lib/api/images"
 
 export function IntakePage() {
   const navigate = useNavigate()
@@ -34,6 +44,7 @@ export function IntakePage() {
   const [existingImageIds, setExistingImageIds] = useState<string[]>([])
   const [existingImagePreviews, setExistingImagePreviews] = useState<string[]>([])
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [deleteImageIndex, setDeleteImageIndex] = useState<number | null>(null)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(!!id)
@@ -160,8 +171,26 @@ export function IntakePage() {
   }
 
   const removeExistingImage = (index: number) => {
-    setExistingImageIds((prev) => prev.filter((_, i) => i !== index))
-    setExistingImagePreviews((prev) => prev.filter((_, i) => i !== index))
+    setDeleteImageIndex(index)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (deleteImageIndex === null) return
+    const imageId = existingImageIds[deleteImageIndex]
+    if (!imageId) return
+
+    setIsImageLoading(true)
+    try {
+      await deleteImage(imageId)
+      setExistingImageIds((prev) => prev.filter((_, i) => i !== deleteImageIndex))
+      setExistingImagePreviews((prev) => prev.filter((_, i) => i !== deleteImageIndex))
+    } catch (err) {
+      console.error("Failed to delete image:", err)
+      alert("Failed to delete image from database")
+    } finally {
+      setIsImageLoading(false)
+      setDeleteImageIndex(null)
+    }
   }
 
   // Handle form submission
@@ -554,6 +583,38 @@ export function IntakePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={deleteImageIndex !== null}
+        onOpenChange={(open) => !open && setDeleteImageIndex(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This image will be permanently deleted from the
+              database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isImageLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className='bg-red-600 hover:bg-red-700 text-white'
+              disabled={isImageLoading}
+            >
+              {isImageLoading ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   )
 }
