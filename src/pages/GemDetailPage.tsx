@@ -57,6 +57,7 @@ export function GemDetailPage() {
   const watchedRi = watch("ri")
   const watchedSg = watch("sg")
   const watchedHardness = watch("hardness")
+  const watchedSpecies = watch("species")
 
   const [speciesSearch, setSpeciesSearch] = useState("")
   const [showSpeciesList, setShowSpeciesList] = useState(false)
@@ -98,6 +99,7 @@ export function GemDetailPage() {
       setShowVarietyList,
       filteredVarieties,
       setValue,
+      watchedSpecies,
     },
   )
 
@@ -120,19 +122,21 @@ export function GemDetailPage() {
           itemDescription:
             obs.itemDescription || (activeData as any).itemDescription || gem.itemDescription || "",
           specialNote: obs.specialNote || "",
-          shape: obs.shape || "",
-          cut: obs.cut || "",
+          cuttingShape: obs.cuttingShape || obs.shape || "",
+          cuttingStyle: obs.cuttingStyle || obs.cut || "",
           messurementX: obs.messurementX?.toString() || "",
           messurementY: obs.messurementY?.toString() || "",
           messurementZ: obs.messurementZ?.toString() || "",
           transparency: obs.transparency || "",
           origin: obs.origin || "",
-          cuttingGrade: obs.cuttingGrade || "Fine",
+          cuttingGrade: Number(obs.cuttingGrade) || 0,
           polishingGrade: obs.polishingGrade || "Fine",
           proportionGrade: obs.proportionGrade || "Fine",
           clarityGrade: obs.clarityGrade || "Fine",
           grade: obs.grade || "",
           spectroscopy: obs.spectroscopy || "",
+          colour: obs.colour || "",
+          colourGrade: obs.colourGrade || 0,
         })
         if (obs.species) {
           setSpeciesSearch(obs.species)
@@ -277,19 +281,21 @@ export function GemDetailPage() {
       ri: source.ri?.toString() || "",
       sg: source.sg?.toString() || "",
       hardness: source.hardness?.toString() || "",
-      shape: obs.shape || "",
-      cut: obs.cut || "",
+      cuttingShape: obs.cuttingShape || obs.shape || "",
+      cuttingStyle: obs.cuttingStyle || obs.cut || "",
       messurementX: obs.messurementX?.toString() || "",
       messurementY: obs.messurementY?.toString() || "",
       messurementZ: obs.messurementZ?.toString() || "",
       transparency: obs.transparency || "",
       origin: obs.origin || "",
-      cuttingGrade: obs.cuttingGrade || "Fine",
+      cuttingGrade: Number(obs.cuttingGrade) || 0,
       polishingGrade: obs.polishingGrade || "Fine",
       proportionGrade: obs.proportionGrade || "Fine",
       clarityGrade: obs.clarityGrade || "Fine",
       grade: obs.grade || "",
       spectroscopy: obs.spectroscopy || "",
+      colour: obs.colour || "",
+      colourGrade: obs.colourGrade || 0,
       species: obs.species || "",
       selectedVariety: source.selectedVariety || source.finalVariety || obs.variety || "",
       comments: obs.comments || "",

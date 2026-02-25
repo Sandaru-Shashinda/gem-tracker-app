@@ -2,6 +2,7 @@ import { type ReactNode } from "react"
 import { type UseFormRegister, type FieldErrors, Controller, type Control } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Star } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/select"
 import { type TestFormValues } from "@/lib/validations/test"
 
-export type FieldType = "text" | "number" | "textarea" | "select" | "custom-search"
+export type FieldType = "text" | "number" | "textarea" | "select" | "custom-search" | "rating"
 
 export interface SelectOption {
   value: string
@@ -134,6 +135,28 @@ export function FormField({ config, register, errors, control, setValue }: FormF
           )}
           {showList && <div className='fixed inset-0 z-40' onClick={onCloseList}></div>}
         </>
+      )}
+
+      {type === "rating" && control && (
+        <Controller
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <div className='flex gap-1.5 pt-1'>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-6 h-6 cursor-pointer transition-colors ${
+                    star <= ((field.value as number) || 0)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-slate-200 hover:text-slate-300"
+                  }`}
+                  onClick={() => field.onChange(star)}
+                />
+              ))}
+            </div>
+          )}
+        />
       )}
 
       {error && <p className='text-[10px] text-red-500 font-bold'>{error.message as string}</p>}
