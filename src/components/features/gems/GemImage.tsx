@@ -16,6 +16,12 @@ export function GemImage({ imageId, className, alt }: GemImageProps) {
   const lastFetchedId = useRef<string | null>(null)
 
   useEffect(() => {
+    if (!imageId) {
+      setLoading(false)
+      setError(true)
+      return
+    }
+
     if (lastFetchedId.current === imageId) return
     lastFetchedId.current = imageId
 
@@ -39,9 +45,7 @@ export function GemImage({ imageId, className, alt }: GemImageProps) {
       }
     }
 
-    if (imageId) {
-      fetchImage()
-    }
+    fetchImage()
 
     return () => {
       isMounted = false

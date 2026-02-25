@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Upload } from "lucide-react"
 import { customersApi } from "@/lib/api/customers"
-import { BASE_URL } from "@/lib/api/config"
+import { getImageById, type Image } from "@/lib/api/images"
 import type { Customer } from "@/lib/types"
 
 interface EditCustomerModalProps {
@@ -36,6 +36,8 @@ export function EditCustomerModal({
   })
   const [logo, setLogo] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [existingLogo, setExistingLogo] = useState<Image | null>(null)
+  const [isLoadingImage, setIsLoadingImage] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -47,10 +49,17 @@ export function EditCustomerModal({
         phoneNumber: customer.phoneNumber || "",
         address: customer.address || "",
       })
+      setLogoPreview(null)
+      setLogo(null)
+
       if (customer.logo) {
-        setLogoPreview(`${BASE_URL}/${customer.logo}`) // Ensure correct logo path
+        setIsLoadingImage(true)
+        getImageById(customer.logo)
+          .then((img) => setExistingLogo(img))
+          .catch((err) => console.error("Failed to fetch customer logo:", err))
+          .finally(() => setIsLoadingImage(false))
       } else {
-        setLogoPreview(null)
+        setExistingLogo(null)
       }
     }
   }, [customer])
@@ -184,6 +193,14 @@ export function EditCustomerModal({
                   <img
                     src={logoPreview}
                     alt='Logo Preview'
+                    className='w-full h-full object-cover'
+                  />
+                ) : isLoadingImage ? (
+                  <Loader2 className='w-4 h-4 animate-spin text-slate-300' />
+                ) : existingLogo ? (
+                  <img
+                    src={existingLogo.url}
+                    alt={customer?.customerName}
                     className='w-full h-full object-cover'
                   />
                 ) : (

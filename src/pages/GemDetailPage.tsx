@@ -329,9 +329,7 @@ export function GemDetailPage() {
 
           {/* Main Column */}
           <div className='lg:col-span-3'>
-            {isHelper && <GemWorkflowStatus gem={gem} />}
-
-            {(isT1 || isT2 || canApprove) && !isHelper && (
+            {(isT1 || isT2 || canApprove) && !isHelper ? (
               <Card className='p-6'>
                 <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
                   <GemAnalysisForm
@@ -374,6 +372,8 @@ export function GemDetailPage() {
                   </div>
                 </form>
               </Card>
+            ) : (
+              <GemWorkflowStatus gem={gem} />
             )}
           </div>
         </div>

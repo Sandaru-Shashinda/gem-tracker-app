@@ -1,10 +1,9 @@
 import { useMemo } from "react"
 import { createColumnHelper, type PaginationState } from "@tanstack/react-table"
-import { Edit2, Trash2, Building2, MapPin, Mail, Phone } from "lucide-react"
+import { Edit2, Trash2, MapPin, Mail, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Customer } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
-import { BASE_URL } from "@/lib/api/config"
 
 interface CustomerTableProps {
   data: Customer[]
@@ -38,24 +37,11 @@ export function CustomerTable({
         cell: (info) => {
           const customer = info.row.original
           return (
-            <div className='flex items-center gap-4'>
-              <div className='w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center border border-slate-200'>
-                {customer.logo ? (
-                  <img
-                    src={`${BASE_URL}/${customer.logo}`} // Assuming logo path is relative to base url or needs API_BASE_URL
-                    alt={customer.customerName}
-                    className='w-full h-full object-cover'
-                  />
-                ) : (
-                  <Building2 className='text-slate-400' size={20} />
-                )}
-              </div>
-              <div>
-                <p className='font-bold text-slate-800 leading-tight'>{customer.customerName}</p>
-                <p className='text-[10px] text-slate-400 font-mono uppercase tracking-wider'>
-                  {customer.companyName}
-                </p>
-              </div>
+            <div>
+              <p className='font-bold text-slate-800 leading-tight'>{customer.customerName}</p>
+              <p className='text-[10px] text-slate-400 font-mono uppercase tracking-wider'>
+                {customer.companyName}
+              </p>
             </div>
           )
         },
