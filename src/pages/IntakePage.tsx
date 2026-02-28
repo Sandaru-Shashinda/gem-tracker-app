@@ -73,7 +73,9 @@ export function IntakePage() {
   })
 
   // Track initialization to prevent duplicate calls (especially in Strict Mode)
-  const lastInitializedId = useRef<string | null | undefined>(undefined)
+  // IMPORTANT: Use a unique sentinel (not undefined) so the initial check doesn't
+  // accidentally match when id is also undefined (new intake form).
+  const lastInitializedId = useRef<string | null | undefined>(null)
 
   useEffect(() => {
     // If we've already initialized for this specific ID (or lack thereof), skip
@@ -421,7 +423,7 @@ export function IntakePage() {
                       name='customerId'
                       control={control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || undefined}>
                           <SelectTrigger className='w-full bg-slate-50 border-slate-200 h-11 focus:bg-white transition-colors'>
                             <SelectValue placeholder='Select a customer...' />
                           </SelectTrigger>
@@ -456,7 +458,7 @@ export function IntakePage() {
                         name='testerId1'
                         control={control}
                         render={({ field }) => (
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value || undefined}>
                             <SelectTrigger className='w-full bg-blue-50/50 border-blue-100 h-12 focus:bg-white transition-colors'>
                               <SelectValue placeholder='Assign Tester 1...' />
                             </SelectTrigger>
@@ -485,7 +487,7 @@ export function IntakePage() {
                         name='testerId2'
                         control={control}
                         render={({ field }) => (
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value || undefined}>
                             <SelectTrigger className='w-full bg-purple-50/50 border-purple-100 h-12 focus:bg-white transition-colors'>
                               <SelectValue placeholder='Assign Tester 2...' />
                             </SelectTrigger>
