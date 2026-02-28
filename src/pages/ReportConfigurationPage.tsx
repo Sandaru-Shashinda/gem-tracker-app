@@ -38,6 +38,7 @@ export function ReportConfigurationPage() {
   const [includeLogo, setIncludeLogo] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
 
   // Fetch report and associated gem
@@ -151,6 +152,113 @@ export function ReportConfigurationPage() {
   }
 
   const handleDownload = async () => {
+    if (size === "medium") {
+      // Use browser's native print to A5 — avoids html2canvas/oklch color issues entirely
+      setIsDownloading(true)
+
+      // Inject a temporary print stylesheet
+      const styleId = "medium-report-print-style"
+      let style = document.getElementById(styleId) as HTMLStyleElement | null
+      if (!style) {
+        style = document.createElement("style")
+        style.id = styleId
+        document.head.appendChild(style)
+      }
+
+      // A5 landscape = 210mm × 148mm.
+      // The inner report is designed at 1000×700px.
+      // Scale factor: 210mm ≈ 793px at 96dpi → 793/1000 ≈ 0.793 (use 0.79 for safety)
+      style.textContent = `
+        @media print {
+          @page {
+            size: A5 landscape;
+            margin: 0;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 210mm !important;
+            height: 148mm !important;
+            overflow: hidden !important;
+          }
+          body > * {
+            display: none !important;
+          }
+          #medium-print-portal {
+            display: block !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 210mm !important;
+            height: 148mm !important;
+            overflow: hidden !important;
+            background: #ffffff !important;
+          }
+          #medium-print-portal .report-scale-wrapper {
+            transform-origin: top left;
+            transform: scale(0.793);
+            width: 1000px;
+            height: 700px;
+          }
+          #medium-print-portal * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `
+
+      // Create a portal div that is always visible during print
+      let portal = document.getElementById("medium-print-portal")
+      if (!portal) {
+        portal = document.createElement("div")
+        portal.id = "medium-print-portal"
+        portal.style.display = "none"
+        document.body.appendChild(portal)
+      }
+
+      // Clone the capture element into the portal
+      const source = document.getElementById("medium-report-capture-inner")
+      if (!source) {
+        alert("Preview not ready. Please ensure the report is visible.")
+        setIsDownloading(false)
+        return
+      }
+
+      portal.innerHTML = ""
+
+      // The source element is a flex container (left + right panels side by side).
+      // We must preserve that flex layout in the wrapper, otherwise panels stack vertically.
+      const wrapper = document.createElement("div")
+      wrapper.className = "report-scale-wrapper"
+      wrapper.style.display = "flex"
+      wrapper.style.flexDirection = "row"
+      wrapper.style.width = "1000px"
+      wrapper.style.height = "700px"
+      wrapper.style.position = "relative"
+      wrapper.style.overflow = "hidden"
+      wrapper.style.background = "#ffffff"
+
+      // Deep clone all inner content (both left + right panels)
+      Array.from(source.childNodes).forEach((node) => {
+        wrapper.appendChild(node.cloneNode(true))
+      })
+
+      portal.appendChild(wrapper)
+
+      // Small delay for rendering to settle before printing
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      window.print()
+
+      // Cleanup after print dialog closes
+      setTimeout(() => {
+        portal!.innerHTML = ""
+        portal!.style.display = "none"
+        style!.textContent = ""
+        setIsDownloading(false)
+      }, 1500)
+      return
+    }
+
     if (!report?.reportUrl) {
       alert("Please save configuration first to generate the report PDF.")
       return
@@ -266,8 +374,13 @@ export function ReportConfigurationPage() {
                   <Button
                     className='w-full bg-emerald-600 hover:bg-emerald-700'
                     onClick={handleDownload}
+                    disabled={isDownloading}
                   >
-                    <Download className='w-4 h-4 mr-2' />
+                    {isDownloading ? (
+                      <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                    ) : (
+                      <Download className='w-4 h-4 mr-2' />
+                    )}
                     Download PDF
                   </Button>
                 </div>
