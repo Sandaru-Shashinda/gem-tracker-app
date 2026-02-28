@@ -139,9 +139,9 @@ export function GemDetailPage() {
         // we use the previous stage as a base to help the user.
         let baseData = activeData
         if (!activeData.ri) {
-          if (isT2 && gem.test1?.ri) {
-            baseData = gem.test1
-          } else if (isApproval) {
+          // For Approval stage only: pre-fill from test2 or test1 if empty
+          // Tester 2 gets a CLEAN form — no fallback from Tester 1's data
+          if (isApproval) {
             baseData = gem.test2?.ri ? gem.test2 : gem.test1?.ri ? gem.test1 : activeData
           }
         }
