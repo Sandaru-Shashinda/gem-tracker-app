@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { getImageById, type Image } from "@/lib/api/images"
 import { Loader2, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -9,11 +9,19 @@ interface GemImageProps {
   alt?: string
 }
 
+// Module-level cache: imageId -> resolved Image data
+// Persists across re-renders and remounts — no redundant API calls
+const imageCache = new Map<string, Image>()
+
+// In-flight deduplication: if two mounts request the same imageId simultaneously,
+// they share one promise instead of making two network requests
+const inflight = new Map<string, Promise<Image>>()
+
 export function GemImage({ imageId, className, alt }: GemImageProps) {
-  const [image, setImage] = useState<Image | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const lastFetchedId = useRef<string | null>(null)
+  const cached = imageId ? imageCache.get(imageId) : undefined
+  const [image, setImage] = useState<Image | null>(cached ?? null)
+  const [loading, setLoading] = useState(!cached && !!imageId)
+  const [error, setError] = useState(!imageId)
 
   useEffect(() => {
     if (!imageId) {
@@ -22,23 +30,39 @@ export function GemImage({ imageId, className, alt }: GemImageProps) {
       return
     }
 
-    if (lastFetchedId.current === imageId) return
-    lastFetchedId.current = imageId
+    // Already in cache — nothing to do
+    if (imageCache.has(imageId)) {
+      setImage(imageCache.get(imageId)!)
+      setLoading(false)
+      setError(false)
+      return
+    }
 
     let isMounted = true
+
     const fetchImage = async () => {
       setLoading(true)
       try {
-        const data = await getImageById(imageId)
+        // Reuse an existing in-flight request if one is already running
+        let promise = inflight.get(imageId)
+        if (!promise) {
+          promise = getImageById(imageId)
+          inflight.set(imageId, promise)
+        }
+
+        const data = await promise
+        imageCache.set(imageId, data) // Store in module-level cache
+        inflight.delete(imageId)
+
         if (isMounted) {
           setImage(data)
           setError(false)
         }
       } catch (err) {
         console.error("Failed to fetch image:", imageId, err)
+        inflight.delete(imageId)
         if (isMounted) {
           setError(true)
-          lastFetchedId.current = null // Allow retry if it failed
         }
       } finally {
         if (isMounted) setLoading(false)

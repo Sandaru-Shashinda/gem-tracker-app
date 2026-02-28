@@ -27,110 +27,227 @@ export function GemAnalysisForm({
 
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-      {/* Scientific Measurements Section */}
+      {/* Left Column: Metrics & Cut */}
       <div className='space-y-6'>
-        <h3 className='font-bold text-slate-900 flex items-center gap-2 border-b pb-2'>
-          <Microscope size={18} className='text-blue-600' /> Scientific Measurements
+        <h3 className='font-bold text-slate-900 flex items-center gap-2 border-b pb-2 uppercase text-xs tracking-widest'>
+          <Microscope size={16} className='text-blue-600' /> Technical Data
         </h3>
 
-        {/* R.I., S.G., Hardness */}
-        <div className='grid grid-cols-2 gap-4'>
-          {scientificFields.slice(0, 3).map((field) => (
+        {/* RI, SG, Hardness Group */}
+        <div className='grid grid-cols-3 gap-3 bg-slate-50/30 p-3 rounded-lg border border-slate-100/50'>
+          <FormField
+            config={scientificFields[0]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
+          <FormField
+            config={scientificFields[1]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
+          <FormField
+            config={scientificFields[2]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
+        </div>
+
+        {/* CUT & STYLE SECTION (Grouped as requested) */}
+        <div className='bg-blue-50/30 p-4 rounded-xl border border-blue-100/50 space-y-4 shadow-sm'>
+          <div className='flex items-center justify-between border-b border-blue-100/50 pb-2'>
+            <h4 className='text-[11px] font-black uppercase text-blue-600 tracking-widest'>
+              Cut & Style Details
+            </h4>
+            <div className='flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-blue-100 shadow-sm'>
+              <span className='text-[9px] font-bold text-blue-400 uppercase'>Cut Grade:</span>
+              <FormField
+                config={gradingFields[3]}
+                register={register}
+                errors={errors}
+                control={control}
+                setValue={setValue}
+              />
+            </div>
+          </div>
+
+          <div className='grid grid-cols-1 gap-4'>
             <FormField
-              key={field.name}
-              config={field}
+              config={scientificFields[3]}
               register={register}
               errors={errors}
               control={control}
               setValue={setValue}
             />
-          ))}
+            <div className='grid grid-cols-2 gap-4'>
+              <FormField
+                config={scientificFields[4]}
+                register={register}
+                errors={errors}
+                control={control}
+                setValue={setValue}
+              />
+              <FormField
+                config={scientificFields[5]}
+                register={register}
+                errors={errors}
+                control={control}
+                setValue={setValue}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Shape and Cut */}
+        {/* Transparency & Measurements */}
+        <div className='space-y-4'>
+          <FormField
+            config={scientificFields[6]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
+          <div className='grid grid-cols-3 gap-4'>
+            {scientificFields.slice(7, 10).map((field) => (
+              <FormField
+                key={field.name}
+                config={field}
+                register={register}
+                errors={errors}
+                control={control}
+                setValue={setValue}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column: Identification & Finish */}
+      <div className='space-y-6'>
+        <h3 className='font-bold text-slate-900 flex items-center gap-2 border-b pb-2 uppercase text-xs tracking-widest'>
+          <Search size={16} className='text-amber-600' /> Laboratory Grading
+        </h3>
+
+        {/* Identification Block */}
         <div className='grid grid-cols-2 gap-4'>
-          {scientificFields.slice(3, 5).map((field) => (
-            <FormField
-              key={field.name}
-              config={field}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-          ))}
+          <FormField
+            config={identificationFields[0]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
+          <FormField
+            config={identificationFields[1]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
         </div>
-
-        {/* Transparency */}
         <FormField
-          config={scientificFields[5]}
+          config={identificationFields[3]}
+          register={register}
+          errors={errors}
+          control={control}
+          setValue={setValue}
+        />
+        <FormField
+          config={identificationFields[2]}
           register={register}
           errors={errors}
           control={control}
           setValue={setValue}
         />
 
-        {/* Measurements */}
-        <div className='grid grid-cols-2 gap-4'>
-          {scientificFields.slice(6, 9).map((field) => (
+        {/* FINISH SECTION (Separate as requested) */}
+        <div className='bg-amber-50/20 p-4 rounded-xl border border-amber-100/50 shadow-sm space-y-4'>
+          <h4 className='text-[11px] font-black uppercase text-amber-600 tracking-widest border-b border-amber-100 pb-2'>
+            Finish & Polish
+          </h4>
+          <div className='grid grid-cols-2 gap-4'>
             <FormField
-              key={field.name}
-              config={field}
+              config={gradingFields[4]}
               register={register}
               errors={errors}
               control={control}
               setValue={setValue}
             />
-          ))}
-        </div>
-      </div>
-
-      {/* Identification & Grading Section */}
-      <div className='space-y-6'>
-        <h3 className='font-bold text-slate-900 flex items-center gap-2 border-b pb-2'>
-          <Search size={18} className='text-amber-600' /> Identification & Grading
-        </h3>
-
-        {/* Species and Variety */}
-        <div className='grid grid-cols-2 gap-4'>
-          {identificationFields.slice(0, 2).map((field) => (
             <FormField
-              key={field.name}
-              config={field}
+              config={gradingFields[5]}
               register={register}
               errors={errors}
               control={control}
               setValue={setValue}
             />
-          ))}
+          </div>
         </div>
 
-        {/* Origin and Cutting Grade */}
-        <div className='grid grid-cols-1 gap-4'>
-          {identificationFields.slice(2, 4).map((field) => (
+        {/* Color & Clarity */}
+        <div className='bg-amber-50/20 p-4 rounded-xl border border-amber-100/50 shadow-sm space-y-4'>
+          <h4 className='text-[11px] font-black uppercase text-amber-600 tracking-widest border-b border-amber-100 pb-2'>
+            Color & Grade
+          </h4>
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='grid grid-cols-2 gap-2'>
+              <FormField
+                config={gradingFields[0]}
+                register={register}
+                errors={errors}
+                control={control}
+                setValue={setValue}
+              />
+              <FormField
+                config={gradingFields[1]}
+                register={register}
+                errors={errors}
+                control={control}
+                setValue={setValue}
+              />
+            </div>
             <FormField
-              key={field.name}
-              config={field}
+              config={gradingFields[2]}
               register={register}
               errors={errors}
               control={control}
               setValue={setValue}
             />
-          ))}
+          </div>
         </div>
 
-        {/* Polishing, Proportion, Clarity */}
-        <div className='grid grid-cols-3 gap-3'>
-          {gradingFields.map((field) => (
+        <div className='grid grid-cols-2 gap-4 pt-4'>
+          <FormField
+            config={gradingFields[6]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
+          <FormField
+            config={gradingFields[7]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
+        </div>
+
+        {/* Overall Lab Assessment */}
+        <div className='p-4 rounded-xl flex items-center justify-between shadow-lg'>
+          <div>
             <FormField
-              key={field.name}
-              config={field}
+              config={gradingFields[8]}
               register={register}
               errors={errors}
               control={control}
               setValue={setValue}
             />
-          ))}
+          </div>
         </div>
 
         {/* Text Fields */}

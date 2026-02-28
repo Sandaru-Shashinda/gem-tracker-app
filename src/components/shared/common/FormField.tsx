@@ -91,20 +91,32 @@ export function FormField({ config, register, errors, control, setValue }: FormF
         <Controller
           name={name}
           control={control}
-          render={({ field }) => (
-            <Select value={field.value as string} onValueChange={field.onChange}>
-              <SelectTrigger className='w-full bg-white'>
-                <SelectValue placeholder={placeholder || "Select..."} />
-              </SelectTrigger>
-              <SelectContent>
-                {options?.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          render={({ field }) => {
+            const currentValue = (field.value as string) || ""
+            const hasMatchingOption = options?.some((opt) => opt.value === currentValue)
+
+            // If we have a value but it's not in the options list (legacy data or manual edit),
+            // add it as a temporary option so the Select can display it.
+            const augmentedOptions =
+              currentValue && !hasMatchingOption
+                ? [{ value: currentValue, label: currentValue }, ...(options || [])]
+                : options
+
+            return (
+              <Select value={currentValue} onValueChange={field.onChange}>
+                <SelectTrigger className='w-full bg-white'>
+                  <SelectValue placeholder={placeholder || "Select..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {augmentedOptions?.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )
+          }}
         />
       )}
 

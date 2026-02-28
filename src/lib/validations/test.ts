@@ -16,7 +16,10 @@ export const testSchema = z.object({
   cuttingGrade: z.number().optional(),
   polishingGrade: z.string().default("Fine"),
   proportionGrade: z.string().default("Fine"),
-  clarityGrade: z.string().default("Fine"),
+  clarityEnhancement: z.string().optional(),
+  clarityGrade: z.string().optional(),
+  crownStyle: z.string().optional(),
+  pavilionStyle: z.string().optional(),
   species: z.string().min(1, "Species is required"),
   selectedVariety: z.string().min(1, "Variety is required"),
   comments: z.string().optional(),
@@ -24,6 +27,7 @@ export const testSchema = z.object({
   specialNote: z.string().optional(),
   colour: z.string().optional(),
   colourGrade: z.number().optional(),
+  finalGrade: z.number().optional(),
 })
 
 export type TestFormValues = z.infer<typeof testSchema>

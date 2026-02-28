@@ -14,11 +14,31 @@ export const SIMPLE_GRADE_OPTIONS = [
   { value: "Good", label: "Good" },
 ]
 
-export const CLARITY_OPTIONS = [
-  { value: "Clean", label: "Clean" },
-  { value: "Fine", label: "Fine" },
-  { value: "Good", label: "Good" },
-  { value: "Fair", label: "Fair" },
+export const CLARITY_OTHER_OPTIONS = [
+  { value: "Exc", label: "Exc (Excellent)" },
+  { value: "LC 1", label: "LC 1" },
+  { value: "LC 2", label: "LC 2" },
+  { value: "EC 1", label: "EC 1" },
+  { value: "EC 2", label: "EC 2" },
+  { value: "VI 1", label: "VI 1" },
+  { value: "VI 2", label: "VI 2" },
+  { value: "HI 1", label: "HI 1" },
+  { value: "HI 2", label: "HI 2" },
+]
+
+export const CLARITY_EMERALD_OPTIONS = [
+  { value: "LC", label: "LC (Loop Clean)" },
+  { value: "EC", label: "EC (Eye Clean)" },
+  { value: "SI", label: "SI (Slightly Included)" },
+  { value: "MI", label: "MI (Moderately Included)" },
+  { value: "HI", label: "HI (Highly Included)" },
+]
+
+export const CLARITY_ENHANCEMENT_OPTIONS = [
+  { value: "None", label: "None (No Significant Clarity Enhancement)" },
+  { value: "E 1", label: "E 1 (Minor Clarity Enhancement)" },
+  { value: "E 2", label: "E 2 (Moderate Clarity Enhancement)" },
+  { value: "E 3", label: "E 3 (Significant Clarity Enhancement)" },
 ]
 
 export const CUTTING_STYLE_OPTIONS = [
@@ -114,6 +134,7 @@ interface FormFieldsConfigParams {
   filteredVarieties: any[]
   setValue: (name: any, value: any) => void
   watchedSpecies?: string
+  watchedVariety?: string
 }
 
 export function getFormFieldsConfig({
@@ -129,9 +150,32 @@ export function getFormFieldsConfig({
   filteredVarieties,
   setValue,
   watchedSpecies,
+  watchedVariety,
 }: FormFieldsConfigParams) {
   let colorOptions = OTHER_COLORS
+  let clarityOptions = CLARITY_OTHER_OPTIONS
+
+  // Apply species-based defaults if any (like Emerald clarity)
   if (watchedSpecies) {
+    const lowerSpecies = watchedSpecies.toLowerCase()
+    if (lowerSpecies.includes("emerald")) {
+      clarityOptions = CLARITY_EMERALD_OPTIONS
+    }
+  }
+
+  // Override options based on Variety (Priority)
+  if (watchedVariety) {
+    const lowerVariety = watchedVariety.toLowerCase()
+    if (lowerVariety.includes("ruby")) {
+      colorOptions = RUBY_COLORS
+    } else if (lowerVariety.includes("emerald")) {
+      colorOptions = EMERALD_COLORS
+      clarityOptions = CLARITY_EMERALD_OPTIONS // Emerald variety always uses emerald clarity
+    } else if (lowerVariety.includes("sapphire") && lowerVariety.includes("blue")) {
+      colorOptions = SAPPHIRE_COLORS
+    }
+  } else if (watchedSpecies) {
+    // Fallback to species if variety not selected
     const lowerSpecies = watchedSpecies.toLowerCase()
     if (lowerSpecies.includes("ruby")) {
       colorOptions = RUBY_COLORS
@@ -176,10 +220,18 @@ export function getFormFieldsConfig({
       className: "",
     },
     {
-      name: "cuttingStyle",
-      label: "Cutting Style",
+      name: "crownStyle",
+      label: "Crown Style",
       type: "select",
       placeholder: "e.g. Brilliant cut",
+      options: CUTTING_STYLE_OPTIONS,
+      className: "",
+    },
+    {
+      name: "pavilionStyle",
+      label: "Pavilion Style",
+      type: "select",
+      placeholder: "e.g. Step cut",
       options: CUTTING_STYLE_OPTIONS,
       className: "",
     },
@@ -265,7 +317,7 @@ export function getFormFieldsConfig({
       type: "textarea",
       placeholder: "Spectroscopy details",
       className: "",
-      rows: 60,
+      rows: 3,
     },
     {
       name: "origin",
@@ -323,10 +375,24 @@ export function getFormFieldsConfig({
     },
     {
       name: "clarityGrade",
-      label: "Clarity",
+      label: "Clarity Grade",
       type: "select",
-      placeholder: "Grade",
-      options: CLARITY_OPTIONS,
+      placeholder: "Select Clarity",
+      options: clarityOptions,
+      className: "",
+    },
+    {
+      name: "clarityEnhancement",
+      label: "Clarity Enhancement",
+      type: "select",
+      placeholder: "Select Enhancement",
+      options: CLARITY_ENHANCEMENT_OPTIONS,
+      className: "",
+    },
+    {
+      name: "finalGrade",
+      label: "Final Grade",
+      type: "rating",
       className: "",
     },
   ]
@@ -337,21 +403,21 @@ export function getFormFieldsConfig({
       label: "Comments",
       type: "textarea",
       placeholder: "Laboratory comments...",
-      rows: 60,
+      rows: 4,
     },
     {
       name: "itemDescription",
       label: "Item Description",
       type: "textarea",
       placeholder: "Detailed item description...",
-      rows: 60,
+      rows: 4,
     },
     {
       name: "specialNote",
       label: "Special Note",
       type: "textarea",
       placeholder: "Special internal notes...",
-      rows: 60,
+      rows: 4,
     },
   ]
 

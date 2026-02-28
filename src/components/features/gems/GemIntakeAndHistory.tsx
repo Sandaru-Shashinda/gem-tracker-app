@@ -249,10 +249,10 @@ export function GemIntakeAndHistory({
             Matching species based on current RI, SG, and Hardness readings:
           </p>
 
-          <div className='space-y-2'>
+          <div className='space-y-2 overflow-y-auto pr-1' style={{ maxHeight: "calc(5 * 88px)" }}>
             {suggestions.length > 0 ? (
               <>
-                {suggestions.slice(0, 5).map((s, i) => (
+                {suggestions.map((s, i) => (
                   <button
                     key={i}
                     type='button'
@@ -320,11 +320,6 @@ export function GemIntakeAndHistory({
                     </div>
                   </button>
                 ))}
-                {suggestions.length > 5 && (
-                  <p className='text-[9px] text-center text-slate-400 pt-1 italic'>
-                    + {suggestions.length - 5} more scientific matches
-                  </p>
-                )}
               </>
             ) : (
               <div className='py-8 text-center border-2 border-dashed border-blue-100 rounded-2xl bg-white/40 animate-in fade-in duration-700'>
@@ -405,17 +400,28 @@ export function GemIntakeAndHistory({
                           {gem.test1.observations?.origin || "-"}
                         </span>
                       </div>
-                      <div className='col-span-2 flex gap-6 pt-1 border-t border-slate-200/50 mt-1'>
+                      <div className='col-span-2 flex flex-wrap gap-x-6 gap-y-2 pt-1 border-t border-slate-200/50 mt-1'>
                         <div>
                           <span className='text-slate-400 text-[10px]'>Shape:</span>{" "}
                           <span className='font-medium text-slate-700'>
-                            {gem.test1.observations?.shape || "-"}
+                            {gem.test1.observations?.cuttingShape ||
+                              gem.test1.observations?.shape ||
+                              "-"}
                           </span>
                         </div>
                         <div>
-                          <span className='text-slate-400 text-[10px]'>Cut:</span>{" "}
+                          <span className='text-slate-400 text-[10px]'>Crown Style:</span>{" "}
                           <span className='font-medium text-slate-700'>
-                            {gem.test1.observations?.cut || "-"}
+                            {gem.test1.observations?.crownStyle ||
+                              gem.test1.observations?.cuttingStyle ||
+                              gem.test1.observations?.cut ||
+                              "-"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className='text-slate-400 text-[10px]'>Pavilion Style:</span>{" "}
+                          <span className='font-medium text-slate-700'>
+                            {gem.test1.observations?.pavilionStyle || "-"}
                           </span>
                         </div>
                       </div>
@@ -494,9 +500,32 @@ export function GemIntakeAndHistory({
                         <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
                           Clarity
                         </span>
-                        <span className='font-bold text-slate-700'>
-                          {gem.test1.observations?.clarityGrade || "-"}
+                        <div className='flex flex-col'>
+                          <span className='font-bold text-slate-700 leading-tight'>
+                            {gem.test1.observations?.clarityGrade || "-"}
+                          </span>
+                          {gem.test1.observations?.clarityEnhancement && (
+                            <span className='text-[7px] text-blue-500 font-bold'>
+                              {gem.test1.observations.clarityEnhancement}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className='p-1.5 bg-indigo-50/50 rounded-md border border-indigo-100 shadow-sm col-span-4 flex items-center justify-center gap-2 mt-1'>
+                        <span className='text-indigo-500 text-[8px] font-black uppercase tracking-widest'>
+                          Final Grade
                         </span>
+                        <div className='flex gap-1'>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <svg
+                              key={star}
+                              className={`w-3.5 h-3.5 ${star <= (gem.test1.observations?.finalGrade || 0) ? "text-amber-500 fill-amber-500" : "text-slate-300"}`}
+                              viewBox='0 0 24 24'
+                            >
+                              <path d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' />
+                            </svg>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -636,17 +665,28 @@ export function GemIntakeAndHistory({
                           {gem.test2.observations?.origin || "-"}
                         </span>
                       </div>
-                      <div className='col-span-2 flex gap-6 pt-1 border-t border-slate-200/50 mt-1'>
+                      <div className='col-span-2 flex flex-wrap gap-x-6 gap-y-2 pt-1 border-t border-slate-200/50 mt-1'>
                         <div>
                           <span className='text-slate-400 text-[10px]'>Shape:</span>{" "}
                           <span className='font-medium text-slate-700'>
-                            {gem.test2.observations?.shape || "-"}
+                            {gem.test2.observations?.cuttingShape ||
+                              gem.test2.observations?.shape ||
+                              "-"}
                           </span>
                         </div>
                         <div>
-                          <span className='text-slate-400 text-[10px]'>Cut:</span>{" "}
+                          <span className='text-slate-400 text-[10px]'>Crown Style:</span>{" "}
                           <span className='font-medium text-slate-700'>
-                            {gem.test2.observations?.cut || "-"}
+                            {gem.test2.observations?.crownStyle ||
+                              gem.test2.observations?.cuttingStyle ||
+                              gem.test2.observations?.cut ||
+                              "-"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className='text-slate-400 text-[10px]'>Pavilion Style:</span>{" "}
+                          <span className='font-medium text-slate-700'>
+                            {gem.test2.observations?.pavilionStyle || "-"}
                           </span>
                         </div>
                       </div>
@@ -725,9 +765,32 @@ export function GemIntakeAndHistory({
                         <span className='block text-slate-400 text-[8px] uppercase mb-0.5'>
                           Clarity
                         </span>
-                        <span className='font-bold text-slate-700'>
-                          {gem.test2.observations?.clarityGrade || "-"}
+                        <div className='flex flex-col'>
+                          <span className='font-bold text-slate-700 leading-tight'>
+                            {gem.test2.observations?.clarityGrade || "-"}
+                          </span>
+                          {gem.test2.observations?.clarityEnhancement && (
+                            <span className='text-[7px] text-purple-500 font-bold'>
+                              {gem.test2.observations.clarityEnhancement}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className='p-1.5 bg-purple-50/50 rounded-md border border-purple-100 shadow-sm col-span-4 flex items-center justify-center gap-2 mt-1'>
+                        <span className='text-purple-500 text-[8px] font-black uppercase tracking-widest'>
+                          Final Grade
                         </span>
+                        <div className='flex gap-1'>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <svg
+                              key={star}
+                              className={`w-3.5 h-3.5 ${star <= (gem.test2.observations?.finalGrade || 0) ? "text-amber-500 fill-amber-500" : "text-slate-300"}`}
+                              viewBox='0 0 24 24'
+                            >
+                              <path d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' />
+                            </svg>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>

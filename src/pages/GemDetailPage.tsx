@@ -41,7 +41,22 @@ export function GemDetailPage() {
 
   const form = useForm<TestFormValues>({
     resolver: zodResolver(testSchema) as any,
-    defaultValues: {},
+    defaultValues: {
+      ri: "",
+      sg: "",
+      hardness: "",
+      species: "",
+      selectedVariety: "",
+      itemDescription: "",
+      colour: "",
+      clarityGrade: "",
+      grade: "",
+      polishingGrade: "Fine",
+      proportionGrade: "Fine",
+      cuttingGrade: 0,
+      colourGrade: 0,
+      finalGrade: 0,
+    },
     mode: "onChange",
   })
 
@@ -58,6 +73,7 @@ export function GemDetailPage() {
   const watchedSg = watch("sg")
   const watchedHardness = watch("hardness")
   const watchedSpecies = watch("species")
+  const watchedVariety = watch("selectedVariety")
 
   const [speciesSearch, setSpeciesSearch] = useState("")
   const [showSpeciesList, setShowSpeciesList] = useState(false)
@@ -100,6 +116,7 @@ export function GemDetailPage() {
       filteredVarieties,
       setValue,
       watchedSpecies,
+      watchedVariety,
     },
   )
 
@@ -123,7 +140,8 @@ export function GemDetailPage() {
             obs.itemDescription || (activeData as any).itemDescription || gem.itemDescription || "",
           specialNote: obs.specialNote || "",
           cuttingShape: obs.cuttingShape || obs.shape || "",
-          cuttingStyle: obs.cuttingStyle || obs.cut || "",
+          crownStyle: obs.crownStyle || obs.cuttingStyle || obs.cut || "",
+          pavilionStyle: obs.pavilionStyle || "",
           messurementX: obs.messurementX?.toString() || "",
           messurementY: obs.messurementY?.toString() || "",
           messurementZ: obs.messurementZ?.toString() || "",
@@ -132,11 +150,13 @@ export function GemDetailPage() {
           cuttingGrade: Number(obs.cuttingGrade) || 0,
           polishingGrade: obs.polishingGrade || "Fine",
           proportionGrade: obs.proportionGrade || "Fine",
-          clarityGrade: obs.clarityGrade || "Fine",
+          clarityGrade: obs.clarityGrade || "",
+          clarityEnhancement: obs.clarityEnhancement || "",
           grade: obs.grade || "",
           spectroscopy: obs.spectroscopy || "",
-          colour: obs.colour || "",
-          colourGrade: obs.colourGrade || 0,
+          colour: obs.colour || gem.color || "",
+          colourGrade: Number(obs.colourGrade) || 0,
+          finalGrade: Number(obs.finalGrade) || 0,
         })
         if (obs.species) {
           setSpeciesSearch(obs.species)
@@ -282,7 +302,8 @@ export function GemDetailPage() {
       sg: source.sg?.toString() || "",
       hardness: source.hardness?.toString() || "",
       cuttingShape: obs.cuttingShape || obs.shape || "",
-      cuttingStyle: obs.cuttingStyle || obs.cut || "",
+      crownStyle: obs.crownStyle || obs.cuttingStyle || obs.cut || "",
+      pavilionStyle: obs.pavilionStyle || "",
       messurementX: obs.messurementX?.toString() || "",
       messurementY: obs.messurementY?.toString() || "",
       messurementZ: obs.messurementZ?.toString() || "",
@@ -291,11 +312,13 @@ export function GemDetailPage() {
       cuttingGrade: Number(obs.cuttingGrade) || 0,
       polishingGrade: obs.polishingGrade || "Fine",
       proportionGrade: obs.proportionGrade || "Fine",
-      clarityGrade: obs.clarityGrade || "Fine",
+      clarityGrade: obs.clarityGrade || "",
+      clarityEnhancement: obs.clarityEnhancement || "",
       grade: obs.grade || "",
       spectroscopy: obs.spectroscopy || "",
       colour: obs.colour || "",
       colourGrade: obs.colourGrade || 0,
+      finalGrade: obs.finalGrade || 0,
       species: obs.species || "",
       selectedVariety: source.selectedVariety || source.finalVariety || obs.variety || "",
       comments: obs.comments || "",

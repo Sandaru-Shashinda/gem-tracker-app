@@ -45,6 +45,10 @@ export interface ObservationData {
   grade?: string
   shape?: string
   cut?: string
+  cuttingShape?: string
+  crownStyle?: string
+  pavilionStyle?: string
+  cuttingStyle?: string
   transparency?: string
   messurementX?: number
   messurementY?: number
@@ -53,13 +57,17 @@ export interface ObservationData {
   variety?: string
   spectroscopy?: string
   origin?: string
-  cuttingGrade?: string
+  cuttingGrade?: string | number
   polishingGrade?: string
   proportionGrade?: string
   clarityGrade?: string
+  clarityEnhancement?: string
   comments?: string
   itemDescription?: string
   specialNote?: string
+  colour?: string
+  colourGrade?: number
+  finalGrade?: number
 }
 
 export interface Gem {
