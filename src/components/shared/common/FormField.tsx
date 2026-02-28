@@ -3,13 +3,6 @@ import { type UseFormRegister, type FieldErrors, Controller, type Control } from
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Star } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { type TestFormValues } from "@/lib/validations/test"
 
 export type FieldType = "text" | "number" | "textarea" | "select" | "custom-search" | "rating"
@@ -87,34 +80,73 @@ export function FormField({ config, register, errors, control, setValue }: FormF
         />
       )}
 
+      {/* 
+        IMPORTANT: We use a styled native <select> here instead of Radix UI's <Select>.
+        
+        Reason: Radix UI Select v2 + React 19 + react-hook-form reset() have a known
+        incompatibility — when reset() programmatically sets a value, the <SelectValue>
+        trigger text doesn't update because Radix only captures the display text map
+        during the initial render of <SelectContent>. This causes the select to appear
+        blank even though field.value is correct.
+        
+        A native <select> always displays the correct option directly via the DOM's
+        `value` attribute — no timing or re-render issues.
+      */}
       {type === "select" && control && (
         <Controller
           name={name}
           control={control}
           render={({ field }) => {
             const currentValue = (field.value as string) || ""
-            const hasMatchingOption = options?.some((opt) => opt.value === currentValue)
+            const hasMatchingOption = currentValue
+              ? options?.some((opt) => opt.value === currentValue)
+              : true
 
-            // If we have a value but it's not in the options list (legacy data or manual edit),
-            // add it as a temporary option so the Select can display it.
+            // If saved value is not in options (legacy/manual), add it temporarily
             const augmentedOptions =
               currentValue && !hasMatchingOption
                 ? [{ value: currentValue, label: currentValue }, ...(options || [])]
-                : options
+                : options || []
 
             return (
-              <Select value={currentValue} onValueChange={field.onChange}>
-                <SelectTrigger className='w-full bg-white'>
-                  <SelectValue placeholder={placeholder || "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  {augmentedOptions?.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
+              <div className='relative'>
+                <select
+                  value={currentValue}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  className={`
+                    w-full h-8 pl-3 pr-8 text-xs rounded-md border border-slate-200
+                    bg-white text-slate-900 shadow-sm
+                    focus:outline-none focus:ring-1 focus:ring-slate-950
+                    appearance-none cursor-pointer
+                    ${!currentValue ? "text-slate-500" : "text-slate-900"}
+                  `}
+                >
+                  <option value='' disabled hidden>
+                    {placeholder || "Select..."}
+                  </option>
+                  {augmentedOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
                       {opt.label}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </select>
+                {/* Custom chevron arrow */}
+                <div className='pointer-events-none absolute inset-y-0 right-2 flex items-center'>
+                  <svg
+                    className='h-3 w-3 text-slate-400'
+                    xmlns='http://www.w3.org/2000/svg'
+                    viewBox='0 0 20 20'
+                    fill='currentColor'
+                  >
+                    <path
+                      fillRule='evenodd'
+                      d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'
+                      clipRule='evenodd'
+                    />
+                  </svg>
+                </div>
+              </div>
             )
           }}
         />

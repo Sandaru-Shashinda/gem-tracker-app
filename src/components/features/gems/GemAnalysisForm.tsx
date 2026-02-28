@@ -194,24 +194,15 @@ export function GemAnalysisForm({
             Color & Grade
           </h4>
           <div className='grid grid-cols-2 gap-4'>
-            <div className='grid grid-cols-2 gap-2'>
-              <FormField
-                config={gradingFields[0]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-              <FormField
-                config={gradingFields[1]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-            </div>
             <FormField
-              config={gradingFields[2]}
+              config={gradingFields[0]}
+              register={register}
+              errors={errors}
+              control={control}
+              setValue={setValue}
+            />
+            <FormField
+              config={gradingFields[1]}
               register={register}
               errors={errors}
               control={control}

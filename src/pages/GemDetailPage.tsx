@@ -20,7 +20,6 @@ import { GemDetailHeader } from "@/components/features/gems/GemDetailHeader"
 import { GemWorkflowStatus } from "@/components/features/gems/GemWorkflowStatus"
 import { GemAnalysisForm } from "@/components/features/gems/GemAnalysisForm"
 import { getFormFieldsConfig } from "@/components/shared/common/Formfieldsconfig"
-
 export function GemDetailPage() {
   const { id } = useParams<{ id: string }>()
   const {
@@ -56,6 +55,18 @@ export function GemDetailPage() {
       cuttingGrade: 0,
       colourGrade: 0,
       finalGrade: 0,
+      cuttingShape: "",
+      crownStyle: "",
+      pavilionStyle: "",
+      messurementX: "",
+      messurementY: "",
+      messurementZ: "",
+      transparency: "",
+      origin: "",
+      spectroscopy: "",
+      comments: "",
+      specialNote: "",
+      clarityEnhancement: "",
     },
     mode: "onChange",
   })
@@ -124,20 +135,32 @@ export function GemDetailPage() {
     if (gem) {
       const activeData = isT1 ? gem.test1 : isT2 ? gem.test2 : gem.finalApproval
       if (activeData) {
-        const obs = (activeData as any).observations || (activeData as any).finalObservations || {}
-        reset({
-          ri: activeData.ri?.toString() || "",
-          sg: activeData.sg?.toString() || "",
-          hardness: activeData.hardness?.toString() || "",
+        // Senior Logic: If the current stage is empty (no RI), but previous stages have data,
+        // we use the previous stage as a base to help the user.
+        let baseData = activeData
+        if (!activeData.ri) {
+          if (isT2 && gem.test1?.ri) {
+            baseData = gem.test1
+          } else if (isApproval) {
+            baseData = gem.test2?.ri ? gem.test2 : gem.test1?.ri ? gem.test1 : activeData
+          }
+        }
+
+        const obs = (baseData as any).observations || (baseData as any).finalObservations || {}
+
+        const newValues = {
+          ri: baseData.ri?.toString() || "",
+          sg: baseData.sg?.toString() || "",
+          hardness: baseData.hardness?.toString() || "",
           species: obs.species || "",
           selectedVariety:
-            (activeData as any).selectedVariety ||
-            (activeData as any).finalVariety ||
+            (baseData as any).selectedVariety ||
+            (baseData as any).finalVariety ||
             obs.variety ||
             "",
           comments: obs.comments || "",
           itemDescription:
-            obs.itemDescription || (activeData as any).itemDescription || gem.itemDescription || "",
+            obs.itemDescription || (baseData as any).itemDescription || gem.itemDescription || "",
           specialNote: obs.specialNote || "",
           cuttingShape: obs.cuttingShape || obs.shape || "",
           crownStyle: obs.crownStyle || obs.cuttingStyle || obs.cut || "",
@@ -157,21 +180,18 @@ export function GemDetailPage() {
           colour: obs.colour || gem.color || "",
           colourGrade: Number(obs.colourGrade) || 0,
           finalGrade: Number(obs.finalGrade) || 0,
-        })
-        if (obs.species) {
-          setSpeciesSearch(obs.species)
         }
-        const currentVariety =
-          (activeData as any).selectedVariety ||
-          (activeData as any).finalVariety ||
-          obs.variety ||
-          ""
-        if (currentVariety) {
-          setVarietySearch(currentVariety)
-        }
+
+        reset(newValues)
+
+        console.log("newValues", newValues)
+
+        // Sync search states
+        setSpeciesSearch(newValues.species)
+        setVarietySearch(newValues.selectedVariety)
       }
     }
-  }, [gem, isT1, isT2, reset])
+  }, [gem, isT1, isT2, isApproval, reset])
 
   useEffect(() => {
     if (gem?.customerId) {

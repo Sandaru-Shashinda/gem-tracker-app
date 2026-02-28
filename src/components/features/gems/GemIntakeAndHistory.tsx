@@ -337,7 +337,7 @@ export function GemIntakeAndHistory({
       )}
 
       {/* Historical Blocks */}
-      {(gem.test1?.ri || gem.test2?.ri) && user?.role === "ADMIN" && (
+      {(gem.test1?.ri || gem.test2?.ri) && (user?.role === "ADMIN" || user?.role === "TESTER") && (
         <div className='space-y-4'>
           {gem.test1?.ri && (
             <Card className='p-4 border-l-4 border-l-blue-500 shadow-sm'>
