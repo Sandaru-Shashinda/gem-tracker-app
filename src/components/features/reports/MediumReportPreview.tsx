@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import { useState } from "react"
 import QRCode from "react-qr-code"
 import { ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"

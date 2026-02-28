@@ -1,14 +1,10 @@
 import { useMemo } from "react"
 import { createColumnHelper, type PaginationState } from "@tanstack/react-table"
-import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { BASE_URL } from "@/lib/api/config"
 import { type Gem, GEM_STATUSES } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
 import { useNavigate } from "react-router-dom"
 import { StatusBadge } from "@/components/shared/common/StatusBadge"
-
-import { GemImage } from "./GemImage"
 
 interface GemTableProps {
   data: Gem[]
