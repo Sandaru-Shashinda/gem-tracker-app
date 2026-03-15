@@ -95,9 +95,11 @@ export interface Gem {
   }
 
   test1: {
-    ri?: number
+    riMin?: number
+    riMax?: number
     sg?: number
-    hardness?: number
+    hardnessMin?: number
+    hardnessMax?: number
     observations?: ObservationData
     selectedVariety?: string
     notes?: string
@@ -109,9 +111,11 @@ export interface Gem {
   }
 
   test2: {
-    ri?: number
+    riMin?: number
+    riMax?: number
     sg?: number
-    hardness?: number
+    hardnessMin?: number
+    hardnessMax?: number
     observations?: ObservationData
     selectedVariety?: string
     notes?: string
@@ -123,9 +127,11 @@ export interface Gem {
   }
 
   finalApproval: {
-    ri?: number
+    riMin?: number
+    riMax?: number
     sg?: number
-    hardness?: number
+    hardnessMin?: number
+    hardnessMax?: number
     finalObservations?: ObservationData
     finalVariety?: string
     itemDescription?: string

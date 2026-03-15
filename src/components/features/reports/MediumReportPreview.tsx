@@ -11,12 +11,20 @@ interface MediumReportPreviewProps {
   reportId?: string
 }
 
+/**
+ * ARCHITECT LEVEL PDF FIX (RELIABILITY FOCUS):
+ * We bypass Tailwind 4's modern color system (oklch) which crashes legacy PDF tools.
+ * Everything in the 'Capture' view is 100% hardcoded HEX.
+ * We also treat the layout as a fixed-pixel 'Blueprint' (1000x700).
+ */
 export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps) {
   const [view, setView] = useState<"inner" | "outer">("inner")
-  const goldText = "text-[#b2945b]"
 
   return (
-    <div className='flex flex-col items-center'>
+    <div
+      className='flex flex-col items-center'
+      style={{ colorScheme: "light" }} // Force light mode for capture logic
+    >
       <div className='flex items-center gap-2 mb-6 bg-slate-100 p-1 rounded-lg'>
         <button
           onClick={() => setView("inner")}
@@ -42,38 +50,60 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
         </button>
       </div>
 
-      {/* Landscape Container: Strictly defined Landscape Aspect Ratio for A4 Folded (A5 Panels) */}
+      {/* Interactive Screen Preview */}
       <div
         id='medium-report-inner'
         className='w-[1000px] h-[700px] bg-white shadow-2xl overflow-hidden text-slate-900 relative border border-slate-100 flex'
       >
-        {view === "inner" ? (
-          <InnerView gem={gem} reportId={reportId} />
-        ) : (
-          <OuterView goldText={goldText} />
-        )}
+        {view === "inner" ? <DetailView gem={gem} reportId={reportId} /> : <CoverView />}
       </div>
 
-      {/* Hidden container for PDF capture (Always "inner" view) */}
-      <div className='fixed -left-[4000px] top-0 pointer-events-none'>
+      {/* 
+          STABLE CAPTURE ENGINE (ISOLATED)
+          Hardcoded 1000x700 canvas.
+          Note: No 'visibility: hidden' because html2canvas ignores hidden elements.
+      */}
+      <div
+        style={{
+          position: "fixed",
+          left: "-5000px",
+          top: "0",
+          zIndex: -1,
+          pointerEvents: "none",
+        }}
+      >
         <div
           id='medium-report-capture-inner'
-          className='bg-white text-slate-900 relative flex overflow-hidden'
-          style={{ width: "210mm", height: "148mm" }}
+          style={{
+            width: "1000px",
+            height: "700px",
+            backgroundColor: "#ffffff",
+            display: "flex",
+            flexDirection: "row",
+            position: "relative",
+            overflow: "hidden",
+            color: "#1e293b",
+          }}
         >
-          <InnerView gem={gem} reportId={reportId} />
+          <DetailView gem={gem} reportId={reportId} />
         </div>
       </div>
     </div>
   )
 }
 
-function InnerView({ gem, reportId }: { gem: Gem; reportId?: string }) {
+function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
   const finalData = gem.finalApproval || {}
   const obs = finalData.finalObservations || {}
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
-  const goldText = "text-[#b2945b]"
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
+
+  // PRIMARY COLORS (STRICT HEX)
+  const GOLD = "#b2945b"
+  const DARK = "#1e293b"
+  const LIGHT = "#94a3b8"
+  const BORDER = "#f1f5f9"
+  const FONT = "'Times New Roman', serif"
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return new Date().toLocaleDateString("en-GB")
@@ -82,9 +112,18 @@ function InnerView({ gem, reportId }: { gem: Gem; reportId?: string }) {
 
   return (
     <>
-      {/* Watermark Background (Spanning across - centered) */}
-      <div className='absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] z-0'>
-        <svg viewBox='0 0 100 100' className='w-[60%] h-[60%] text-[#b2945b]'>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: 0.04,
+          pointerEvents: "none",
+        }}
+      >
+        <svg viewBox='0 0 100 100' style={{ width: "600px", height: "600px", color: GOLD }}>
           <path
             d='M50 20 C35 20 25 35 25 50 C25 65 35 80 50 80 C65 80 75 65 75 50 C75 35 65 20 50 20 Z'
             fill='currentColor'
@@ -97,136 +136,270 @@ function InnerView({ gem, reportId }: { gem: Gem; reportId?: string }) {
         </svg>
       </div>
 
-      {/* LEFT HALF PANEL (50%) */}
+      {/* LEFT PANEL: DATA */}
       <div
-        className='w-1/2 h-full p-10 z-10 flex flex-col border-r relative'
-        style={{ borderColor: "#f1f5f9" }}
+        style={{
+          width: "500px",
+          height: "700px",
+          padding: "40px",
+          display: "flex",
+          flexDirection: "column",
+          boxSizing: "border-box",
+          position: "relative",
+          borderRight: `1px solid ${BORDER}`,
+          fontFamily: FONT,
+        }}
       >
-        <div className='mb-6'>
-          <h1
-            className={`font-serif text-[24px] font-bold ${goldText} uppercase tracking-wide leading-tight`}
-          >
-            Gemological Report of Ceylon
-          </h1>
+        <h1
+          style={{
+            color: GOLD,
+            fontSize: "26px",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            margin: "0 0 30px 0",
+            lineHeight: "1.2",
+          }}
+        >
+          Gemological Report of Ceylon
+        </h1>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "9px",
+            color: DARK,
+            fontSize: "14px",
+          }}
+        >
+          <PrintRow
+            label='Date'
+            value={formatDate(gem.updatedAt)}
+            dottedColor={LIGHT}
+            textColor={DARK}
+          />
+          <PrintRow label='GRC Number' value={gem.gemId} dottedColor={LIGHT} textColor={DARK} />
+          <PrintRow label='Color' value={gem.color} dottedColor={LIGHT} textColor={DARK} />
+          <div style={{ height: "4px" }}></div>
+          <PrintRow
+            label='Weight'
+            value={gem.weight ? `${gem.weight.toFixed(2)} ct` : undefined}
+            dottedColor={LIGHT}
+            textColor={DARK}
+          />
+          <PrintRow label='Shape' value={obs.shape} dottedColor={LIGHT} textColor={DARK} />
+          <PrintRow label='Cut' value={obs.cut} dottedColor={LIGHT} textColor={DARK} />
+          <PrintRow
+            label='Measurements'
+            value={
+              obs.messurementX
+                ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm`
+                : undefined
+            }
+            dottedColor={LIGHT}
+            textColor={DARK}
+          />
+          <PrintRow
+            label='Transparency'
+            value={obs.transparency}
+            dottedColor={LIGHT}
+            textColor={DARK}
+          />
+          <PrintRow label='Species' value={obs.species} dottedColor={LIGHT} textColor={DARK} />
+          <PrintRow
+            label='Variety'
+            value={finalData.finalVariety || obs.variety}
+            dottedColor={LIGHT}
+            textColor={DARK}
+          />
+
+          <div style={{ height: "15px" }}></div>
+          <PrintRow
+            label='Geographic Origin'
+            value={obs.origin}
+            dottedColor={LIGHT}
+            textColor={DARK}
+          />
+          <div style={{ height: "4px" }}></div>
+          <PrintRow label='Cutting' value={obs.cuttingGrade} dottedColor={LIGHT} textColor={DARK} />
+          <PrintRow
+            label='Polishing'
+            value={obs.polishingGrade}
+            dottedColor={LIGHT}
+            textColor={DARK}
+          />
+          <PrintRow
+            label='Proportion'
+            value={obs.proportionGrade}
+            dottedColor={LIGHT}
+            textColor={DARK}
+          />
+          <PrintRow label='Clarity' value={obs.clarityGrade} dottedColor={LIGHT} textColor={DARK} />
+          <PrintRow
+            label='Comments'
+            value={obs.comments || "No Indications of heating"}
+            dottedColor={LIGHT}
+            textColor={DARK}
+          />
         </div>
 
-        <div className='flex-1 flex flex-col justify-center'>
-          <div
-            className='space-y-[6px] text-[13px] leading-snug font-medium'
-            style={{ color: "#1e293b" }}
-          >
-            <ReportRow label='Date' value={formatDate(gem.updatedAt)} />
-            <ReportRow label='GRC Number' value={gem.gemId} />
-            <ReportRow label='Color' value={gem.color} />
-            <div className='my-[2px]'></div>
-            <ReportRow
-              label='Weight'
-              value={gem.weight ? `${gem.weight.toFixed(2)} ct` : undefined}
-            />
-            <ReportRow label='Shape' value={obs.shape} />
-            <ReportRow label='Cut' value={obs.cut} />
-            <ReportRow
-              label='Measurements'
-              value={
-                obs.messurementX
-                  ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm`
-                  : undefined
-              }
-            />
-            <ReportRow label='Transparency' value={obs.transparency} />
-            <ReportRow label='Species' value={obs.species} />
-            <ReportRow label='Variety' value={finalData.finalVariety || obs.variety} />
-            <div className='h-4'></div>
-            <ReportRow label='Geographic Origin' value={obs.origin} />
-            <div className='h-1'></div>
-            <ReportRow label='Cutting' value={obs.cuttingGrade} />
-            <ReportRow label='Polishing' value={obs.polishingGrade} />
-            <ReportRow label='Proportion' value={obs.proportionGrade} />
-            <ReportRow label='Clarity' value={obs.clarityGrade} />
-            <ReportRow label='Comments' value={obs.comments || "Minor Oil"} />
-          </div>
-
-          <div
-            className='mt-auto mb-6 text-[11px] leading-relaxed text-justify'
-            style={{ color: "#0f172a" }}
-          >
-            <p>
-              <span className='font-semibold mr-1'>Item Description:</span>
-              {finalData.itemDescription ||
-                "One white metal ring set with a natural Island Emerald, oval cabochon cut, as the center stone, surrounded by round-cut natural diamonds."}
-            </p>
-            <p className='mt-2 font-bold'>
-              Total article weight: {gem.weight ? (gem.weight + 5).toFixed(3) : "0.000"} g.
-            </p>
-          </div>
+        <div
+          style={{
+            marginTop: "auto",
+            marginBottom: "20px",
+            fontSize: "11px",
+            color: "#0f172a",
+            textAlign: "justify",
+            lineHeight: "1.6",
+          }}
+        >
+          <p style={{ margin: 0 }}>
+            <span style={{ fontWeight: 700, marginRight: "5px" }}>Item Description:</span>
+            {finalData.itemDescription ||
+              "Natural gemstone certificated by Gemological Report of Ceylon. Validates origin and authenticity."}
+          </p>
+          <p style={{ fontWeight: 800, marginTop: "10px", margin: 0 }}>
+            Total Weight: {gem.weight ? gem.weight.toFixed(3) : "0.000"} ct.
+          </p>
         </div>
 
-        <div className='absolute bottom-4 left-10 text-[9px]' style={{ color: "#94a3b8" }}>
-          For complete terms and updates, visit www.grc.lk
+        <div
+          style={{
+            position: "absolute",
+            bottom: "20px",
+            left: "40px",
+            color: LIGHT,
+            fontSize: "10px",
+          }}
+        >
+          Verify authenticity at www.grc.lk
         </div>
       </div>
 
-      {/* RIGHT HALF PANEL (50%) */}
-      <div className='w-1/2 h-full p-10 z-10 flex flex-col items-center justify-center'>
-        <div className='h-4'></div>
+      {/* RIGHT PANEL: VISUALS */}
+      <div
+        style={{
+          width: "500px",
+          height: "700px",
+          padding: "40px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          boxSizing: "border-box",
+          position: "relative",
+          fontFamily: FONT,
+        }}
+      >
         <div
-          className='w-[200px] h-[200px] border bg-white flex items-center justify-center p-2 relative shadow-sm mb-2'
-          style={{ borderColor: "#e2e8f0" }}
+          style={{
+            width: "250px",
+            height: "250px",
+            border: "1px solid #e2e8f0",
+            backgroundColor: "#ffffff",
+            padding: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "15px",
+          }}
         >
           {firstImageId ? (
             <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
           ) : (
-            <ImageIcon className='w-12 h-12' style={{ color: "#cbd5e1" }} />
+            <ImageIcon size={48} color='#cbd5e1' />
           )}
         </div>
         <p
-          className='text-[10px] mb-6 w-full text-center tracking-wide'
-          style={{ color: "#94a3b8" }}
+          style={{
+            color: LIGHT,
+            fontSize: "11px",
+            marginBottom: "30px",
+            textAlign: "center",
+            width: "100%",
+          }}
         >
-          Image is approximate
+          Image represents the actual item.
         </p>
 
-        <div className='text-center w-full mb-8'>
+        <div style={{ textAlign: "center", width: "100%", marginBottom: "40px" }}>
           <h2
-            className={`text-[28px] font-bold uppercase font-serif tracking-wide leading-none`}
-            style={{ color: "#1e293b" }}
+            style={{
+              fontSize: "32px",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              margin: 0,
+              color: DARK,
+              lineHeight: "1.1",
+            }}
           >
-            NATURAL <br /> {obs.species || "GEMSTONE"}
+            NATURAL <br /> {obs.variety || "GEMSTONE"}
           </h2>
           <p
-            className='text-[16px] font-serif mt-3 font-medium uppercase tracking-widest'
-            style={{ color: "#475569" }}
+            style={{
+              fontSize: "18px",
+              color: "#475569",
+              textTransform: "uppercase",
+              letterSpacing: "0.2em",
+              marginTop: "10px",
+              fontWeight: 500,
+            }}
           >
             {obs.origin}
           </p>
         </div>
 
-        <div className='w-full flex items-end justify-between mt-auto mb-2'>
-          <div className='border p-2 bg-white shadow-sm' style={{ borderColor: "#f1f5f9" }}>
-            <QRCode value={verificationUrl} size={75} />
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            marginTop: "auto",
+          }}
+        >
+          <div
+            style={{ border: `1px solid ${BORDER}`, padding: "8px", backgroundColor: "#ffffff" }}
+          >
+            <QRCode value={verificationUrl} size={85} />
           </div>
 
-          <div className='flex-1 flex flex-col items-end pl-4'>
-            <div className='h-16 w-[180px] relative -mb-3'>
-              <svg
-                viewBox='0 0 200 80'
-                className='w-full h-full opacity-90'
-                style={{ color: "#1e3a8a" }}
-              >
+          <div
+            style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}
+          >
+            <div
+              style={{
+                height: "60px",
+                width: "160px",
+                color: "#1e3a8a",
+                opacity: 0.8,
+                marginBottom: "-5px",
+              }}
+            >
+              <svg viewBox='0 0 200 80' style={{ width: "100%", height: "100%" }}>
                 <path
-                  d='M40,50 C70,20 100,60 140,30 S180,50 190,30'
+                  d='M30,50 Q60,20 100,50 T170,30'
                   fill='none'
                   stroke='currentColor'
-                  strokeWidth='2'
+                  strokeWidth='2.5'
                 />
               </svg>
             </div>
-            <div className='border-t w-[200px] pt-1 text-right' style={{ borderColor: "#1a1a1a" }}>
-              <p className='font-bold text-[12px] text-[#1a1a1a]'>R. Milinda Edirisinghe</p>
-              <p className='text-[10px] font-medium' style={{ color: "#475569" }}>
+            <div
+              style={{
+                borderTop: "1.5px solid #1a1a1a",
+                width: "220px",
+                paddingTop: "5px",
+                textAlign: "right",
+              }}
+            >
+              <p style={{ fontWeight: 700, fontSize: "13px", color: DARK, margin: 0 }}>
+                R. Milinda Edirisinghe
+              </p>
+              <p style={{ fontSize: "11px", fontWeight: 500, color: "#475569", margin: 0 }}>
                 CEO / Consultant Gemmologist
               </p>
-              <p className='text-[10px]' style={{ color: "#64748b" }}>
+              <p style={{ fontSize: "10px", color: LIGHT, margin: 0 }}>
                 Gemological Report Of Ceylon (Pvt) Ltd
               </p>
             </div>
@@ -237,82 +410,85 @@ function InnerView({ gem, reportId }: { gem: Gem; reportId?: string }) {
   )
 }
 
-function OuterView({ goldText }: { goldText: string }) {
+function CoverView() {
+  const GOLD = "#b2945b"
+  const serif = "'Times New Roman', serif"
   return (
     <>
       <div className='w-1/2 h-full bg-white relative flex flex-col items-center justify-center p-12 border-r border-slate-100'>
-        <div className='absolute left-0 top-0 bottom-0 w-3 bg-[#b2945b]'></div>
+        <div className='absolute left-0 top-0 bottom-0 w-3' style={{ backgroundColor: GOLD }}></div>
         <div className='flex-1 flex items-center justify-center'>
-          <div className='w-56 h-56 text-[#b2945b]'>
+          <div style={{ width: "224px", height: "224px", color: GOLD }}>
             <svg viewBox='0 0 100 100' fill='none' stroke='currentColor' strokeWidth='1.2'>
               <path d='M50 20 C35 20 25 35 25 50 C25 65 35 80 50 80 C65 80 75 65 75 50 C75 35 65 20 50 20 Z' />
-              <path d='M50 20 L50 80 M25 50 L75 50 M35 30 L65 70 M65 30 L35 70' strokeWidth='0.8' />
+              <path d='M50 20 L50 80 M25 50 L75 50' strokeWidth='0.8' />
               <circle cx='50' cy='15' r='7' />
-              <path d='M25 35 L12 25 M75 35 L88 25 M25 65 L12 75 M75 65 L88 75' />
             </svg>
           </div>
         </div>
-        <div className='absolute bottom-12 w-full pl-8 text-center'>
+        <div className='absolute bottom-12 w-full text-center'>
           <p className='font-bold text-[#1a1a1a] text-sm'>Gemological Report Of Ceylon (Pvt) Ltd</p>
-          <p className='text-[11px] text-slate-600 mt-1'>
-            Email: info@grc.lk | Whatsapp: +94 778204525
-            <br />
-            No. 97, Galle Rd, Colombo 03, Sri Lanka. | www.grc.lk
-          </p>
+          <p className='text-[11px] mt-1 text-slate-500'>info@grc.lk | www.grc.lk</p>
         </div>
       </div>
       <div className='w-1/2 h-full bg-white relative flex flex-col items-center justify-center p-12'>
-        <div className='flex flex-col items-center gap-10 -mt-10'>
-          <div className='text-center relative'>
-            <h1
-              className={`text-[120px] leading-none font-serif ${goldText} font-bold tracking-tight`}
-            >
-              GRC
-            </h1>
-            <div className='absolute top-4 -right-6 text-2xl font-bold text-slate-400'>®</div>
-          </div>
-          <div className='flex gap-6 mt-4'>
-            <GemIcon color='bg-[#1e3a8a]' />
-            <GemIcon color='bg-[#15803d]' />
-            <GemIcon color='bg-[#b91c1c]' />
-          </div>
-        </div>
-        <div className='absolute bottom-16 text-center w-full px-8'>
-          <h2 className={`font-serif font-bold text-[20px] ${goldText} uppercase tracking-[0.2em]`}>
-            GEMOLOGICAL REPORT OF CEYLON
-          </h2>
-        </div>
+        <h1
+          style={{ color: GOLD, fontSize: "120px", fontWeight: 700, fontFamily: serif, margin: 0 }}
+        >
+          GRC
+        </h1>
+        <p
+          style={{
+            color: GOLD,
+            fontSize: "18px",
+            letterSpacing: "0.3em",
+            fontWeight: 800,
+            marginTop: "20px",
+            textTransform: "uppercase",
+            fontFamily: serif,
+          }}
+        >
+          Gemological Report of Ceylon
+        </p>
       </div>
     </>
   )
 }
 
-function ReportRow({ label, value }: { label: string; value?: string | number }) {
-  // Classic dotted leader line style
+function PrintRow({
+  label,
+  value,
+  dottedColor,
+  textColor,
+}: {
+  label: string
+  value?: string | number
+  dottedColor: string
+  textColor: string
+}) {
   return (
-    <div className='flex items-baseline w-full text-[#1a1a1a]'>
-      <span className='shrink-0 font-medium font-serif pr-1'>{label}</span>
+    <div style={{ display: "flex", width: "100%", alignItems: "baseline", color: textColor }}>
+      <span style={{ fontWeight: 700, paddingRight: "5px", flexShrink: 0 }}>{label}</span>
+      <div
+        style={{
+          flex: 1,
+          borderBottom: `1.5px dotted ${dottedColor}`,
+          margin: "0 5px",
+          position: "relative",
+          top: "-4px",
+        }}
+      ></div>
       <span
-        className='flex-1 border-b-[1.5px] border-dotted mx-1 relative -top-1'
-        style={{ borderColor: "#94a3b8" }}
-      ></span>
-      {/* Ensure the line of dots is visible by giving flex-1 */}
-      <span className='shrink-0 font-medium font-serif pl-1 min-w-[20px] text-right'>
-        {value || ""}
+        style={{
+          fontWeight: 700,
+          paddingLeft: "5px",
+          textAlign: "right",
+          flexShrink: 0,
+          minWidth: "40px",
+        }}
+      >
+        {value || "--"}
       </span>
-    </div>
-  )
-}
-
-function GemIcon({ color }: { color: string }) {
-  return (
-    <div
-      className={`w-16 h-20 ${color} rounded-md shadow-md relative overflow-hidden ring-1 ring-black/5`}
-    >
-      {/* Simple faceted gem simulation */}
-      <div className='absolute inset-0 bg-linear-to-br from-white/30 to-black/10'></div>
-      <div className='absolute top-0 right-0 w-10 h-10 bg-white/20 -rotate-45 transform translate-x-3 -translate-y-3 blur-sm'></div>
-      <div className='absolute inset-3 border border-white/30 opacity-70'></div>
     </div>
   )
 }

@@ -34,28 +34,47 @@ export function GemAnalysisForm({
         </h3>
 
         {/* RI, SG, Hardness Group */}
-        <div className='grid grid-cols-3 gap-3 bg-slate-50/30 p-3 rounded-lg border border-slate-100/50'>
-          <FormField
-            config={scientificFields[0]}
-            register={register}
-            errors={errors}
-            control={control}
-            setValue={setValue}
-          />
-          <FormField
-            config={scientificFields[1]}
-            register={register}
-            errors={errors}
-            control={control}
-            setValue={setValue}
-          />
-          <FormField
-            config={scientificFields[2]}
-            register={register}
-            errors={errors}
-            control={control}
-            setValue={setValue}
-          />
+        <div className='bg-slate-50/30 p-3 rounded-lg border border-slate-100/50 space-y-2'>
+          <div className='grid grid-cols-3 gap-3'>
+            <FormField
+              config={scientificFields[0]}
+              register={register}
+              errors={errors}
+              control={control}
+              setValue={setValue}
+            />
+            <FormField
+              config={scientificFields[1]}
+              register={register}
+              errors={errors}
+              control={control}
+              setValue={setValue}
+            />
+            <FormField
+              config={scientificFields[2]}
+              register={register}
+              errors={errors}
+              control={control}
+              setValue={setValue}
+            />
+          </div>
+          {/* Min/Max Hardness side by side */}
+          <div className='grid grid-cols-2 gap-3'>
+            <FormField
+              config={scientificFields[3]}
+              register={register}
+              errors={errors}
+              control={control}
+              setValue={setValue}
+            />
+            <FormField
+              config={scientificFields[4]}
+              register={register}
+              errors={errors}
+              control={control}
+              setValue={setValue}
+            />
+          </div>
         </div>
 
         {/* CUT & STYLE SECTION (Grouped as requested) */}
@@ -78,7 +97,7 @@ export function GemAnalysisForm({
 
           <div className='grid grid-cols-1 gap-4'>
             <FormField
-              config={scientificFields[3]}
+              config={scientificFields[5]}
               register={register}
               errors={errors}
               control={control}
@@ -86,14 +105,14 @@ export function GemAnalysisForm({
             />
             <div className='grid grid-cols-2 gap-4'>
               <FormField
-                config={scientificFields[4]}
+                config={scientificFields[6]}
                 register={register}
                 errors={errors}
                 control={control}
                 setValue={setValue}
               />
               <FormField
-                config={scientificFields[5]}
+                config={scientificFields[7]}
                 register={register}
                 errors={errors}
                 control={control}
@@ -106,14 +125,14 @@ export function GemAnalysisForm({
         {/* Transparency & Measurements */}
         <div className='space-y-4'>
           <FormField
-            config={scientificFields[6]}
+            config={scientificFields[8]}
             register={register}
             errors={errors}
             control={control}
             setValue={setValue}
           />
           <div className='grid grid-cols-3 gap-4'>
-            {scientificFields.slice(7, 10).map((field) => (
+            {scientificFields.slice(9, 12).map((field) => (
               <FormField
                 key={field.name}
                 config={field}

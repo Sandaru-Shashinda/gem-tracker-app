@@ -12,6 +12,8 @@ export const SIMPLE_GRADE_OPTIONS = [
   { value: "Ex", label: "Excellent" },
   { value: "Fine", label: "Fine" },
   { value: "Good", label: "Good" },
+  { value: "Fair", label: "Fair" },
+  { value: "Poor", label: "Poor" },
 ]
 
 export const CLARITY_OTHER_OPTIONS = [
@@ -135,6 +137,21 @@ interface FormFieldsConfigParams {
   setValue: (name: any, value: any) => void
   watchedSpecies?: string
   watchedVariety?: string
+  // Combobox states for Crown Style
+  crownStyleSearch: string
+  setCrownStyleSearch: (value: string) => void
+  showCrownStyleList: boolean
+  setShowCrownStyleList: (value: boolean) => void
+  // Combobox states for Pavilion Style
+  pavilionStyleSearch: string
+  setPavilionStyleSearch: (value: string) => void
+  showPavilionStyleList: boolean
+  setShowPavilionStyleList: (value: boolean) => void
+  // Combobox states for Cutting Shape
+  cuttingShapeSearch: string
+  setCuttingShapeSearch: (value: string) => void
+  showCuttingShapeList: boolean
+  setShowCuttingShapeList: (value: boolean) => void
 }
 
 export function getFormFieldsConfig({
@@ -151,6 +168,18 @@ export function getFormFieldsConfig({
   setValue,
   watchedSpecies,
   watchedVariety,
+  crownStyleSearch,
+  setCrownStyleSearch,
+  showCrownStyleList,
+  setShowCrownStyleList,
+  pavilionStyleSearch,
+  setPavilionStyleSearch,
+  showPavilionStyleList,
+  setShowPavilionStyleList,
+  cuttingShapeSearch,
+  setCuttingShapeSearch,
+  showCuttingShapeList,
+  setShowCuttingShapeList,
 }: FormFieldsConfigParams) {
   let colorOptions = OTHER_COLORS
   let clarityOptions = CLARITY_OTHER_OPTIONS
@@ -188,11 +217,19 @@ export function getFormFieldsConfig({
 
   const scientificFields: FieldConfig[] = [
     {
-      name: "ri",
-      label: "R.I.",
+      name: "riMin",
+      label: "Min R.I.",
       type: "number",
       step: "0.001",
-      placeholder: "e.g. 1.66",
+      placeholder: "e.g. 1.62",
+      className: "",
+    },
+    {
+      name: "riMax",
+      label: "Max R.I.",
+      type: "number",
+      step: "0.001",
+      placeholder: "e.g. 1.70",
       className: "",
     },
     {
@@ -204,8 +241,16 @@ export function getFormFieldsConfig({
       className: "",
     },
     {
-      name: "hardness",
-      label: "Hardness",
+      name: "hardnessMin",
+      label: "Min Hardness",
+      type: "number",
+      step: "0.5",
+      placeholder: "e.g. 7.0",
+      className: "",
+    },
+    {
+      name: "hardnessMax",
+      label: "Max Hardness",
       type: "number",
       step: "0.5",
       placeholder: "e.g. 7.5",
@@ -214,25 +259,49 @@ export function getFormFieldsConfig({
     {
       name: "cuttingShape",
       label: "Cutting Shape",
-      type: "select",
+      type: "combobox",
       placeholder: "e.g. Round",
-      options: CUTTING_SHAPE_OPTIONS,
+      comboboxOptions: CUTTING_SHAPE_OPTIONS,
+      comboboxSearch: cuttingShapeSearch,
+      onComboboxSearchChange: (value) => {
+        setCuttingShapeSearch(value)
+        setShowCuttingShapeList(true)
+      },
+      onComboboxFocus: () => setShowCuttingShapeList(true),
+      showComboboxList: showCuttingShapeList,
+      onComboboxClose: () => setShowCuttingShapeList(false),
       className: "",
     },
     {
       name: "crownStyle",
       label: "Crown Style",
-      type: "select",
+      type: "combobox",
       placeholder: "e.g. Brilliant cut",
-      options: CUTTING_STYLE_OPTIONS,
+      comboboxOptions: CUTTING_STYLE_OPTIONS,
+      comboboxSearch: crownStyleSearch,
+      onComboboxSearchChange: (value) => {
+        setCrownStyleSearch(value)
+        setShowCrownStyleList(true)
+      },
+      onComboboxFocus: () => setShowCrownStyleList(true),
+      showComboboxList: showCrownStyleList,
+      onComboboxClose: () => setShowCrownStyleList(false),
       className: "",
     },
     {
       name: "pavilionStyle",
       label: "Pavilion Style",
-      type: "select",
+      type: "combobox",
       placeholder: "e.g. Step cut",
-      options: CUTTING_STYLE_OPTIONS,
+      comboboxOptions: CUTTING_STYLE_OPTIONS,
+      comboboxSearch: pavilionStyleSearch,
+      onComboboxSearchChange: (value) => {
+        setPavilionStyleSearch(value)
+        setShowPavilionStyleList(true)
+      },
+      onComboboxFocus: () => setShowPavilionStyleList(true),
+      showComboboxList: showPavilionStyleList,
+      onComboboxClose: () => setShowPavilionStyleList(false),
       className: "",
     },
     {

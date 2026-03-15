@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Star } from "lucide-react"
 import { type TestFormValues } from "@/lib/validations/test"
 
-export type FieldType = "text" | "number" | "textarea" | "select" | "custom-search" | "rating"
+export type FieldType = "text" | "number" | "textarea" | "select" | "custom-search" | "combobox" | "rating"
 
 export interface SelectOption {
   value: string
@@ -30,6 +30,13 @@ export interface FieldConfig {
   onItemSelect?: (item: any) => void
   onCloseList?: () => void
   renderItem?: (item: any) => ReactNode
+  // For combobox fields (static options + free typing)
+  comboboxOptions?: SelectOption[]
+  comboboxSearch?: string
+  onComboboxSearchChange?: (value: string) => void
+  showComboboxList?: boolean
+  onComboboxFocus?: () => void
+  onComboboxClose?: () => void
 }
 
 interface FormFieldProps {
@@ -58,12 +65,18 @@ export function FormField({ config, register, errors, control, setValue }: FormF
     onItemSelect,
     onCloseList,
     renderItem,
+    comboboxOptions,
+    comboboxSearch,
+    onComboboxSearchChange,
+    showComboboxList,
+    onComboboxFocus,
+    onComboboxClose,
   } = config
 
   const error = errors[name]
 
   return (
-    <div className={`space-y-1.5 ${type === "custom-search" ? "relative" : ""} ${className || ""}`}>
+    <div className={`space-y-1.5 ${type === "custom-search" || type === "combobox" ? "relative" : ""} ${className || ""}`}>
       <label className='text-xs font-bold text-slate-500 uppercase'>{label}</label>
 
       {type === "text" && <Input placeholder={placeholder} {...register(name)} />}
@@ -178,6 +191,48 @@ export function FormField({ config, register, errors, control, setValue }: FormF
             </div>
           )}
           {showList && <div className='fixed inset-0 z-40' onClick={onCloseList}></div>}
+        </>
+      )}
+
+      {type === "combobox" && setValue && (
+        <>
+          <Input
+            placeholder={placeholder}
+            value={comboboxSearch ?? ""}
+            onChange={(e) => {
+              onComboboxSearchChange?.(e.target.value)
+              setValue(name, e.target.value)
+            }}
+            onFocus={onComboboxFocus}
+          />
+          {showComboboxList && (
+            <>
+              {(() => {
+                const filtered = (comboboxOptions || []).filter((opt) =>
+                  opt.label.toLowerCase().includes((comboboxSearch || "").toLowerCase())
+                )
+                return filtered.length > 0 ? (
+                  <div className='absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-48 overflow-y-auto overflow-x-hidden'>
+                    {filtered.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type='button'
+                        className='w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-blue-700 transition-colors border-b last:border-0 border-slate-100'
+                        onClick={() => {
+                          setValue(name, opt.value)
+                          onComboboxSearchChange?.(opt.label)
+                          onComboboxClose?.()
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null
+              })()}
+              <div className='fixed inset-0 z-40' onClick={onComboboxClose}></div>
+            </>
+          )}
         </>
       )}
 

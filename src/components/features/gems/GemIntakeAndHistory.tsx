@@ -261,8 +261,10 @@ export function GemIntakeAndHistory({
                         ...onWatch(),
                         species: s.species || "",
                         selectedVariety: s.variety,
-                        hardness:
-                          s.hardnessMin?.toString() || s.hardnessMax?.toString() || watchedHardness,
+                        hardnessMin:
+                          s.hardnessMin?.toString() || watchedHardness,
+                        hardnessMax:
+                          s.hardnessMax?.toString() || watchedHardness,
                       })
                       onSetSpeciesSearch(s.species || "")
                       onSetVarietySearch(s.variety || "")
@@ -337,9 +339,9 @@ export function GemIntakeAndHistory({
       )}
 
       {/* Historical Blocks */}
-      {(gem.test1?.ri || gem.test2?.ri) && user?.role === "ADMIN" && (
+      {(gem.test1?.riMin || gem.test1?.riMax || gem.test2?.riMin || gem.test2?.riMax) && user?.role === "ADMIN" && (
         <div className='space-y-4'>
-          {gem.test1?.ri && (
+          {gem.test1?.riMin || gem.test1?.riMax ? (
             <Card className='p-4 border-l-4 border-l-blue-500 shadow-sm'>
               <div className='flex justify-between items-center mb-2'>
                 <span className='text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded'>
@@ -370,8 +372,8 @@ export function GemIntakeAndHistory({
               </div>
               <div className='text-xs space-y-1'>
                 <p>
-                  RI: <strong>{gem.test1.ri}</strong> | SG: <strong>{gem.test1.sg}</strong> |
-                  Hardness: <strong>{gem.test1.hardness}</strong>
+                  RI: <strong>{gem.test1.riMin}{gem.test1.riMax && gem.test1.riMax !== gem.test1.riMin ? ` - ${gem.test1.riMax}` : ""}</strong> | SG: <strong>{gem.test1.sg}</strong> |
+                  Hardness: <strong>{gem.test1.hardnessMin}{gem.test1.hardnessMax && gem.test1.hardnessMax !== gem.test1.hardnessMin ? ` - ${gem.test1.hardnessMax}` : ""}</strong>
                 </p>
                 <div className='mt-3 space-y-3'>
                   {/* Identification */}
@@ -595,7 +597,7 @@ export function GemIntakeAndHistory({
                                 {new Date(h.timestamp).toLocaleString()}
                               </span>
                             </div>
-                            RI: {h.ri} | SG: {h.sg} | Var: {h.selectedVariety}
+                            RI: {h.riMin}{h.riMax && h.riMax !== h.riMin ? ` - ${h.riMax}` : ""} | SG: {h.sg} | Var: {h.selectedVariety}
                           </div>
                         ))}
                     </div>
@@ -603,8 +605,8 @@ export function GemIntakeAndHistory({
                 )}
               </div>
             </Card>
-          )}
-          {gem.test2?.ri && (
+          ) : null}
+          {gem.test2?.riMin || gem.test2?.riMax ? (
             <Card className='p-4 border-l-4 border-l-purple-500 shadow-sm'>
               <div className='flex justify-between items-center mb-2'>
                 <span className='text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded'>
@@ -635,8 +637,8 @@ export function GemIntakeAndHistory({
               </div>
               <div className='text-xs space-y-1'>
                 <p>
-                  RI: <strong>{gem.test2.ri}</strong> | SG: <strong>{gem.test2.sg}</strong> |
-                  Hardness: <strong>{gem.test2.hardness}</strong>
+                  RI: <strong>{gem.test2.riMin}{gem.test2.riMax && gem.test2.riMax !== gem.test2.riMin ? ` - ${gem.test2.riMax}` : ""}</strong> | SG: <strong>{gem.test2.sg}</strong> |
+                  Hardness: <strong>{gem.test2.hardnessMin}{gem.test2.hardnessMax && gem.test2.hardnessMax !== gem.test2.hardnessMin ? ` - ${gem.test2.hardnessMax}` : ""}</strong>
                 </p>
                 <div className='mt-3 space-y-3'>
                   {/* Identification */}
@@ -860,7 +862,7 @@ export function GemIntakeAndHistory({
                                 {new Date(h.timestamp).toLocaleString()}
                               </span>
                             </div>
-                            RI: {h.ri} | SG: {h.sg} | Var: {h.selectedVariety}
+                            RI: {h.riMin}{h.riMax && h.riMax !== h.riMin ? ` - ${h.riMax}` : ""} | SG: {h.sg} | Var: {h.selectedVariety}
                           </div>
                         ))}
                     </div>
@@ -868,7 +870,7 @@ export function GemIntakeAndHistory({
                 )}
               </div>
             </Card>
-          )}
+          ) : null}
         </div>
       )}
 

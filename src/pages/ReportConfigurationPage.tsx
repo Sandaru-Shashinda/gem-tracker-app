@@ -14,6 +14,8 @@ import { type Gem, GEM_STATUSES } from "@/lib/types"
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
+import { jsPDF } from "jspdf"
+import html2canvas from "html2canvas"
 
 interface Report {
   _id: string
@@ -153,109 +155,69 @@ export function ReportConfigurationPage() {
 
   const handleDownload = async () => {
     if (size === "medium") {
-      // Use browser's native print to A5 — avoids html2canvas/oklch color issues entirely
-      setIsDownloading(true)
-
-      // Inject a temporary print stylesheet
-      const styleId = "medium-report-print-style"
-      let style = document.getElementById(styleId) as HTMLStyleElement | null
-      if (!style) {
-        style = document.createElement("style")
-        style.id = styleId
-        document.head.appendChild(style)
-      }
-
-      // A5 landscape = 210mm × 148mm.
-      // The inner report is designed at 1000×700px.
-      // Scale factor: 210mm ≈ 793px at 96dpi → 793/1000 ≈ 0.793 (use 0.79 for safety)
-      style.textContent = `
-        @media print {
-          @page {
-            size: A5 landscape;
-            margin: 0;
-          }
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 210mm !important;
-            height: 148mm !important;
-            overflow: hidden !important;
-          }
-          body > * {
-            display: none !important;
-          }
-          #medium-print-portal {
-            display: block !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 210mm !important;
-            height: 148mm !important;
-            overflow: hidden !important;
-            background: #ffffff !important;
-          }
-          #medium-print-portal .report-scale-wrapper {
-            transform-origin: top left;
-            transform: scale(0.793);
-            width: 1000px;
-            height: 700px;
-          }
-          #medium-print-portal * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-      `
-
-      // Create a portal div that is always visible during print
-      let portal = document.getElementById("medium-print-portal")
-      if (!portal) {
-        portal = document.createElement("div")
-        portal.id = "medium-print-portal"
-        portal.style.display = "none"
-        document.body.appendChild(portal)
-      }
-
-      // Clone the capture element into the portal
-      const source = document.getElementById("medium-report-capture-inner")
-      if (!source) {
-        alert("Preview not ready. Please ensure the report is visible.")
-        setIsDownloading(false)
+      const element = document.getElementById("medium-report-capture-inner")
+      if (!element) {
+        alert("Preview not ready.")
         return
       }
 
-      portal.innerHTML = ""
+      try {
+        setIsDownloading(true)
+        // Ensure all images are loaded before capture
+        await new Promise((resolve) => setTimeout(resolve, 1200))
 
-      // The source element is a flex container (left + right panels side by side).
-      // We must preserve that flex layout in the wrapper, otherwise panels stack vertically.
-      const wrapper = document.createElement("div")
-      wrapper.className = "report-scale-wrapper"
-      wrapper.style.display = "flex"
-      wrapper.style.flexDirection = "row"
-      wrapper.style.width = "1000px"
-      wrapper.style.height = "700px"
-      wrapper.style.position = "relative"
-      wrapper.style.overflow = "hidden"
-      wrapper.style.background = "#ffffff"
+        const canvas = await html2canvas(element, {
+          scale: 4, // Professional high-resolution sharpness
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+          width: 1000,
+          height: 700,
+          onclone: (clonedDoc) => {
+            // DEEP CLEAN: Absolute immunity to Tailwind 4 oklch crashes.
+            const styles = Array.from(clonedDoc.getElementsByTagName("style"))
+            const links = Array.from(clonedDoc.getElementsByTagName("link"))
+            const scripts = Array.from(clonedDoc.getElementsByTagName("script"))
 
-      // Deep clone all inner content (both left + right panels)
-      Array.from(source.childNodes).forEach((node) => {
-        wrapper.appendChild(node.cloneNode(true))
-      })
+            scripts.forEach((s) => s.remove())
+            styles.forEach((s) => s.remove())
+            links.forEach((l) => {
+              if (l.rel === "stylesheet") l.remove()
+            })
 
-      portal.appendChild(wrapper)
+            // FORCED COLOR NORMALIZATION
+            const allElements = clonedDoc.getElementsByTagName("*")
+            for (let i = 0; i < allElements.length; i++) {
+              const el = allElements[i] as HTMLElement
+              if (el.className) el.className = "" // Strip all tailwind logic
 
-      // Small delay for rendering to settle before printing
-      await new Promise((resolve) => setTimeout(resolve, 300))
-      window.print()
+              const styles = window.getComputedStyle(el)
+              if (styles.color?.includes("oklch")) el.style.color = "#1e293b"
+              if (styles.backgroundColor?.includes("oklch"))
+                el.style.backgroundColor = "transparent"
+              if (styles.borderColor?.includes("oklch")) el.style.borderColor = "#f1f5f9"
+              if (styles.fill?.includes("oklch")) el.style.fill = "currentColor"
+              if (styles.stroke?.includes("oklch")) el.style.stroke = "currentColor"
+            }
+          },
+        })
 
-      // Cleanup after print dialog closes
-      setTimeout(() => {
-        portal!.innerHTML = ""
-        portal!.style.display = "none"
-        style!.textContent = ""
+        const imgData = canvas.toDataURL("image/jpeg", 0.98)
+        const pdf = new jsPDF({
+          orientation: "landscape",
+          unit: "mm",
+          format: "a5",
+        })
+
+        pdf.addImage(imgData, "JPEG", 0, 0, 210, 148, undefined, "FAST")
+        pdf.save(`GRC-Report-${gem?.gemId || "Medium"}.pdf`)
+      } catch (error) {
+        console.error("Direct PDF Export failed:", error)
+        alert("Enhanced export failed. Falling back to native system print...")
+        window.print()
+      } finally {
         setIsDownloading(false)
-      }, 1500)
+      }
       return
     }
 

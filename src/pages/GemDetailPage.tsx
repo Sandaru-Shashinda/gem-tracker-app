@@ -41,9 +41,11 @@ export function GemDetailPage() {
   const form = useForm<TestFormValues>({
     resolver: zodResolver(testSchema) as any,
     defaultValues: {
-      ri: "",
+      riMin: "",
+      riMax: "",
       sg: "",
-      hardness: "",
+      hardnessMin: "",
+      hardnessMax: "",
       species: "",
       selectedVariety: "",
       itemDescription: "",
@@ -80,9 +82,11 @@ export function GemDetailPage() {
   } = form
 
   // Watch fields for suggestions
-  const watchedRi = watch("ri")
+  const watchedRiMin = watch("riMin")
+  const watchedRiMax = watch("riMax")
   const watchedSg = watch("sg")
-  const watchedHardness = watch("hardness")
+  const watchedHardnessMin = watch("hardnessMin")
+  const watchedHardnessMax = watch("hardnessMax")
   const watchedSpecies = watch("species")
   const watchedVariety = watch("selectedVariety")
 
@@ -90,6 +94,12 @@ export function GemDetailPage() {
   const [showSpeciesList, setShowSpeciesList] = useState(false)
   const [varietySearch, setVarietySearch] = useState("")
   const [showVarietyList, setShowVarietyList] = useState(false)
+  const [crownStyleSearch, setCrownStyleSearch] = useState("")
+  const [showCrownStyleList, setShowCrownStyleList] = useState(false)
+  const [pavilionStyleSearch, setPavilionStyleSearch] = useState("")
+  const [showPavilionStyleList, setShowPavilionStyleList] = useState(false)
+  const [cuttingShapeSearch, setCuttingShapeSearch] = useState("")
+  const [showCuttingShapeList, setShowCuttingShapeList] = useState(false)
   const [suggestions, setSuggestions] = useState<GemReference[]>([])
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [customer, setCustomer] = useState<Customer | null>(null)
@@ -128,6 +138,18 @@ export function GemDetailPage() {
       setValue,
       watchedSpecies,
       watchedVariety,
+      crownStyleSearch,
+      setCrownStyleSearch,
+      showCrownStyleList,
+      setShowCrownStyleList,
+      pavilionStyleSearch,
+      setPavilionStyleSearch,
+      showPavilionStyleList,
+      setShowPavilionStyleList,
+      cuttingShapeSearch,
+      setCuttingShapeSearch,
+      showCuttingShapeList,
+      setShowCuttingShapeList,
     },
   )
 
@@ -138,20 +160,22 @@ export function GemDetailPage() {
         // Senior Logic: If the current stage is empty (no RI), but previous stages have data,
         // we use the previous stage as a base to help the user.
         let baseData = activeData
-        if (!activeData.ri) {
+        if (!activeData.riMin) {
           // For Approval stage only: pre-fill from test2 or test1 if empty
           // Tester 2 gets a CLEAN form — no fallback from Tester 1's data
           if (isApproval) {
-            baseData = gem.test2?.ri ? gem.test2 : gem.test1?.ri ? gem.test1 : activeData
+            baseData = gem.test2?.riMin ? gem.test2 : gem.test1?.riMin ? gem.test1 : activeData
           }
         }
 
         const obs = (baseData as any).observations || (baseData as any).finalObservations || {}
 
         const newValues = {
-          ri: baseData.ri?.toString() || "",
+          riMin: baseData.riMin?.toString() || "",
+          riMax: baseData.riMax?.toString() || "",
           sg: baseData.sg?.toString() || "",
-          hardness: baseData.hardness?.toString() || "",
+          hardnessMin: baseData.hardnessMin?.toString() || "",
+          hardnessMax: baseData.hardnessMax?.toString() || "",
           species: obs.species || "",
           selectedVariety:
             (baseData as any).selectedVariety ||
@@ -189,6 +213,9 @@ export function GemDetailPage() {
         // Sync search states
         setSpeciesSearch(newValues.species)
         setVarietySearch(newValues.selectedVariety)
+        setCrownStyleSearch(newValues.crownStyle)
+        setPavilionStyleSearch(newValues.pavilionStyle)
+        setCuttingShapeSearch(newValues.cuttingShape)
       }
     }
   }, [gem, isT1, isT2, isApproval, reset])
@@ -202,12 +229,14 @@ export function GemDetailPage() {
   // Auto-suggestion Logic
   useEffect(() => {
     const getSuggestions = async () => {
-      if (watchedRi || watchedSg || watchedHardness) {
+      if (watchedRiMin || watchedRiMax || watchedSg || watchedHardnessMin || watchedHardnessMax) {
         try {
           const matches = await referencesApi.searchReferences(
-            watchedRi,
+            watchedRiMin,
+            watchedRiMax,
             watchedSg,
-            watchedHardness,
+            watchedHardnessMin,
+            watchedHardnessMax,
           )
           setSuggestions(matches)
         } catch (err) {
@@ -218,7 +247,7 @@ export function GemDetailPage() {
       }
     }
     getSuggestions()
-  }, [watchedRi, watchedSg, watchedHardness])
+  }, [watchedRiMin, watchedRiMax, watchedSg, watchedHardnessMin, watchedHardnessMax])
 
   if (loading && !gem) {
     return (
@@ -318,9 +347,11 @@ export function GemDetailPage() {
   const copyValues = (source: any) => {
     const obs = source.observations || source.finalObservations || {}
     const newValues = {
-      ri: source.ri?.toString() || "",
+      riMin: source.riMin?.toString() || "",
+      riMax: source.riMax?.toString() || "",
       sg: source.sg?.toString() || "",
-      hardness: source.hardness?.toString() || "",
+      hardnessMin: source.hardnessMin?.toString() || "",
+      hardnessMax: source.hardnessMax?.toString() || "",
       cuttingShape: obs.cuttingShape || obs.shape || "",
       crownStyle: obs.crownStyle || obs.cuttingStyle || obs.cut || "",
       pavilionStyle: obs.pavilionStyle || "",
@@ -348,6 +379,9 @@ export function GemDetailPage() {
     reset(newValues)
     setSpeciesSearch(obs.species || "")
     setVarietySearch(source.selectedVariety || source.finalVariety || obs.variety || "")
+    setCrownStyleSearch(obs.crownStyle || obs.cuttingStyle || obs.cut || "")
+    setPavilionStyleSearch(obs.pavilionStyle || "")
+    setCuttingShapeSearch(obs.cuttingShape || obs.shape || "")
   }
 
   return (
@@ -365,7 +399,7 @@ export function GemDetailPage() {
             user={user}
             customer={customer}
             suggestions={suggestions}
-            watchedHardness={watchedHardness as string}
+            watchedHardness={watchedHardnessMin as string}
             onReset={reset}
             onWatch={watch}
             onSetSpeciesSearch={setSpeciesSearch}

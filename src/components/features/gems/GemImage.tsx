@@ -78,8 +78,11 @@ export function GemImage({ imageId, className, alt }: GemImageProps) {
 
   if (loading) {
     return (
-      <div className={cn("flex items-center justify-center bg-slate-50 animate-pulse", className)}>
-        <Loader2 className='w-4 h-4 animate-spin text-slate-300' />
+      <div
+        className={cn("flex items-center justify-center", className)}
+        style={{ backgroundColor: "#f8fafc" }}
+      >
+        <Loader2 className='w-4 h-4 animate-spin' style={{ color: "#cbd5e1" }} />
       </div>
     )
   }
@@ -87,12 +90,20 @@ export function GemImage({ imageId, className, alt }: GemImageProps) {
   if (error || !image || !image.url) {
     return (
       <div
-        className={cn("flex items-center justify-center bg-slate-100 text-slate-400", className)}
+        className={cn("flex items-center justify-center", className)}
+        style={{ backgroundColor: "#f1f5f9", color: "#94a3b8" }}
       >
         <Search className='w-4 h-4' />
       </div>
     )
   }
 
-  return <img src={image.url} alt={alt || image.name} className={cn("object-cover", className)} />
+  return (
+    <img
+      src={image.url}
+      alt={alt || image.name}
+      className={cn("object-cover", className)}
+      style={{ objectFit: className?.includes("object-contain") ? "contain" : "cover" }}
+    />
+  )
 }

@@ -185,9 +185,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, stage: "test1" | "test2", data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        ri: parseFloat(data.ri),
+        riMin: parseFloat(data.riMin),
+        riMax: parseFloat(data.riMax),
         sg: parseFloat(data.sg),
-        hardness: parseFloat(data.hardness),
+        hardnessMin: parseFloat(data.hardnessMin),
+        hardnessMax: parseFloat(data.hardnessMax),
         selectedVariety: data.selectedVariety,
         observations: {
           cuttingShape: data.cuttingShape,
@@ -230,9 +232,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        ri: parseFloat(data.ri),
+        riMin: parseFloat(data.riMin),
+        riMax: parseFloat(data.riMax),
         sg: parseFloat(data.sg),
-        hardness: parseFloat(data.hardness),
+        hardnessMin: parseFloat(data.hardnessMin),
+        hardnessMax: parseFloat(data.hardnessMax),
         finalVariety: data.selectedVariety,
         itemDescription: data.itemDescription || data.comments,
         finalObservations: {
@@ -281,9 +285,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
       let update: any = {}
       if (stage === "finalApproval") {
         update = {
-          ri: parseFloat(data.ri),
+          riMin: parseFloat(data.riMin),
+          riMax: parseFloat(data.riMax),
           sg: parseFloat(data.sg),
-          hardness: parseFloat(data.hardness),
+          hardnessMin: parseFloat(data.hardnessMin),
+          hardnessMax: parseFloat(data.hardnessMax),
           finalVariety: data.selectedVariety,
           itemDescription: data.itemDescription || data.comments,
           finalObservations: {
@@ -314,9 +320,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
         }
       } else {
         update = {
-          ri: parseFloat(data.ri),
+          riMin: parseFloat(data.riMin),
+          riMax: parseFloat(data.riMax),
           sg: parseFloat(data.sg),
-          hardness: parseFloat(data.hardness),
+          hardnessMin: parseFloat(data.hardnessMin),
+          hardnessMax: parseFloat(data.hardnessMax),
           selectedVariety: data.selectedVariety,
           observations: {
             cuttingShape: data.cuttingShape,
