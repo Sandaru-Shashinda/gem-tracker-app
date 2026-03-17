@@ -27,9 +27,11 @@ export const testSchema = z.object({
   comments: z.string().optional(),
   itemDescription: z.string().optional(),
   specialNote: z.string().optional(),
+  treatment: z.string().optional(),
   colour: z.string().optional(),
   colourGrade: z.number().optional(),
   finalGrade: z.number().optional(),
+  isHeated: z.boolean().default(false).optional(),
 })
 
 export type TestFormValues = z.infer<typeof testSchema>

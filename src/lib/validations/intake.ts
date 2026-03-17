@@ -7,6 +7,7 @@ export const intakeSchema = z.object({
   customerId: z.string().optional(),
   testerId1: z.string().min(1, "Tester 1 is required"),
   testerId2: z.string().min(1, "Tester 2 is required"),
+  reportTypes: z.array(z.string()).min(1, "At least one report type is required"),
 })
 
 export type IntakeFormValues = z.infer<typeof intakeSchema>

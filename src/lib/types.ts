@@ -65,9 +65,11 @@ export interface ObservationData {
   comments?: string
   itemDescription?: string
   specialNote?: string
+  treatment?: string
   colour?: string
   colourGrade?: number
   finalGrade?: number
+  isHeated?: boolean
 }
 
 export interface Gem {
@@ -88,6 +90,7 @@ export interface Gem {
   currentAssignee?: string
   assignedTester1?: string
   assignedTester2?: string
+  reportTypes?: string[]
 
   intake: {
     helperId?: string

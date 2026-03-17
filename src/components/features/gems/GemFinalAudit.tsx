@@ -170,6 +170,14 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
                 {gem.finalApproval.finalObservations?.specialNote || "No special notes provided"}
               </p>
             </div>
+            <div className='p-5 bg-purple-50 rounded-2xl border border-purple-100'>
+              <p className='text-[10px] uppercase font-black text-purple-600 mb-2 tracking-widest'>
+                Treatment
+              </p>
+              <p className='text-sm text-slate-600 font-medium'>
+                {gem.finalApproval.finalObservations?.treatment || "No specific treatment"}
+              </p>
+            </div>
           </div>
         </div>
 

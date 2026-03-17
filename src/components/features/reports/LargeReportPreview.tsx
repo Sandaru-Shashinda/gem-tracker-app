@@ -4,6 +4,7 @@ import { ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Gem } from "@/lib/types"
 import { GemImage } from "../gems/GemImage"
+import signatureImg from "@/assets/signature.png"
 
 interface LargeReportPreviewProps {
   gem: Gem
@@ -157,10 +158,20 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
                 <h3 className={`${fontBase} font-bold text-[14px] mb-3`}>
                   Special note from the Gemmologist:
                 </h3>
-                <p className={`${fontBase} text-[13px] leading-[1.6] text-justify`}>
+                <p className={`${fontBase} text-[13px] leading-[1.6] text-justify md:mb-4`}>
                   {obs.specialNote ||
                     "This is a rare and highly valuable gemstone within the global gem market. Based on the presence of classic three-phase (multiphase) inclusions, including Colombian-type inclusions, the stone is identified as originating from Colombia. These jagged multiphase inclusions characteristically host a gas bubble along with one or more cubic crystals."}
                 </p>
+                {obs.treatment && (
+                  <>
+                    <h3 className={`${fontBase} font-bold text-[14px] mb-3 mt-4`}>
+                      Treatment details:
+                    </h3>
+                    <p className={`${fontBase} text-[13px] leading-[1.6] text-justify`}>
+                      {obs.treatment}
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Center Gem Display */}
@@ -220,15 +231,11 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
                 {/* Signature Block */}
                 <div className='flex flex-col items-end'>
                   <div className='w-[180px] h-[60px] relative mb-2'>
-                    {/* Signature Image Placeholder */}
-                    <svg viewBox='0 0 200 80' className='w-full h-full text-[#1a1a1a]'>
-                      <path
-                        d='M20,60 C50,20 80,70 120,40 S180,60 190,30'
-                        fill='none'
-                        stroke='currentColor'
-                        strokeWidth='1.5'
-                      />
-                    </svg>
+                    <img 
+                      src={signatureImg}
+                      alt='Signature'
+                      className='w-full h-full object-contain'
+                    />
                   </div>
                   <div className='text-right border-t border-dotted border-[#999] pt-2 w-[220px]'>
                     <p className={`${fontBase} font-bold text-[13px] text-[#1a1a1a]`}>

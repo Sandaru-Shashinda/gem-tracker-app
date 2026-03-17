@@ -395,6 +395,13 @@ export function getFormFieldsConfig({
       placeholder: "Colombia",
       className: "",
     },
+    {
+      name: "isHeated",
+      label: "Is Heated",
+      type: "checkbox",
+      placeholder: "Check if the gem is heated",
+      className: "",
+    },
   ]
 
   const gradingFields: FieldConfig[] = [
@@ -486,6 +493,13 @@ export function getFormFieldsConfig({
       label: "Special Note",
       type: "textarea",
       placeholder: "Special internal notes...",
+      rows: 4,
+    },
+    {
+      name: "treatment",
+      label: "Treatment",
+      type: "textarea",
+      placeholder: "Treatment details...",
       rows: 4,
     },
   ]

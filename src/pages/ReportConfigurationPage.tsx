@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, Loader2, Download, Printer, Save, Check } from "lucide-react"
+import { ArrowLeft, Loader2, Download, Save, Check } from "lucide-react"
 import { useGem } from "@/hooks/useGemStore"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Card } from "@/components/ui/card"
@@ -16,6 +16,7 @@ import { MediumReportPreview } from "@/components/features/reports/MediumReportP
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
 import { jsPDF } from "jspdf"
 import html2canvas from "html2canvas"
+import { toJpeg } from "html-to-image"
 
 interface Report {
   _id: string
@@ -154,6 +155,61 @@ export function ReportConfigurationPage() {
   }
 
   const handleDownload = async () => {
+    if (size === "small") {
+      const element = document.getElementById("small-report-back-view")
+      if (!element) {
+        alert("Preview not ready.")
+        return
+      }
+
+      try {
+        setIsDownloading(true)
+        // Ensure images are loaded before capture
+        await new Promise((resolve) => setTimeout(resolve, 500))
+
+        // Temporarily make the back view fully visible for capture
+        const origPosition = element.style.position
+        const origOpacity = element.style.opacity
+        const origZIndex = element.style.zIndex
+        const origPointerEvents = element.style.pointerEvents
+        element.style.position = "relative"
+        element.style.opacity = "1"
+        element.style.zIndex = "1"
+        element.style.pointerEvents = "auto"
+
+        // Use html-to-image (SVG foreignObject approach — no CSS color parsing)
+        const dataUrl = await toJpeg(element, {
+          quality: 1.0,
+          pixelRatio: 4, // 300+ DPI for debit card size print
+          backgroundColor: "#ffffff",
+          width: 640,
+          height: 400,
+          canvasWidth: 640 * 4,
+          canvasHeight: 400 * 4,
+        })
+
+        // Restore original visibility
+        element.style.position = origPosition
+        element.style.opacity = origOpacity
+        element.style.zIndex = origZIndex
+        element.style.pointerEvents = origPointerEvents
+
+        // Trigger download
+        const link = document.createElement("a")
+        link.download = `GRC-Report-${gem?.gemId || "Small"}-Back-Print.jpg`
+        link.href = dataUrl
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } catch (error) {
+        console.error("JPG Export failed:", error)
+        alert("Export failed.")
+      } finally {
+        setIsDownloading(false)
+      }
+      return
+    }
+
     if (size === "medium") {
       const element = document.getElementById("medium-report-capture-inner")
       if (!element) {
@@ -328,24 +384,18 @@ export function ReportConfigurationPage() {
                   <span className='text-sm font-medium'>Configuration Saved</span>
                 </div>
                 <h3 className='text-lg font-semibold'>Actions</h3>
-                <div className='grid grid-cols-2 gap-4'>
-                  <Button variant='outline' className='w-full' onClick={() => window.print()}>
-                    <Printer className='w-4 h-4 mr-2' />
-                    Print
-                  </Button>
-                  <Button
-                    className='w-full bg-emerald-600 hover:bg-emerald-700'
-                    onClick={handleDownload}
-                    disabled={isDownloading}
-                  >
-                    {isDownloading ? (
-                      <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                    ) : (
-                      <Download className='w-4 h-4 mr-2' />
-                    )}
-                    Download PDF
-                  </Button>
-                </div>
+                <Button
+                  className='w-full bg-emerald-600 hover:bg-emerald-700 h-10'
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                  ) : (
+                    <Download className='w-4 h-4 mr-2' />
+                  )}
+                  {size === "small" ? "Download Print Ready JPG" : "Download"}
+                </Button>
               </div>
             )}
           </Card>
@@ -356,8 +406,8 @@ export function ReportConfigurationPage() {
               <div className='border rounded-xl overflow-auto shadow-lg bg-white relative max-h-[calc(100vh-200px)]'>
                 <div
                   className={`
-                        origin-top transform transition-all p-8
-                        ${size === "small" ? "scale-75 max-w-sm mx-auto shadow-2xl my-10" : ""}
+                        origin-top transform transition-all p-8 flex justify-center
+                        ${size === "small" ? "scale-90 w-full max-w-[800px] mx-auto my-4" : ""}
                         ${size === "medium" ? "scale-[0.55] w-[1000px] h-[700px] mx-auto origin-top mt-10 mb-[-100px]" : ""}
                         ${size === "large" ? "scale-[0.5] w-[1200px] min-h-[950px] mx-auto origin-top mt-4 mb-[-400px]" : ""}
                     `}

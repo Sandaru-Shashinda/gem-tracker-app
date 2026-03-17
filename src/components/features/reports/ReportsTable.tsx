@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import DataTable from "@/components/shared/data-table/DataTable"
 import { RefreshCw } from "lucide-react"
 import { StatusBadge } from "@/components/shared/common/StatusBadge"
+import { Badge } from "@/components/ui/badge"
 
 interface Report {
   _id: string
@@ -14,6 +15,7 @@ interface Report {
     color: string
     weight: number
     status: string
+    reportTypes?: string[]
   }
   reportType: string
   reportUrl: string
@@ -54,6 +56,25 @@ export function ReportsTable({
       columnHelper.accessor("gemId.status", {
         header: "Gem Status",
         cell: (info) => <StatusBadge status={info.getValue()} />,
+      }),
+      columnHelper.accessor("gemId.reportTypes", {
+        header: "Requested Types",
+        cell: (info) => {
+          const reportTypes = info.getValue() || []
+          return (
+            <div className='flex flex-wrap gap-1'>
+              {reportTypes.map((type) => (
+                <Badge
+                  key={type}
+                  variant='outline'
+                  className='capitalize text-[10px] px-1.5 py-0'
+                >
+                  {type}
+                </Badge>
+              ))}
+            </div>
+          )
+        },
       }),
       columnHelper.accessor("reportType", {
         header: "Type",

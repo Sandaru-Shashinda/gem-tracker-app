@@ -224,9 +224,26 @@ export function GemIntakeAndHistory({
           </div>
           <div className='flex border-b border-slate-200 pb-1'>
             <span className='text-slate-500 pr-2'>Weight:</span>{" "}
-            <span className='font-bold'>{gem.weight}</span>
+            <span className='font-bold'>{gem.weight}ct</span>
           </div>
-          <div className='pt-2'>
+          <div className='flex flex-col border-b border-slate-200 pb-1 col-span-2'>
+            <span className='text-[10px] uppercase font-bold text-slate-400 mb-1'>Report Types</span>
+            <div className='flex gap-1.5'>
+              {(gem.reportTypes || []).map((type) => (
+                <Badge
+                  key={type}
+                  variant='outline'
+                  className='capitalize text-[10px] bg-white text-blue-600 border-blue-100'
+                >
+                  {type}
+                </Badge>
+              ))}
+              {(!gem.reportTypes || gem.reportTypes.length === 0) && (
+                <span className='text-xs text-slate-400 italic'>None selected</span>
+              )}
+            </div>
+          </div>
+          <div className='pt-2 col-span-2'>
             <p className='text-[10px] uppercase font-bold text-slate-400 mb-1'>Description</p>
             <p className='text-xs text-slate-600 leading-relaxed'>{gem.itemDescription}</p>
           </div>
@@ -566,6 +583,17 @@ export function GemIntakeAndHistory({
                       </p>
                     </div>
                   )}
+                  {/* Treatment */}
+                  {gem.test1.observations?.treatment && (
+                    <div className='bg-purple-50/50 p-2.5 rounded-lg border border-purple-100/50'>
+                      <p className='text-[9px] font-bold text-purple-600/80 uppercase mb-1'>
+                        Treatment
+                      </p>
+                      <p className='text-[10px] text-purple-800 leading-relaxed'>
+                        {gem.test1.observations?.treatment}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 {gem.test1.correctionRequested && (
                   <div className='mt-2 p-2 bg-red-50 rounded border border-red-100'>
@@ -828,6 +856,17 @@ export function GemIntakeAndHistory({
                       </p>
                       <p className='text-[10px] text-orange-800 leading-relaxed'>
                         {gem.test2.observations?.specialNote}
+                      </p>
+                    </div>
+                  )}
+                  {/* Treatment */}
+                  {gem.test2.observations?.treatment && (
+                    <div className='bg-purple-50/50 p-2.5 rounded-lg border border-purple-100/50'>
+                      <p className='text-[9px] font-bold text-purple-600/80 uppercase mb-1'>
+                        Treatment
+                      </p>
+                      <p className='text-[10px] text-purple-800 leading-relaxed'>
+                        {gem.test2.observations?.treatment}
                       </p>
                     </div>
                   )}

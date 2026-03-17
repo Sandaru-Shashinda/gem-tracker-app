@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,6 +69,7 @@ export function IntakePage() {
       customerId: "",
       testerId1: "",
       testerId2: "",
+      reportTypes: [],
     },
     mode: "onChange",
   })
@@ -116,6 +118,7 @@ export function IntakePage() {
               (gem.assignedTester2 as any)?.id ||
               gem.assignedTester2 ||
               "",
+            reportTypes: gem.reportTypes || [],
           })
 
           const gemImageIds = gem.images && gem.images.length > 0 ? gem.images : []
@@ -445,6 +448,47 @@ export function IntakePage() {
                     {errors.customerId && (
                       <p className='text-xs text-red-500 font-medium'>
                         {errors.customerId.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className='space-y-3 pt-2'>
+                    <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>
+                      Report Types
+                    </label>
+                    <div className='flex flex-wrap gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100'>
+                      {["small", "medium", "large"].map((type) => (
+                        <Controller
+                          key={type}
+                          name='reportTypes'
+                          control={control}
+                          render={({ field }) => (
+                            <div className='flex items-center space-x-2'>
+                              <Checkbox
+                                id={`report-type-${type}`}
+                                checked={field.value?.includes(type)}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || []
+                                  const updated = checked
+                                    ? [...current, type]
+                                    : current.filter((t: string) => t !== type)
+                                  field.onChange(updated)
+                                }}
+                              />
+                              <label
+                                htmlFor={`report-type-${type}`}
+                                className='text-sm capitalize font-bold text-slate-700 cursor-pointer'
+                              >
+                                {type}
+                              </label>
+                            </div>
+                          )}
+                        />
+                      ))}
+                    </div>
+                    {errors.reportTypes && (
+                      <p className='text-xs text-red-500 font-medium'>
+                        {errors.reportTypes.message}
                       </p>
                     )}
                   </div>

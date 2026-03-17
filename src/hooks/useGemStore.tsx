@@ -28,6 +28,7 @@ interface GemContextType {
       testerId2?: string
       customerId?: string
       status?: GemStatus
+      reportTypes?: string[]
     },
     images?: File[],
     id?: string,
@@ -137,6 +138,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
         testerId2?: string
         customerId?: string
         status?: GemStatus
+        reportTypes?: string[]
       },
       images?: File[],
       id?: string,
@@ -207,6 +209,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
           comments: data.comments,
           itemDescription: data.itemDescription,
           specialNote: data.specialNote,
+          treatment: data.treatment,
           colour: data.colour,
           colourGrade: data.colourGrade,
           grade: data.grade,
@@ -255,6 +258,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
           comments: data.comments,
           itemDescription: data.itemDescription,
           specialNote: data.specialNote,
+          treatment: data.treatment,
           colour: data.colour,
           colourGrade: data.colourGrade,
           grade: data.grade,
@@ -308,6 +312,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
             comments: data.comments,
             itemDescription: data.itemDescription,
             specialNote: data.specialNote,
+            treatment: data.treatment,
             colour: data.colour,
             colourGrade: data.colourGrade,
             grade: data.grade,
@@ -342,6 +347,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
             comments: data.comments,
             itemDescription: data.itemDescription,
             specialNote: data.specialNote,
+            treatment: data.treatment,
             colour: data.colour,
             colourGrade: data.colourGrade,
             grade: data.grade,

@@ -2,10 +2,11 @@ import { type ReactNode } from "react"
 import { type UseFormRegister, type FieldErrors, Controller, type Control } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Star } from "lucide-react"
 import { type TestFormValues } from "@/lib/validations/test"
 
-export type FieldType = "text" | "number" | "textarea" | "select" | "custom-search" | "combobox" | "rating"
+export type FieldType = "text" | "number" | "textarea" | "select" | "custom-search" | "combobox" | "rating" | "checkbox"
 
 export interface SelectOption {
   value: string
@@ -77,7 +78,7 @@ export function FormField({ config, register, errors, control, setValue }: FormF
 
   return (
     <div className={`space-y-1.5 ${type === "custom-search" || type === "combobox" ? "relative" : ""} ${className || ""}`}>
-      <label className='text-xs font-bold text-slate-500 uppercase'>{label}</label>
+      {type !== "checkbox" && <label className='text-xs font-bold text-slate-500 uppercase'>{label}</label>}
 
       {type === "text" && <Input placeholder={placeholder} {...register(name)} />}
 
@@ -253,6 +254,24 @@ export function FormField({ config, register, errors, control, setValue }: FormF
                   onClick={() => field.onChange(star)}
                 />
               ))}
+            </div>
+          )}
+        />
+      )}
+
+      {type === "checkbox" && control && (
+        <Controller
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <div className='flex items-center gap-2 pt-1'>
+              <Checkbox
+                checked={field.value as boolean}
+                onCheckedChange={field.onChange}
+              />
+              <label className='text-sm text-slate-700 font-medium leading-none cursor-pointer' onClick={() => field.onChange(!field.value)}>
+                {placeholder || label}
+              </label>
             </div>
           )}
         />

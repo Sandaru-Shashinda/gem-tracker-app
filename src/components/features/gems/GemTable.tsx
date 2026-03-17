@@ -5,6 +5,7 @@ import { type Gem, GEM_STATUSES } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
 import { useNavigate } from "react-router-dom"
 import { StatusBadge } from "@/components/shared/common/StatusBadge"
+import { Badge } from "@/components/ui/badge"
 
 interface GemTableProps {
   data: Gem[]
@@ -65,6 +66,25 @@ export function GemTable({
           return (
             <div className='text-sm text-slate-500'>
               {gem.color} / {gem.weight}ct
+            </div>
+          )
+        },
+      }),
+      columnHelper.accessor("reportTypes", {
+        header: "Report Types",
+        cell: (info) => {
+          const reportTypes = info.getValue() || []
+          return (
+            <div className='flex flex-wrap gap-1 max-w-[150px]'>
+              {reportTypes.map((type) => (
+                <Badge
+                  key={type}
+                  variant='secondary'
+                  className='capitalize text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 border-none'
+                >
+                  {type}
+                </Badge>
+              ))}
             </div>
           )
         },

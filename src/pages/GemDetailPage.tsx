@@ -68,7 +68,9 @@ export function GemDetailPage() {
       spectroscopy: "",
       comments: "",
       specialNote: "",
+      treatment: "",
       clarityEnhancement: "",
+      isHeated: false,
     },
     mode: "onChange",
   })
@@ -186,6 +188,7 @@ export function GemDetailPage() {
           itemDescription:
             obs.itemDescription || (baseData as any).itemDescription || gem.itemDescription || "",
           specialNote: obs.specialNote || "",
+          treatment: obs.treatment || "",
           cuttingShape: obs.cuttingShape || obs.shape || "",
           crownStyle: obs.crownStyle || obs.cuttingStyle || obs.cut || "",
           pavilionStyle: obs.pavilionStyle || "",
@@ -204,6 +207,7 @@ export function GemDetailPage() {
           colour: obs.colour || gem.color || "",
           colourGrade: Number(obs.colourGrade) || 0,
           finalGrade: Number(obs.finalGrade) || 0,
+          isHeated: obs.isHeated || (baseData as any).isHeated || false,
         }
 
         reset(newValues)
@@ -375,6 +379,8 @@ export function GemDetailPage() {
       comments: obs.comments || "",
       itemDescription: obs.itemDescription || source.itemDescription || "",
       specialNote: obs.specialNote || "",
+      treatment: obs.treatment || "",
+      isHeated: obs.isHeated || source.isHeated || false,
     }
     reset(newValues)
     setSpeciesSearch(obs.species || "")
