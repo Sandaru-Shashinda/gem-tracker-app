@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import type { Gem } from "@/lib/types"
 import { GemImage } from "../gems/GemImage"
 import turtlesLogo from "@/assets/Turtles.png"
-import signatureImg from "@/assets/signature.png"
+import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo.png"
 
 interface SmallReportPreviewProps {
@@ -230,9 +230,9 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 5,
-                  fontSize: "12px",
-                  marginTop: "-55px",
+                  gap: 4,
+                  fontSize: "14px",
+                  marginTop: "-57px",
                   padding: "10px 0",
                   fontFamily: "Arial, Helvetica, sans-serif",
                   color: "#1a1a1a",
@@ -264,7 +264,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                         textOverflow: "ellipsis",
                       }}
                     >
-                      {row.value || "—"}
+                      {row.value || " "}
                     </span>
                   </div>
                 ))}
@@ -278,8 +278,9 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                 style={{
                   height: "450px",
                   objectFit: "contain",
-                  marginTop: "-160px",
-                  marginLeft: "-103px",
+                  marginTop: "-22px",
+                  marginLeft: "-12px",
+                  maxWidth: "58%",
                 }}
               />
             </div>

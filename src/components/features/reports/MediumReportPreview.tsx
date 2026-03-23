@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import type { Gem } from "@/lib/types"
 import { GemImage } from "../gems/GemImage"
 import turtlesLogo from "@/assets/Turtles.png"
-import signatureImg from "@/assets/signature.png"
+import signatureImg from "@/assets/signature1.png"
 
 interface MediumReportPreviewProps {
   gem: Gem
@@ -485,12 +485,13 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
       >
         <div
           style={{
-            width: "320px",
-            height: "300px",
+            width: "220px",
+            height: "200px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             marginBottom: "15px",
+            backgroundColor: "#f5f5f5",
           }}
         >
           {firstImageId ? (
