@@ -428,7 +428,15 @@ export function GemDetailPage() {
           <div className='lg:col-span-3'>
             {(isT1 || isT2 || canApprove) && !isHelper ? (
               <Card className='p-6'>
-                <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") {
+                      e.preventDefault()
+                    }
+                  }}
+                  className='space-y-8'
+                >
                   <GemAnalysisForm
                     form={form}
                     scientificFields={scientificFields}

@@ -5,7 +5,7 @@ import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
 import { GemImage } from "../gems/GemImage"
 import turtlesLogo from "@/assets/Turtles.png"
-import signatureImg from "@/assets/signature.png"
+import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo.png"
 
 // A4 at 96 dpi → 794 × 1123 px  (portrait)
@@ -58,7 +58,11 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
   }
 
   return (
-    <div ref={containerRef} className='flex flex-col w-full max-w-[860px] mx-auto pb-8 overflow-hidden' style={{ colorScheme: "light" }}>
+    <div
+      ref={containerRef}
+      className='flex flex-col w-full max-w-[860px] mx-auto pb-8 overflow-hidden'
+      style={{ colorScheme: "light" }}
+    >
       {/* Download button */}
       <div className='flex items-center justify-end w-full mb-4 print:hidden'>
         <button
@@ -126,10 +130,12 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
 
   const formatDate = (d?: string | Date) =>
-    d ? new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    d
+      ? new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+      : new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
 
   const COURIER: React.CSSProperties = {
-    fontFamily: "'Courier New', Courier, monospace",
+    fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
     color: "#1a1a1a",
   }
 
@@ -177,17 +183,25 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
       </div>
 
       {/* ── HEADER ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px", position: "relative", zIndex: 2 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "28px",
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
         {/* GRC Logo */}
-        <div style={{ width: "120px" }}>
+        <div style={{ width: "220px" }}>
           <img src={grcMemoLogo} alt='GRC Logo' style={{ height: "90px", objectFit: "contain" }} />
         </div>
-
         {/* Title block */}
         <div style={{ textAlign: "center" }}>
           <h1
             style={{
-              fontFamily: "'Courier New', Courier, monospace",
+              fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
               fontSize: "18px",
               fontWeight: 700,
               color: "#C5A259",
@@ -205,46 +219,85 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
             {formatDate(gem.updatedAt)}
           </p>
         </div>
-
         <div style={{ width: "120px" }} /> {/* spacer */}
       </div>
 
       {/* ── DIVIDER ── */}
-      <div style={{ height: "1px", backgroundColor: "#ddd", marginBottom: "26px", position: "relative", zIndex: 2 }} />
+      <div
+        style={{
+          height: "1px",
+          backgroundColor: "#ddd",
+          marginBottom: "26px",
+          position: "relative",
+          zIndex: 2,
+        }}
+      />
 
       {/* ── DETAILS SECTION ── */}
       <div style={{ marginBottom: "6px", position: "relative", zIndex: 2 }}>
-        <SectionTitle>DETAILS</SectionTitle>
+        <Title>DETAILS</Title>
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "2px 32px",
+            display: "flex",
+            gap: "32px",
             ...COURIER,
             fontSize: "11.5px",
             fontWeight: 600,
             marginTop: "8px",
           }}
         >
-          <TypewriterRow label='Item Description' value={finalData.itemDescription || obs.itemDescription || "One loose stone"} />
-          <TypewriterRow label='Measurements' value={obs.messurementX ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm` : undefined} />
-          <TypewriterRow label='Weight' value={gem.weight ? `${gem.weight.toFixed(2)} ct` : undefined} />
-          <TypewriterRow label='Transparency' value={obs.transparency} />
-          <TypewriterRow label='Shape' value={obs.shape || obs.cuttingShape} />
-          <TypewriterRow label='Color' value={gem.color} />
-          <TypewriterRow label='Cutting Style: Crown' value={obs.cut} />
-          <TypewriterRow label='Cutting Style: Pavilion' value={obs.cuttingStyle} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
+            <TypewriterRow
+              label='Item Description'
+              value={finalData.itemDescription || obs.itemDescription || "One loose stone"}
+            />
+            <TypewriterRow
+              label='Weight'
+              value={gem.weight ? `${gem.weight.toFixed(2)} ct` : undefined}
+            />
+            <TypewriterRow label='Shape' value={obs.shape || obs.cuttingShape} />
+            <TypewriterRow label='Cutting Style: Crown' value={obs.crownStyle} />
+            <TypewriterRow label='Cutting Style: Pavilion' value={obs.pavilionStyle} />
+          </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
+            <TypewriterRow
+              label='Measurements'
+              value={
+                obs.messurementX
+                  ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm`
+                  : undefined
+              }
+            />
+            <TypewriterRow label='Transparency' value={obs.transparency} />
+            <TypewriterRow label='Color' value={gem.color} />
+          </div>
         </div>
       </div>
 
       {/* ── DIVIDER ── */}
-      <div style={{ height: "1px", backgroundColor: "#ddd", margin: "18px 0", position: "relative", zIndex: 2 }} />
+      <div
+        style={{
+          height: "1px",
+          backgroundColor: "#ddd",
+          margin: "18px 0",
+          position: "relative",
+          zIndex: 2,
+        }}
+      />
 
       {/* ── RESULTS + TREATMENT ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 40px", position: "relative", zIndex: 2 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "0 40px",
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
         {/* Results */}
         <div>
-          <SectionTitle>RESULTS</SectionTitle>
+          <Title>RESULTS</Title>
           <div
             style={{
               ...COURIER,
@@ -263,26 +316,79 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
           </div>
 
           {/* Comments paragraph */}
-          <p style={{ ...COURIER, fontSize: "11px", fontWeight: 600, marginTop: "12px", lineHeight: 1.55, textAlign: "justify" }}>
+          <p
+            style={{
+              ...COURIER,
+              fontSize: "11px",
+              fontWeight: 600,
+              marginTop: "12px",
+              lineHeight: 1.55,
+              textAlign: "justify",
+            }}
+          >
             Comments.{" "}
             {obs.comments ||
               "The geographic origin and color description are an expert opinion based on a collection of observations and analytical data."}
           </p>
+        </div>
+
+        {/* Treatment */}
+        <div>
+          <Title>TREATMENT</Title>
+          <p style={{ ...COURIER, fontSize: "11.5px", fontWeight: 600, marginTop: "8px" }}>
+            {obs.treatment || "None."}
+          </p>
+          {obs.specialNote && (
+            <>
+              <Title style={{ marginTop: "20px" }}>SPECIAL NOTE</Title>
+              <p
+                style={{
+                  ...COURIER,
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  marginTop: "8px",
+                  lineHeight: 1.55,
+                  textAlign: "justify",
+                }}
+              >
+                {obs.specialNote}
+              </p>
+            </>
+          )}
 
           {/* Clarity table */}
-          <div style={{ marginTop: "14px" }}>
+          <div style={{ marginTop: "20px" }}>
             <table style={{ borderCollapse: "collapse", width: "100%" }}>
               <thead>
                 <tr>
                   <td style={tdStyle} rowSpan={2}></td>
-                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>Loupe Clean</td>
-                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>Eye Clean</td>
-                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>Visible Inclusions</td>
-                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>Highly Included</td>
+                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>
+                    Loupe Clean
+                  </td>
+                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>
+                    Eye Clean
+                  </td>
+                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>
+                    Visible Inclusions
+                  </td>
+                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>
+                    Highly Included
+                  </td>
                 </tr>
                 <tr>
-                  {["Minor\nInclusions", "Highly\nIncluded", "Minor\nInclusions", "Highly\nIncluded", "Minor\nInclusions", "Highly\nIncluded", "Minor\nInclusions", "Highly\nIncluded"].map((t, i) => (
-                    <td key={i} style={tdStyle}>{t}</td>
+                  {[
+                    "Minor\nInclusions",
+                    "Highly\nIncluded",
+                    "Minor\nInclusions",
+                    "Highly\nIncluded",
+                    "Minor\nInclusions",
+                    "Highly\nIncluded",
+                    "Minor\nInclusions",
+                    "Highly\nIncluded",
+                  ].map((t, i) => (
+                    <td key={i} style={tdStyle}>
+                      {t}
+                    </td>
                   ))}
                 </tr>
               </thead>
@@ -290,28 +396,14 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
                 <tr>
                   <td style={{ ...tdStyle, fontWeight: 700 }}>Eye</td>
                   {["LC 1", "LC 2", "EC 1", "EC 2", "vl 1", "vl 2", "HI 1", "HI 2"].map((g, i) => (
-                    <td key={i} style={tdStyle}>{g}</td>
+                    <td key={i} style={tdStyle}>
+                      {g}
+                    </td>
                   ))}
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* Treatment */}
-        <div>
-          <SectionTitle>TREATMENT</SectionTitle>
-          <p style={{ ...COURIER, fontSize: "11.5px", fontWeight: 600, marginTop: "8px" }}>
-            {obs.treatment || "None."}
-          </p>
-          {obs.specialNote && (
-            <>
-              <SectionTitle style={{ marginTop: "20px" }}>SPECIAL NOTE</SectionTitle>
-              <p style={{ ...COURIER, fontSize: "11px", fontWeight: 600, marginTop: "8px", lineHeight: 1.55, textAlign: "justify" }}>
-                {obs.specialNote}
-              </p>
-            </>
-          )}
         </div>
       </div>
 
@@ -319,121 +411,104 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
           flex: 1,
-          justifyContent: "flex-end",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
           position: "relative",
           zIndex: 2,
+          paddingTop: "20px",
         }}
       >
-        {/* Image box */}
-        <div
-          style={{
-            width: "170px",
-            height: "160px",
-            border: "1px solid #aaa",
-            backgroundColor: "#f9f9f9",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            marginTop: "20px",
-          }}
-        >
-          {firstImageId ? (
-            <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
-          ) : (
-            <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
-          )}
-        </div>
-        <p style={{ fontFamily: "Arial, sans-serif", fontSize: "9px", color: "#888", marginTop: "4px", marginBottom: "8px" }}>
-          Image is approximate
-        </p>
-
-        {/* Gem name + weight */}
-        <div style={{ textAlign: "center", marginBottom: "18px" }}>
-          <p
+        {/* Left: Image + name */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+          {/* Image box */}
+          <div
             style={{
-              fontFamily: "'Courier New', Courier, monospace",
-              fontSize: "22px",
-              fontWeight: 900,
-              color: "#C5A259",
-              margin: 0,
-              letterSpacing: "0.5px",
+              width: "170px",
+              height: "160px",
+              border: "1px solid #aaa",
+              backgroundColor: "#f9f9f9",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
             }}
           >
-            {finalData.finalVariety || obs.variety || "—"}
+            {firstImageId ? (
+              <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
+            ) : (
+              <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
+            )}
+          </div>
+          <p
+            style={{
+              fontFamily: "Arial, sans-serif",
+              fontSize: "9px",
+              color: "#888",
+              marginTop: "4px",
+              marginBottom: "8px",
+            }}
+          >
+            Image is approximate
           </p>
-          {gem.weight && (
+
+          {/* Gem name + weight */}
+          <div style={{ textAlign: "left" }}>
             <p
               style={{
-                fontFamily: "'Courier New', Courier, monospace",
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "#444",
-                margin: "3px 0 0",
+                fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
+                fontSize: "22px",
+                fontWeight: 900,
+                color: "#C5A259",
+                margin: 0,
+                letterSpacing: "0.5px",
               }}
             >
-              {gem.weight.toFixed(2)} ct
+              {finalData.finalVariety || obs.variety || "—"}
             </p>
-          )}
+            {gem.weight && (
+              <p
+                style={{
+                  fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#444",
+                  margin: "3px 0 0",
+                }}
+              >
+                {gem.weight.toFixed(2)} ct
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* QR + Signature row */}
+        {/* Right: QR + Signature */}
         <div
-          style={{
-            display: "flex",
-            width: "100%",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-          }}
+          style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px" }}
         >
-          {/* QR */}
-          <div>
+          {/* QR + Signature side by side */}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: "12px" }}>
             <QRCode value={verificationUrl} size={75} />
-          </div>
-
-          {/* Signature block */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
             <img
               src={signatureImg}
               alt='Signature'
-              style={{ height: "55px", objectFit: "contain", marginBottom: "4px" }}
+              style={{ height: "175px", objectFit: "contain" }}
             />
-            <div
-              style={{
-                borderTop: "1px dotted #999",
-                paddingTop: "4px",
-                textAlign: "right",
-                fontFamily: "Arial, sans-serif",
-              }}
-            >
-              <p style={{ fontSize: "11px", fontWeight: 700, margin: 0, color: "#1a1a1a" }}>
-                R. Milinda Edirisinghe
-              </p>
-              <p style={{ fontSize: "9px", margin: "1px 0 0", color: "#444" }}>
-                Authorized Signature
-              </p>
-              <p style={{ fontSize: "9px", margin: "1px 0 0", color: "#555" }}>
-                Gemological Report Of Ceylon (Pvt) Ltd
-              </p>
-            </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <p
-          style={{
-            fontFamily: "Arial, sans-serif",
-            fontSize: "8.5px",
-            color: "#888",
-            marginTop: "10px",
-            textAlign: "center",
-          }}
-        >
-          For complete terms and updates, visit www.grc.lk
-        </p>
+          {/* Footer */}
+          <p
+            style={{
+              fontFamily: "Arial, sans-serif",
+              fontSize: "8.5px",
+              color: "#888",
+              margin: 0,
+              textAlign: "right",
+            }}
+          >
+            For complete terms and updates, visit www.grc.lk
+          </p>
+        </div>
       </div>
     </div>
   )
@@ -443,18 +518,17 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function SectionTitle({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function Title({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <p
       style={{
-        fontFamily: "'Courier New', Courier, monospace",
-        fontSize: "11px",
+        fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
+        fontSize: "12px",
         fontWeight: 900,
         color: "#1a1a1a",
         textTransform: "uppercase",
         letterSpacing: "1px",
         margin: 0,
-        borderBottom: "1.5px solid #1a1a1a",
         paddingBottom: "2px",
         display: "inline-block",
         ...style,

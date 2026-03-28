@@ -158,7 +158,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
     },
     { label: "Weight", value: displayWeight || undefined },
     { label: "Shape", value: obs.shape || obs.cuttingShape },
-    { label: "Cut", value: obs.cut || obs.cuttingStyle },
+    { label: "Cut", value: obs.crownStyle || obs.cuttingStyle || obs.cut },
     {
       label: "Measurements",
       value: obs.messurementX
@@ -247,7 +247,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             textTransform: "uppercase",
             margin: "0 0 36px 0",
             letterSpacing: "0.5px",
-            fontFamily: "'Times New Roman', Times, serif",
+            fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
           }}
         >
           GEMOLOGICAL REPORT OF CEYLON
@@ -261,7 +261,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             gap: "6px",
             color: DARK,
             fontSize: "13px",
-            fontFamily: "'Courier New', Courier, monospace",
+            fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
             fontWeight: 600,
             width: "100%",
             maxWidth: "480px",
@@ -282,7 +282,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             gap: "6px",
             color: DARK,
             fontSize: "13px",
-            fontFamily: "'Courier New', Courier, monospace",
+            fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
             fontWeight: 600,
             width: "100%",
             maxWidth: "480px",
@@ -366,7 +366,6 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             justifyContent: "center",
             marginBottom: "10px",
             border: "1px solid #ccc",
-            backgroundColor: "#f5f5f5",
           }}
         >
           {firstImageId ? (
@@ -396,7 +395,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
           style={{
             textAlign: "center",
             width: "100%",
-            fontFamily: "'Courier New', Courier, monospace",
+            fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
           }}
         >
           <h2
@@ -407,7 +406,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
               textTransform: "uppercase",
               color: "#111",
               letterSpacing: "0.5px",
-              fontFamily: "'Courier New', Courier, monospace",
+              fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
             }}
           >
             {finalData.finalVariety || obs.variety || "BLUE SAPPHIRE"}
@@ -457,4 +456,3 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
     </>
   )
 }
-
