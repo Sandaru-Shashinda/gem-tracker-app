@@ -1,10 +1,17 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import QRCode from "react-qr-code"
-import { ImageIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Download, ImageIcon } from "lucide-react"
+import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
 import { GemImage } from "../gems/GemImage"
+import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature.png"
+import grcMemoLogo from "@/assets/grc_memo_logo.png"
+
+// A4 at 96 dpi → 794 × 1123 px  (portrait)
+const A4_W = 794
+const A4_H = 1123
+const DOWNLOAD_SCALE = 3
 
 interface LargeReportPreviewProps {
   gem: Gem
@@ -13,345 +20,465 @@ interface LargeReportPreviewProps {
 }
 
 export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
-  const finalData = gem.finalApproval || {}
-  const obs = finalData.finalObservations || {}
-  const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
+  const [downloading, setDownloading] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const captureRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
 
-  // Toggle state
-  const [view, setView] = useState<"inner" | "outer">("inner")
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        const parent = containerRef.current.parentElement
+        const available = (parent?.clientWidth ?? window.innerWidth) - 32
+        setScale(available < A4_W ? available / A4_W : 1)
+      }
+    }
+    setTimeout(updateScale, 10)
+    window.addEventListener("resize", updateScale)
+    return () => window.removeEventListener("resize", updateScale)
+  }, [])
 
-  const formatDate = (dateString?: string | Date) => {
-    if (!dateString) return new Date().toLocaleDateString("en-GB")
-    return new Date(dateString).toLocaleDateString("en-GB")
+  const handleDownload = async () => {
+    if (!captureRef.current) return
+    setDownloading(true)
+    try {
+      const dataUrl = await toPng(captureRef.current, {
+        pixelRatio: DOWNLOAD_SCALE,
+        cacheBust: true,
+      })
+      const link = document.createElement("a")
+      link.download = `GRC-${gem.gemId || gem._id}-large-report.png`
+      link.href = dataUrl
+      link.click()
+    } catch (err) {
+      console.error("Download failed", err)
+    } finally {
+      setDownloading(false)
+    }
   }
 
-  // Common font base for the report - replicating the serif style
-  const fontBase = "font-serif text-[#1a1a1a]"
-  const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
-
   return (
-    <div className='flex flex-col items-center'>
-      {/* ... toggle code unchanged ... */}
-      <div className='flex items-center gap-2 mb-6 bg-slate-100 p-1 rounded-lg'>
+    <div ref={containerRef} className='flex flex-col w-full max-w-[860px] mx-auto pb-8 overflow-hidden' style={{ colorScheme: "light" }}>
+      {/* Download button */}
+      <div className='flex items-center justify-end w-full mb-4 print:hidden'>
         <button
-          onClick={() => setView("inner")}
-          className={cn(
-            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-            view === "inner"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700",
-          )}
+          onClick={handleDownload}
+          disabled={downloading}
+          className='flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-slate-800 text-white rounded-md hover:bg-slate-700 disabled:opacity-50 transition-colors'
         >
-          Inner Pages (Details)
-        </button>
-        <button
-          onClick={() => setView("outer")}
-          className={cn(
-            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-            view === "outer"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700",
-          )}
-        >
-          Outer Pages (Covers)
+          <Download className='w-4 h-4' />
+          {downloading ? "Exporting..." : "Download Report"}
         </button>
       </div>
 
-      <div className='flex flex-col md:flex-row w-full max-w-[1200px] mx-auto bg-white shadow-2xl overflow-hidden text-slate-900 min-h-[900px]'>
-        {view === "inner" ? (
-          /* =========================================================================
-             INNER VIEW (Data + Spread)
-             ========================================================================= */
-          <>
-            {/* LEFT PAGE (Interior Left fully unchanged) */}
-            <div className='flex-1 py-14 px-12 relative border-r border-[#e5e5e5]'>
-              {/* Header Title */}
-              <div className='mb-6'>
-                <h1
-                  className={`${fontBase} text-[19px] font-bold tracking-[0.02em] text-[#5c4d3c] uppercase border-b border-[#C5A059]/30 pb-3 mb-1`}
-                >
-                  GEMOLOGICAL REPORT OF CEYLON
-                </h1>
-              </div>
+      {/* ── SCREEN PREVIEW ── */}
+      <div className='w-full flex justify-center' style={{ height: `${A4_H * scale}px` }}>
+        <div
+          style={{
+            width: A4_W,
+            minWidth: A4_W,
+            height: A4_H,
+            minHeight: A4_H,
+            flexShrink: 0,
+            transform: `scale(${scale})`,
+            transformOrigin: "top center",
+          }}
+        >
+          <ReportPage gem={gem} reportId={reportId} />
+        </div>
+      </div>
 
-              {/* Data Table Area */}
-              <div className={`${fontBase} text-[13px] leading-[1.65] space-y-[2px]`}>
-                <ReportRow label='Date' value={formatDate(gem.updatedAt)} />
-                <ReportRow label='GRC No' value={gem.gemId} />
-                <ReportRow label='Colour' value={gem.color} />
-                <ReportRow label='Grade' value={obs.grade} />
-                <ReportRow
-                  label='Weight'
-                  value={gem.weight ? `${gem.weight.toFixed(2)}ct` : undefined}
-                />
-                <ReportRow label='Shape' value={obs.shape} />
-                <ReportRow label='Cut' value={obs.cut} />
-                <ReportRow
-                  label='Measurements'
-                  value={
-                    obs.messurementX
-                      ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm`
-                      : undefined
-                  }
-                />
-                <ReportRow label='Transparency' value={obs.transparency} />
-                <ReportRow label='Species' value={obs.species} />
-                <ReportRow label='Variety' value={finalData.finalVariety || obs.variety} />
-
-                {/* Note: In image, UV-Vis is a multi-line text block, not a simple row */}
-                <div className='flex items-start mt-2'>
-                  <span className='w-[170px] shrink-0 font-medium'>UV-Vis spectroscopy</span>
-                  <span className='flex-1 leading-snug -mt-0.5'>
-                    {obs.spectroscopy ? `..${obs.spectroscopy}` : "..No Fe²⁺ or Fe³⁺ observed"}
-                  </span>
-                </div>
-
-                <ReportRow label='Geographic Origin' value={obs.origin} />
-
-                <div className='mt-2 text-md'></div>
-                <ReportRow label='Cutting' value={obs.cuttingGrade} />
-                <ReportRow label='Polishing' value={obs.polishingGrade} />
-                <ReportRow label='Proportion' value={obs.proportionGrade} />
-                <ReportRow label='Clarity' value={obs.clarityGrade} />
-
-                <div className='flex items-baseline mt-1'>
-                  <span className='w-[170px] shrink-0 font-bold'>Comments:</span>
-                  <span className='flex-1 border-b border-dotted border-[#999]'>
-                    {obs.comments
-                      ? `.......${obs.comments}`
-                      : ".......Indication of minor oil treatment"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Images Area (Lower Left) */}
-              <div className='mt-16 flex items-end gap-12'>
-                {/* Birth Mark / Microscopic View */}
-                <div className='flex flex-col items-center'>
-                  <div className='w-[140px] h-[100px] bg-[#808080]/10 overflow-hidden flex items-center justify-center relative'>
-                    {/* Placeholder for inclusion image - ideally dynamic */}
-                    <img
-                      src='https://placehold.co/300x200/666666/ffffff?text=Inclusion'
-                      className='w-full h-full object-cover opacity-80 grayscale mix-blend-multiply'
-                      alt='Microscopic View'
-                    />
-                  </div>
-                  <p className={`${fontBase} text-[11px] mt-2 font-medium`}>Birth Mark</p>
-                  <p className={`${fontBase} text-[10px]`}>1 x 600 times</p>
-                </div>
-              </div>
-
-              {/* Item Description Footer */}
-              <div className='absolute bottom-14 left-12 right-12'>
-                <p className={`${fontBase} text-[13px] leading-relaxed text-justify`}>
-                  <span className='font-bold'>Item Description : </span>
-                  {finalData.itemDescription ||
-                    `The described ${obs.variety?.toLowerCase() || "gemstone"} is set in gold as the centestone within a two-tone ring featuring a white metal band.`}
-                </p>
-              </div>
-            </div>
-
-            {/* RIGHT PAGE (Interior Right) */}
-            <div className='flex-1 py-14 px-12 relative'>
-              {/* Special Note Section */}
-              <div className='mb-10'>
-                <h3 className={`${fontBase} font-bold text-[14px] mb-3`}>
-                  Special note from the Gemmologist:
-                </h3>
-                <p className={`${fontBase} text-[13px] leading-[1.6] text-justify md:mb-4`}>
-                  {obs.specialNote ||
-                    "This is a rare and highly valuable gemstone within the global gem market. Based on the presence of classic three-phase (multiphase) inclusions, including Colombian-type inclusions, the stone is identified as originating from Colombia. These jagged multiphase inclusions characteristically host a gas bubble along with one or more cubic crystals."}
-                </p>
-                {obs.treatment && (
-                  <>
-                    <h3 className={`${fontBase} font-bold text-[14px] mb-3 mt-4`}>
-                      Treatment details:
-                    </h3>
-                    <p className={`${fontBase} text-[13px] leading-[1.6] text-justify`}>
-                      {obs.treatment}
-                    </p>
-                  </>
-                )}
-              </div>
-
-              {/* Center Gem Display */}
-              <div className='flex flex-col items-center text-center mt-8'>
-                {/* Main Image */}
-                <div className='mb-4'>
-                  {firstImageId ? (
-                    <GemImage
-                      imageId={firstImageId}
-                      alt='Gem'
-                      className='w-[180px] h-[180px] object-contain drop-shadow-xl'
-                    />
-                  ) : (
-                    <div className='w-[180px] h-[180px] bg-slate-100 flex items-center justify-center rounded-full'>
-                      <ImageIcon className='w-12 h-12 text-slate-300' />
-                    </div>
-                  )}
-                </div>
-
-                {/* Title Group */}
-                <div className='space-y-1'>
-                  <h2 className={`${fontBase} text-[22px] font-bold text-[#2a3b8f] tracking-wide`}>
-                    Natural {obs.species || "Beryl"} <br />
-                    {finalData.finalVariety || obs.variety || "Emerald"}
-                  </h2>
-                  <p className={`${fontBase} text-[18px] text-[#333]`}>
-                    {gem.weight ? gem.weight.toFixed(2) : "0.00"}ct
-                  </p>
-                </div>
-
-                {/* Secondary Views (Mockup) */}
-                <div className='mt-8 grid grid-cols-2 gap-x-12 gap-y-4'>
-                  {/* Mocking secondary views by reusing main image or placeholders */}
-                  <div className='w-20 h-20 opacity-80'>
-                    {firstImageId && (
-                      <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
-                    )}
-                  </div>
-                  <div className='w-20 h-20 opacity-80 transform scale-x-[-1]'>
-                    {firstImageId && (
-                      <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
-                    )}
-                  </div>
-                </div>
-                <p className={`${fontBase} text-[10px] mt-2 italic text-slate-500`}>
-                  images are approximate
-                </p>
-              </div>
-
-              {/* Footer: QR & Signature */}
-              <div className='absolute bottom-14 left-12 right-12 flex items-end justify-between'>
-                {/* QR Code */}
-                <div>
-                  <QRCode value={verificationUrl} size={90} />
-                </div>
-
-                {/* Signature Block */}
-                <div className='flex flex-col items-end'>
-                  <div className='w-[180px] h-[60px] relative mb-2'>
-                    <img 
-                      src={signatureImg}
-                      alt='Signature'
-                      className='w-full h-full object-contain'
-                    />
-                  </div>
-                  <div className='text-right border-t border-dotted border-[#999] pt-2 w-[220px]'>
-                    <p className={`${fontBase} font-bold text-[13px] text-[#1a1a1a]`}>
-                      R. Milinda Edirisinghe
-                    </p>
-                    <p className={`${fontBase} text-[11px] text-[#333]`}>
-                      CEO / Consultant Gemmologist
-                    </p>
-                    <p className={`${fontBase} text-[11px] text-[#444]`}>
-                      Gemological Report Of Ceylon (Pvt) Ltd
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          /* =========================================================================
-             OUTER VIEW (Covers)
-             ========================================================================= */
-          <>
-            {/* BACK COVER (Left in spread) */}
-            <div className='flex-1 py-14 px-12 relative border-r border-[#e5e5e5] bg-[#fffdf5]'>
-              <h2 className={`${fontBase} font-bold text-sm mb-4`}>
-                Terms & Conditions - Gemological Report of Ceylon (GRC)
-              </h2>
-              <div
-                className={`${fontBase} text-[10px] space-y-2 text-justify text-slate-600 leading-relaxed`}
-              >
-                <p>
-                  1. Authenticity: The Gemological Report of Ceylon (GRC) certifies the gem's
-                  authenticity based on the knowledge, techniques, and standards available at the
-                  time of issue only.
-                </p>
-                <p>
-                  2. Techniques & Features: Characteristics such as inclusions are assessed
-                  according to current gemological practices. Future technological advancements may
-                  allow artificial replication or reinterpretation of these features.
-                </p>
-                <p>
-                  3. Non-Treatability: The certificate is based solely on the observed
-                  characteristics at the time of examination. It does not warrant against future
-                  enhancements, nor are covered by this certificate unless explicitly stated.
-                </p>
-                <p>
-                  4. Limitations: GRC and its employees are not liable for any financial or other
-                  loss resulting from this report or any errors or omissions, including those
-                  arising from negligence, fraud, or other causes.
-                </p>
-                <p>
-                  5. Scope of Certification: The content is applicable only to the specific gem
-                  examined and does not imply an appraisal or valuation.
-                </p>
-                <p>
-                  6. Third Party Use: Any improper use of the GRC report by third parties, including
-                  but not limited to altering or separating the report from the gem, is strictly
-                  prohibited.
-                </p>
-              </div>
-
-              <div className='absolute bottom-12 left-12'>
-                <p className='text-[10px] text-slate-400'>www.grc.lk</p>
-              </div>
-            </div>
-
-            {/* FRONT COVER (Right in spread) */}
-            <div className='flex-1 py-14 px-12 relative flex flex-col items-center justify-center text-center bg-white'>
-              {/* Golden Turtle Logo */}
-              <div className='mb-8 text-[#D4AF37]'>
-                <svg viewBox='0 0 24 24' fill='currentColor' className='w-40 h-40'>
-                  <path
-                    d='M12 2C13 5 14 7 12 9C10 7 9 5 12 2ZM6.5 7C7.5 9.5 9 11 11 11.5C9 12 7.5 13 6.5 15.5C5.5 13 4 11.5 6.5 11.5C9 11 10.5 9.5 6.5 7ZM17.5 7C13.5 9.5 15 11 17.5 11.5C20 11.5 18.5 13 17.5 15.5C16.5 13 15 12 13 11.5C15 11 16.5 9.5 17.5 7ZM12 4.5C14.5 5.5 16 7.5 16.5 10C17 12.5 16 15 14 16.5L14 18.5L15 20L12 21.5L9 20L10 18.5L10 16.5C8 15 7 12.5 7.5 10C8 7.5 9.5 5.5 12 4.5Z'
-                    fill='currentColor'
-                    fillOpacity='0.8'
-                  />
-                </svg>
-              </div>
-
-              {/* Title */}
-              <h1
-                className={`${fontBase} text-[32px] font-bold tracking-widest text-[#1a1a1a] uppercase mb-2`}
-              >
-                GRC
-              </h1>
-              <h2
-                className={`${fontBase} text-[14px] text-[#C5A059] tracking-[0.2em] font-bold uppercase`}
-              >
-                Gemological Report of Ceylon
-              </h2>
-
-              {/* 3 Gems Logo */}
-              <div className='flex justify-center gap-4 mt-20'>
-                <div className='w-8 h-10 bg-blue-800 rounded mx-1 shadow-sm'></div>
-                <div className='w-8 h-10 bg-green-700 rounded mx-1 shadow-sm'></div>
-                <div className='w-8 h-10 bg-red-700 rounded mx-1 shadow-sm'></div>
-              </div>
-            </div>
-          </>
-        )}
+      {/* ── INVISIBLE CAPTURE ENGINE ── */}
+      <div
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: 0,
+          zIndex: -1,
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          ref={captureRef}
+          style={{
+            width: A4_W,
+            height: A4_H,
+            backgroundColor: "#ffffff",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <ReportPage gem={gem} reportId={reportId} />
+        </div>
       </div>
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// The actual A4 page – shared by preview and capture engine
 // ---------------------------------------------------------------------------
 
-function ReportRow({ label, value }: { label: string; value?: string | number }) {
-  // Use non-breaking spaces + padding to push dots
-  // The goal: Label [dots...................] Value
+function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
+  const finalData = gem.finalApproval || {}
+  const obs = finalData.finalObservations || {}
+  const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
+  const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
+
+  const formatDate = (d?: string | Date) =>
+    d ? new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+
+  const COURIER: React.CSSProperties = {
+    fontFamily: "'Courier New', Courier, monospace",
+    color: "#1a1a1a",
+  }
+
+  const tdStyle: React.CSSProperties = {
+    border: "1px solid #111",
+    padding: "3px 5px",
+    textAlign: "center",
+    fontSize: "8px",
+    fontFamily: "Arial, sans-serif",
+    verticalAlign: "middle",
+  }
+
   return (
-    <div className='flex items-baseline w-full text-[#1a1a1a]'>
-      <span className='w-[170px] shrink-0 font-medium'>{label}:</span>
-      <span className='flex-1 border-b border-dotted border-[#999] relative top-[-4px] mx-1'></span>
-      <span className='font-medium shrink-0'>{value || ""}</span>
+    <div
+      style={{
+        width: A4_W,
+        height: A4_H,
+        backgroundColor: "#ffffff",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        boxSizing: "border-box",
+        padding: "52px 56px 40px 56px",
+      }}
+    >
+      {/* Watermark */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: 1,
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      >
+        <img
+          src={turtlesLogo}
+          alt=''
+          style={{ width: "700px", height: "700px", objectFit: "contain" }}
+        />
+      </div>
+
+      {/* ── HEADER ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px", position: "relative", zIndex: 2 }}>
+        {/* GRC Logo */}
+        <div style={{ width: "120px" }}>
+          <img src={grcMemoLogo} alt='GRC Logo' style={{ height: "90px", objectFit: "contain" }} />
+        </div>
+
+        {/* Title block */}
+        <div style={{ textAlign: "center" }}>
+          <h1
+            style={{
+              fontFamily: "'Courier New', Courier, monospace",
+              fontSize: "18px",
+              fontWeight: 700,
+              color: "#C5A259",
+              textTransform: "uppercase",
+              letterSpacing: "1.5px",
+              margin: 0,
+            }}
+          >
+            Gemological Report of Ceylon
+          </h1>
+          <p style={{ ...COURIER, fontSize: "12px", margin: "4px 0 0", fontWeight: 500 }}>
+            GRC Report Number – {gem.gemId || "—"}
+          </p>
+          <p style={{ ...COURIER, fontSize: "12px", margin: "2px 0 0" }}>
+            {formatDate(gem.updatedAt)}
+          </p>
+        </div>
+
+        <div style={{ width: "120px" }} /> {/* spacer */}
+      </div>
+
+      {/* ── DIVIDER ── */}
+      <div style={{ height: "1px", backgroundColor: "#ddd", marginBottom: "26px", position: "relative", zIndex: 2 }} />
+
+      {/* ── DETAILS SECTION ── */}
+      <div style={{ marginBottom: "6px", position: "relative", zIndex: 2 }}>
+        <SectionTitle>DETAILS</SectionTitle>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "2px 32px",
+            ...COURIER,
+            fontSize: "11.5px",
+            fontWeight: 600,
+            marginTop: "8px",
+          }}
+        >
+          <TypewriterRow label='Item Description' value={finalData.itemDescription || obs.itemDescription || "One loose stone"} />
+          <TypewriterRow label='Measurements' value={obs.messurementX ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm` : undefined} />
+          <TypewriterRow label='Weight' value={gem.weight ? `${gem.weight.toFixed(2)} ct` : undefined} />
+          <TypewriterRow label='Transparency' value={obs.transparency} />
+          <TypewriterRow label='Shape' value={obs.shape || obs.cuttingShape} />
+          <TypewriterRow label='Color' value={gem.color} />
+          <TypewriterRow label='Cutting Style: Crown' value={obs.cut} />
+          <TypewriterRow label='Cutting Style: Pavilion' value={obs.cuttingStyle} />
+        </div>
+      </div>
+
+      {/* ── DIVIDER ── */}
+      <div style={{ height: "1px", backgroundColor: "#ddd", margin: "18px 0", position: "relative", zIndex: 2 }} />
+
+      {/* ── RESULTS + TREATMENT ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 40px", position: "relative", zIndex: 2 }}>
+        {/* Results */}
+        <div>
+          <SectionTitle>RESULTS</SectionTitle>
+          <div
+            style={{
+              ...COURIER,
+              fontSize: "11.5px",
+              fontWeight: 600,
+              display: "flex",
+              flexDirection: "column",
+              gap: "2px",
+              marginTop: "8px",
+            }}
+          >
+            <TypewriterRow label='Species' value={obs.species} />
+            <TypewriterRow label='Variety' value={finalData.finalVariety || obs.variety} />
+            <TypewriterRow label='Geographic Origin' value={obs.origin} />
+            <TypewriterRow label='Clarity' value={obs.clarityGrade} />
+          </div>
+
+          {/* Comments paragraph */}
+          <p style={{ ...COURIER, fontSize: "11px", fontWeight: 600, marginTop: "12px", lineHeight: 1.55, textAlign: "justify" }}>
+            Comments.{" "}
+            {obs.comments ||
+              "The geographic origin and color description are an expert opinion based on a collection of observations and analytical data."}
+          </p>
+
+          {/* Clarity table */}
+          <div style={{ marginTop: "14px" }}>
+            <table style={{ borderCollapse: "collapse", width: "100%" }}>
+              <thead>
+                <tr>
+                  <td style={tdStyle} rowSpan={2}></td>
+                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>Loupe Clean</td>
+                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>Eye Clean</td>
+                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>Visible Inclusions</td>
+                  <td style={{ ...tdStyle, fontWeight: 700 }} colSpan={2}>Highly Included</td>
+                </tr>
+                <tr>
+                  {["Minor\nInclusions", "Highly\nIncluded", "Minor\nInclusions", "Highly\nIncluded", "Minor\nInclusions", "Highly\nIncluded", "Minor\nInclusions", "Highly\nIncluded"].map((t, i) => (
+                    <td key={i} style={tdStyle}>{t}</td>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ ...tdStyle, fontWeight: 700 }}>Eye</td>
+                  {["LC 1", "LC 2", "EC 1", "EC 2", "vl 1", "vl 2", "HI 1", "HI 2"].map((g, i) => (
+                    <td key={i} style={tdStyle}>{g}</td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Treatment */}
+        <div>
+          <SectionTitle>TREATMENT</SectionTitle>
+          <p style={{ ...COURIER, fontSize: "11.5px", fontWeight: 600, marginTop: "8px" }}>
+            {obs.treatment || "None."}
+          </p>
+          {obs.specialNote && (
+            <>
+              <SectionTitle style={{ marginTop: "20px" }}>SPECIAL NOTE</SectionTitle>
+              <p style={{ ...COURIER, fontSize: "11px", fontWeight: 600, marginTop: "8px", lineHeight: 1.55, textAlign: "justify" }}>
+                {obs.specialNote}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── GEM IMAGE + NAME + SIGNATURE/QR ── */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          flex: 1,
+          justifyContent: "flex-end",
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
+        {/* Image box */}
+        <div
+          style={{
+            width: "170px",
+            height: "160px",
+            border: "1px solid #aaa",
+            backgroundColor: "#f9f9f9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            marginTop: "20px",
+          }}
+        >
+          {firstImageId ? (
+            <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
+          ) : (
+            <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
+          )}
+        </div>
+        <p style={{ fontFamily: "Arial, sans-serif", fontSize: "9px", color: "#888", marginTop: "4px", marginBottom: "8px" }}>
+          Image is approximate
+        </p>
+
+        {/* Gem name + weight */}
+        <div style={{ textAlign: "center", marginBottom: "18px" }}>
+          <p
+            style={{
+              fontFamily: "'Courier New', Courier, monospace",
+              fontSize: "22px",
+              fontWeight: 900,
+              color: "#C5A259",
+              margin: 0,
+              letterSpacing: "0.5px",
+            }}
+          >
+            {finalData.finalVariety || obs.variety || "—"}
+          </p>
+          {gem.weight && (
+            <p
+              style={{
+                fontFamily: "'Courier New', Courier, monospace",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#444",
+                margin: "3px 0 0",
+              }}
+            >
+              {gem.weight.toFixed(2)} ct
+            </p>
+          )}
+        </div>
+
+        {/* QR + Signature row */}
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+          }}
+        >
+          {/* QR */}
+          <div>
+            <QRCode value={verificationUrl} size={75} />
+          </div>
+
+          {/* Signature block */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <img
+              src={signatureImg}
+              alt='Signature'
+              style={{ height: "55px", objectFit: "contain", marginBottom: "4px" }}
+            />
+            <div
+              style={{
+                borderTop: "1px dotted #999",
+                paddingTop: "4px",
+                textAlign: "right",
+                fontFamily: "Arial, sans-serif",
+              }}
+            >
+              <p style={{ fontSize: "11px", fontWeight: 700, margin: 0, color: "#1a1a1a" }}>
+                R. Milinda Edirisinghe
+              </p>
+              <p style={{ fontSize: "9px", margin: "1px 0 0", color: "#444" }}>
+                Authorized Signature
+              </p>
+              <p style={{ fontSize: "9px", margin: "1px 0 0", color: "#555" }}>
+                Gemological Report Of Ceylon (Pvt) Ltd
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p
+          style={{
+            fontFamily: "Arial, sans-serif",
+            fontSize: "8.5px",
+            color: "#888",
+            marginTop: "10px",
+            textAlign: "center",
+          }}
+        >
+          For complete terms and updates, visit www.grc.lk
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function SectionTitle({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <p
+      style={{
+        fontFamily: "'Courier New', Courier, monospace",
+        fontSize: "11px",
+        fontWeight: 900,
+        color: "#1a1a1a",
+        textTransform: "uppercase",
+        letterSpacing: "1px",
+        margin: 0,
+        borderBottom: "1.5px solid #1a1a1a",
+        paddingBottom: "2px",
+        display: "inline-block",
+        ...style,
+      }}
+    >
+      {children}
+    </p>
+  )
+}
+
+function TypewriterRow({ label, value }: { label: string; value?: string | number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "baseline", width: "100%" }}>
+      <span style={{ whiteSpace: "nowrap", paddingRight: "4px", flexShrink: 0 }}>{label}:</span>
+      <span
+        style={{
+          flex: 1,
+          borderBottom: "1.5px dotted #a3a3a3",
+          position: "relative",
+          top: "-3px",
+          minWidth: "12px",
+        }}
+      />
+      <span style={{ whiteSpace: "nowrap", paddingLeft: "6px", flexShrink: 0 }}>{value || ""}</span>
     </div>
   )
 }

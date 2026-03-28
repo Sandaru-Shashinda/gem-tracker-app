@@ -102,6 +102,8 @@ export function GemDetailPage() {
   const [showPavilionStyleList, setShowPavilionStyleList] = useState(false)
   const [cuttingShapeSearch, setCuttingShapeSearch] = useState("")
   const [showCuttingShapeList, setShowCuttingShapeList] = useState(false)
+  const [colourSearch, setColourSearch] = useState("")
+  const [showColourList, setShowColourList] = useState(false)
   const [suggestions, setSuggestions] = useState<GemReference[]>([])
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [customer, setCustomer] = useState<Customer | null>(null)
@@ -152,6 +154,10 @@ export function GemDetailPage() {
       setCuttingShapeSearch,
       showCuttingShapeList,
       setShowCuttingShapeList,
+      colourSearch,
+      setColourSearch,
+      showColourList,
+      setShowColourList,
     },
   )
 
@@ -220,6 +226,7 @@ export function GemDetailPage() {
         setCrownStyleSearch(newValues.crownStyle)
         setPavilionStyleSearch(newValues.pavilionStyle)
         setCuttingShapeSearch(newValues.cuttingShape)
+        setColourSearch(newValues.colour)
       }
     }
   }, [gem, isT1, isT2, isApproval, reset])
@@ -388,6 +395,7 @@ export function GemDetailPage() {
     setCrownStyleSearch(obs.crownStyle || obs.cuttingStyle || obs.cut || "")
     setPavilionStyleSearch(obs.pavilionStyle || "")
     setCuttingShapeSearch(obs.cuttingShape || obs.shape || "")
+    setColourSearch(obs.colour || "")
   }
 
   return (

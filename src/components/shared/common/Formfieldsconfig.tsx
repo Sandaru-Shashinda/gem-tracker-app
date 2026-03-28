@@ -152,6 +152,11 @@ interface FormFieldsConfigParams {
   setCuttingShapeSearch: (value: string) => void
   showCuttingShapeList: boolean
   setShowCuttingShapeList: (value: boolean) => void
+  // Combobox states for Colour
+  colourSearch: string
+  setColourSearch: (value: string) => void
+  showColourList: boolean
+  setShowColourList: (value: boolean) => void
 }
 
 export function getFormFieldsConfig({
@@ -180,6 +185,10 @@ export function getFormFieldsConfig({
   setCuttingShapeSearch,
   showCuttingShapeList,
   setShowCuttingShapeList,
+  colourSearch,
+  setColourSearch,
+  showColourList,
+  setShowColourList,
 }: FormFieldsConfigParams) {
   let colorOptions = OTHER_COLORS
   let clarityOptions = CLARITY_OTHER_OPTIONS
@@ -408,9 +417,17 @@ export function getFormFieldsConfig({
     {
       name: "colour",
       label: "Colour",
-      type: "select",
-      placeholder: "Select Colour",
-      options: colorOptions,
+      type: "combobox",
+      placeholder: "Select or type colour...",
+      comboboxOptions: colorOptions,
+      comboboxSearch: colourSearch,
+      onComboboxSearchChange: (value) => {
+        setColourSearch(value)
+        setShowColourList(true)
+      },
+      onComboboxFocus: () => setShowColourList(true),
+      showComboboxList: showColourList,
+      onComboboxClose: () => setShowColourList(false),
       className: "",
     },
     {

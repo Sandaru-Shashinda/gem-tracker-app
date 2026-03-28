@@ -187,11 +187,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, stage: "test1" | "test2", data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        riMin: parseFloat(data.riMin),
-        riMax: parseFloat(data.riMax),
-        sg: parseFloat(data.sg),
-        hardnessMin: parseFloat(data.hardnessMin),
-        hardnessMax: parseFloat(data.hardnessMax),
+        riMin: data.riMin ? parseFloat(data.riMin) : undefined,
+        riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+        sg: data.sg ? parseFloat(data.sg) : undefined,
+        hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
+        hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
         selectedVariety: data.selectedVariety,
         observations: {
           cuttingShape: data.cuttingShape,
@@ -235,11 +235,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        riMin: parseFloat(data.riMin),
-        riMax: parseFloat(data.riMax),
-        sg: parseFloat(data.sg),
-        hardnessMin: parseFloat(data.hardnessMin),
-        hardnessMax: parseFloat(data.hardnessMax),
+        riMin: data.riMin ? parseFloat(data.riMin) : undefined,
+        riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+        sg: data.sg ? parseFloat(data.sg) : undefined,
+        hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
+        hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
         finalVariety: data.selectedVariety,
         itemDescription: data.itemDescription || data.comments,
         finalObservations: {
@@ -289,11 +289,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
       let update: any = {}
       if (stage === "finalApproval") {
         update = {
-          riMin: parseFloat(data.riMin),
-          riMax: parseFloat(data.riMax),
-          sg: parseFloat(data.sg),
-          hardnessMin: parseFloat(data.hardnessMin),
-          hardnessMax: parseFloat(data.hardnessMax),
+          riMin: data.riMin ? parseFloat(data.riMin) : undefined,
+          riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+          sg: data.sg ? parseFloat(data.sg) : undefined,
+          hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
+          hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
           finalVariety: data.selectedVariety,
           itemDescription: data.itemDescription || data.comments,
           finalObservations: {
@@ -325,11 +325,11 @@ export function GemProvider({ children }: { children: ReactNode }) {
         }
       } else {
         update = {
-          riMin: parseFloat(data.riMin),
-          riMax: parseFloat(data.riMax),
-          sg: parseFloat(data.sg),
-          hardnessMin: parseFloat(data.hardnessMin),
-          hardnessMax: parseFloat(data.hardnessMax),
+          riMin: data.riMin ? parseFloat(data.riMin) : undefined,
+          riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+          sg: data.sg ? parseFloat(data.sg) : undefined,
+          hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
+          hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
           selectedVariety: data.selectedVariety,
           observations: {
             cuttingShape: data.cuttingShape,
