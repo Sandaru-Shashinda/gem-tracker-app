@@ -70,6 +70,8 @@ export interface ObservationData {
   colourGrade?: number
   finalGrade?: number
   isHeated?: boolean
+  isEmerald?: boolean
+  isMixCut?: boolean
 }
 
 export interface Gem {
@@ -142,6 +144,8 @@ export interface Gem {
     qrCode?: string
     approverId?: string
     timestamp?: Date
+    approverCorrectionRequested?: boolean
+    approverCorrectionNote?: string
   }
 }
 

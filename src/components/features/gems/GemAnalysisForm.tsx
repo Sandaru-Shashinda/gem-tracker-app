@@ -103,16 +103,23 @@ export function GemAnalysisForm({
               control={control}
               setValue={setValue}
             />
+            <FormField
+              config={scientificFields[6]}
+              register={register}
+              errors={errors}
+              control={control}
+              setValue={setValue}
+            />
             <div className='grid grid-cols-2 gap-4'>
               <FormField
-                config={scientificFields[6]}
+                config={scientificFields[7]}
                 register={register}
                 errors={errors}
                 control={control}
                 setValue={setValue}
               />
               <FormField
-                config={scientificFields[7]}
+                config={scientificFields[8]}
                 register={register}
                 errors={errors}
                 control={control}
@@ -125,14 +132,14 @@ export function GemAnalysisForm({
         {/* Transparency & Measurements */}
         <div className='space-y-4'>
           <FormField
-            config={scientificFields[8]}
+            config={scientificFields[9]}
             register={register}
             errors={errors}
             control={control}
             setValue={setValue}
           />
           <div className='grid grid-cols-3 gap-4'>
-            {scientificFields.slice(9, 12).map((field) => (
+            {scientificFields.slice(10, 13).map((field) => (
               <FormField
                 key={field.name}
                 config={field}
@@ -170,14 +177,21 @@ export function GemAnalysisForm({
           />
         </div>
         <FormField
-          config={identificationFields[3]}
+          config={identificationFields[2]}
           register={register}
           errors={errors}
           control={control}
           setValue={setValue}
         />
         <FormField
-          config={identificationFields[2]}
+          config={identificationFields[4]}
+          register={register}
+          errors={errors}
+          control={control}
+          setValue={setValue}
+        />
+        <FormField
+          config={identificationFields[3]}
           register={register}
           errors={errors}
           control={control}

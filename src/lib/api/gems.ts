@@ -105,6 +105,24 @@ export const gemsApi = {
     return response.json()
   },
 
+  requestApproverCorrection: async (gemId: string, note: string): Promise<Gem> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/gems/${gemId}/request-approver-correction`, {
+      method: "PUT",
+      body: JSON.stringify({ note }),
+    })
+    if (!response.ok) throw new Error("Failed to request approver correction")
+    return response.json()
+  },
+
+  dismissApproverCorrection: async (gemId: string): Promise<Gem> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/gems/${gemId}/dismiss-approver-correction`, {
+      method: "PUT",
+      body: JSON.stringify({}),
+    })
+    if (!response.ok) throw new Error("Failed to dismiss approver correction")
+    return response.json()
+  },
+
   deleteGem: async (id: string): Promise<void> => {
     const response = await fetchWithAuth(`${API_BASE_URL}/gems/${id}`, {
       method: "DELETE",

@@ -48,6 +48,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
     { label: "GRC Number", value: gem.gemId },
     { label: "Date", value: new Date(gem.updatedAt).toLocaleDateString("en-GB") },
     { label: "Weight", value: gem.weight ? `${gem.weight} ct` : undefined },
+    { label: "Color", value: gem.color },
     {
       label: "Shape & Cut",
       value: `${obs.cuttingShape || ""} ${obs.cut || ""}`.trim() || undefined,
@@ -58,10 +59,9 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
         ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm`
         : undefined,
     },
-    { label: "Color", value: gem.color },
     { label: "Species", value: obs.species },
     { label: "Variety", value: obs.variety },
-    { label: "Comments", value: obs.treatment || "" },
+    { label: "Comments", value: obs.comments },
   ]
 
   return (
@@ -131,7 +131,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 4,
+                gap: 3,
                 fontSize: "14px",
                 marginTop: "-57px",
                 padding: "10px 0",

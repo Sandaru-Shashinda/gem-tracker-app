@@ -42,6 +42,8 @@ interface GemContextType {
     status?: GemStatus,
   ) => Promise<void>
   handleRequestCorrection: (gemId: string, stage: "test1" | "test2", note: string) => Promise<void>
+  handleRequestApproverCorrection: (gemId: string, note: string) => Promise<void>
+  handleDismissApproverCorrection: (gemId: string) => Promise<void>
 
   handleApproval: (gemId: string, data: any, status?: GemStatus) => Promise<void>
   handleOverride: (gemId: string, status: any) => Promise<void>
@@ -218,6 +220,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
           messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
           messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
           messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
+          isHeated: data.isHeated ?? false,
+          isEmerald: data.isEmerald ?? false,
+          isMixCut: data.isMixCut ?? false,
         },
       }
       await gemsApi.updateGem(gemId, {
@@ -267,6 +272,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
           messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
           messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
           messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
+          isHeated: data.isHeated ?? false,
+          isEmerald: data.isEmerald ?? false,
+          isMixCut: data.isMixCut ?? false,
         },
       }
       await gemsApi.submitApproval(gemId, {
@@ -321,6 +329,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
             messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
             messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
             messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
+            isHeated: data.isHeated ?? false,
+            isEmerald: data.isEmerald ?? false,
+            isMixCut: data.isMixCut ?? false,
           },
         }
       } else {
@@ -356,6 +367,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
             messurementX: data.messurementX ? parseFloat(data.messurementX) : undefined,
             messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
             messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
+            isHeated: data.isHeated ?? false,
+            isEmerald: data.isEmerald ?? false,
+            isMixCut: data.isMixCut ?? false,
           },
         }
       }
@@ -396,6 +410,36 @@ export function GemProvider({ children }: { children: ReactNode }) {
     [refreshGems],
   )
 
+  const handleRequestApproverCorrection = useCallback(
+    async (gemId: string, note: string) => {
+      setRefreshing(true)
+      try {
+        await gemsApi.requestApproverCorrection(gemId, note)
+        await refreshGems()
+      } catch (err) {
+        console.error("Failed to request approver correction:", err)
+      } finally {
+        setRefreshing(false)
+      }
+    },
+    [refreshGems],
+  )
+
+  const handleDismissApproverCorrection = useCallback(
+    async (gemId: string) => {
+      setRefreshing(true)
+      try {
+        await gemsApi.dismissApproverCorrection(gemId)
+        await refreshGems()
+      } catch (err) {
+        console.error("Failed to dismiss approver correction:", err)
+      } finally {
+        setRefreshing(false)
+      }
+    },
+    [refreshGems],
+  )
+
   return (
     <GemContext.Provider
       value={useMemo(
@@ -414,6 +458,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
           getGemById,
           handleTestSubmit,
           handleRequestCorrection,
+          handleRequestApproverCorrection,
+          handleDismissApproverCorrection,
           handleApproval,
           handleOverride,
           handleSaveDraft,
@@ -432,6 +478,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
           getGemById,
           handleTestSubmit,
           handleRequestCorrection,
+          handleRequestApproverCorrection,
+          handleDismissApproverCorrection,
           handleApproval,
           handleOverride,
           handleSaveDraft,

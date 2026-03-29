@@ -29,6 +29,8 @@ export function GemDetailPage() {
     species: globalSpecies,
     handleTestSubmit,
     handleRequestCorrection,
+    handleRequestApproverCorrection,
+    handleDismissApproverCorrection,
     handleApproval,
     handleSaveDraft,
     loading,
@@ -71,6 +73,8 @@ export function GemDetailPage() {
       treatment: "",
       clarityEnhancement: "",
       isHeated: false,
+      isEmerald: false,
+      isMixCut: false,
     },
     mode: "onChange",
   })
@@ -165,16 +169,9 @@ export function GemDetailPage() {
     if (gem) {
       const activeData = isT1 ? gem.test1 : isT2 ? gem.test2 : gem.finalApproval
       if (activeData) {
-        // Senior Logic: If the current stage is empty (no RI), but previous stages have data,
-        // we use the previous stage as a base to help the user.
-        let baseData = activeData
-        if (!activeData.riMin) {
-          // For Approval stage only: pre-fill from test2 or test1 if empty
-          // Tester 2 gets a CLEAN form — no fallback from Tester 1's data
-          if (isApproval) {
-            baseData = gem.test2?.riMin ? gem.test2 : gem.test1?.riMin ? gem.test1 : activeData
-          }
-        }
+        // For Approval stage: always use finalApproval data only.
+        // The approver must manually copy from Tester 1 or Tester 2 — no auto pre-fill.
+        const baseData = activeData
 
         const obs = (baseData as any).observations || (baseData as any).finalObservations || {}
 
@@ -213,7 +210,9 @@ export function GemDetailPage() {
           colour: obs.colour || gem.color || "",
           colourGrade: Number(obs.colourGrade) || 0,
           finalGrade: Number(obs.finalGrade) || 0,
-          isHeated: obs.isHeated || (baseData as any).isHeated || false,
+          isHeated: obs.isHeated ?? (baseData as any).isHeated ?? false,
+          isEmerald: obs.isEmerald ?? (baseData as any).isEmerald ?? false,
+          isMixCut: obs.isMixCut ?? (baseData as any).isMixCut ?? false,
         }
 
         reset(newValues)
@@ -283,8 +282,12 @@ export function GemDetailPage() {
     )
   }
 
-  const canTest = user?.role === "TESTER" || user?.role === "ADMIN"
-  const canApprove = user?.role === "ADMIN"
+  const isTester = user?.role === "TESTER"
+  const isAssignedT1 = gem?.assignedTester1 === user?.id
+  const isAssignedT2 = gem?.assignedTester2 === user?.id
+  const canTest = (isTester && ((isT1 && isAssignedT1) || (isT2 && isAssignedT2))) || isAdmin
+  const canApprove = isAdmin
+  const approverCorrectionActive = gem?.finalApproval?.approverCorrectionRequested === true
 
   const onSubmit: SubmitHandler<TestFormValues> = async (data) => {
     try {
@@ -387,7 +390,9 @@ export function GemDetailPage() {
       itemDescription: obs.itemDescription || source.itemDescription || "",
       specialNote: obs.specialNote || "",
       treatment: obs.treatment || "",
-      isHeated: obs.isHeated || source.isHeated || false,
+      isHeated: obs.isHeated ?? source.isHeated ?? false,
+      isEmerald: obs.isEmerald ?? source.isEmerald ?? false,
+      isMixCut: obs.isMixCut ?? source.isMixCut ?? false,
     }
     reset(newValues)
     setSpeciesSearch(obs.species || "")
@@ -426,14 +431,31 @@ export function GemDetailPage() {
 
           {/* Main Column */}
           <div className='lg:col-span-3'>
-            {(isT1 || isT2 || canApprove) && !isHelper ? (
+            {approverCorrectionActive && (
+              <div className='mb-4 flex items-start justify-between gap-3 rounded-lg border border-yellow-400 bg-yellow-50 p-4'>
+                <div>
+                  <p className='text-sm font-bold text-yellow-800'>Correction Flagged by Approver</p>
+                  {gem.finalApproval?.approverCorrectionNote && (
+                    <p className='mt-1 text-sm text-yellow-700'>{gem.finalApproval.approverCorrectionNote}</p>
+                  )}
+                </div>
+                {isAdmin && (
+                  <button
+                    type='button'
+                    onClick={() => handleDismissApproverCorrection(gem._id)}
+                    className='shrink-0 text-xs font-semibold text-yellow-700 underline hover:text-yellow-900'
+                  >
+                    Dismiss
+                  </button>
+                )}
+              </div>
+            )}
+            {(canTest || (canApprove && isApproval)) && !isHelper ? (
               <Card className='p-6'>
                 <form
                   onSubmit={handleSubmit(onSubmit)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") {
-                      e.preventDefault()
-                    }
+                    if (e.key === "Enter") e.preventDefault()
                   }}
                   className='space-y-8'
                 >

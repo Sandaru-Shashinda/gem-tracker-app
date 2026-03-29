@@ -92,9 +92,7 @@ export function QueuePage() {
   ])
 
   useEffect(() => {
-    if (user?.role === "ADMIN" || user?.role === "HELPER") {
-      usersApi.getUsers().then(setUsers).catch(console.error)
-    }
+    usersApi.getUsers().then(setUsers).catch(console.error)
   }, [user?.role])
 
   return (
@@ -103,7 +101,7 @@ export function QueuePage() {
         <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
           <div>
             <h2 className='text-2xl font-bold text-slate-800'>
-              {user?.role === "ADMIN" ? "System Gems" : "My Queue"}
+              {user?.role === "TESTER" ? "Gem Queue" : "System Gems"}
             </h2>
             <p className='text-slate-500 text-sm'>
               {totalRecords} gems found based on current filters
@@ -156,8 +154,7 @@ export function QueuePage() {
             </Select>
           </div>
 
-          {(user?.role === "ADMIN" || user?.role === "HELPER") && (
-            <div>
+          <div>
               <label className='text-xs font-medium text-slate-500 mb-1.5 block'>Assignee</label>
               <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                 <SelectTrigger className='h-9'>
@@ -173,7 +170,6 @@ export function QueuePage() {
                 </SelectContent>
               </Select>
             </div>
-          )}
 
           <div>
             <label className='text-xs font-medium text-slate-500 mb-1.5 block'>Start Date</label>

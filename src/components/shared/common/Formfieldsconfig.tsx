@@ -282,6 +282,12 @@ export function getFormFieldsConfig({
       className: "",
     },
     {
+      name: "isMixCut",
+      label: "Is Mix Cut",
+      type: "checkbox",
+      className: "",
+    },
+    {
       name: "crownStyle",
       label: "Crown Style",
       type: "combobox",
@@ -390,6 +396,12 @@ export function getFormFieldsConfig({
       renderItem: (reference) => reference.variety,
     },
     {
+      name: "isEmerald",
+      label: "Is Emerald",
+      type: "checkbox",
+      className: "",
+    },
+    {
       name: "spectroscopy",
       label: "Spectroscopy",
       type: "textarea",
@@ -402,13 +414,6 @@ export function getFormFieldsConfig({
       label: "Origin",
       type: "text",
       placeholder: "Colombia",
-      className: "",
-    },
-    {
-      name: "isHeated",
-      label: "Is Heated",
-      type: "checkbox",
-      placeholder: "Check if the gem is heated",
       className: "",
     },
   ]
@@ -480,6 +485,12 @@ export function getFormFieldsConfig({
       type: "select",
       placeholder: "Select Enhancement",
       options: CLARITY_ENHANCEMENT_OPTIONS,
+      className: "",
+    },
+    {
+      name: "isHeated",
+      label: "Is Heated",
+      type: "checkbox",
       className: "",
     },
     {
