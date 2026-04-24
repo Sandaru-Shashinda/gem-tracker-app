@@ -6,7 +6,7 @@ import { FileText, Activity, CheckCircle, AlertCircle } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { useGem } from "@/hooks/useGemStore"
 import { GemTimeline } from "@/components/features/gems/GemTimeline"
-import { GEM_STATUSES } from "@/lib/types"
+import { GEM_STATUSES, UserRole } from "@/lib/types"
 import { GemImage } from "@/components/features/gems/GemImage"
 
 export function DashboardPage() {
@@ -18,10 +18,10 @@ export function DashboardPage() {
       pending: gems.filter((g) => g.status !== GEM_STATUSES.DONE).length,
       completed: gems.filter((g) => g.status === GEM_STATUSES.DONE).length,
       myPending: gems.filter((g) => {
-        if (user?.role === "HELPER") return g.status === GEM_STATUSES.TOOK_IN
-        if (user?.role === "TESTER")
+        if (user?.role === UserRole.HELPER) return g.status === GEM_STATUSES.TOOK_IN
+        if (user?.role === UserRole.TESTER)
           return g.status === GEM_STATUSES.READY_FOR_T1 || g.status === GEM_STATUSES.READY_FOR_T2
-        if (user?.role === "ADMIN") return g.status === GEM_STATUSES.READY_FOR_APPROVAL
+        if (user?.role === UserRole.ADMIN) return g.status === GEM_STATUSES.READY_FOR_APPROVAL
         return false
       }).length,
     }

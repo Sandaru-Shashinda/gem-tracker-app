@@ -1,9 +1,9 @@
 import { useState } from "react"
-import { Search, Activity, Building2, AlertCircle, Eye, X, Plus, Loader2 } from "lucide-react"
+import { Building2, AlertCircle, Eye, X, Plus, Loader2 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { type Gem, type Customer, type GemReference } from "@/lib/types"
+import { type Gem, type Customer, type GemReference, UserRole } from "@/lib/types"
 import { gemsApi } from "@/lib/api/gems"
 import { getImageById, deleteImage } from "@/lib/api/images"
 import { useGem } from "@/hooks/useGemStore"
@@ -44,6 +44,7 @@ interface GemIntakeAndHistoryProps {
 }
 
 import { GemImage } from "./GemImage"
+import { ScientificSuggestions } from "./ScientificSuggestions"
 
 export function GemIntakeAndHistory({
   gem,
@@ -144,7 +145,7 @@ export function GemIntakeAndHistory({
                 >
                   <Eye size={18} />
                 </Button>
-                {(user?.role === "ADMIN" || user?.role === "HELPER") && (
+                {(user?.role === UserRole.ADMIN || user?.role === UserRole.HELPER) && (
                   <label className='cursor-pointer p-2 bg-blue-600/80 hover:bg-blue-600 rounded-full text-white transition-all'>
                     <Plus size={18} />
                     <input
@@ -170,7 +171,7 @@ export function GemIntakeAndHistory({
                     onClick={() => setActiveImageId(imgId)}
                   >
                     <GemImage imageId={imgId} className='w-full h-full object-cover' />
-                    {(user?.role === "ADMIN" || user?.role === "HELPER") && (
+                    {(user?.role === UserRole.ADMIN || user?.role === UserRole.HELPER) && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
@@ -187,7 +188,7 @@ export function GemIntakeAndHistory({
             )}
           </div>
         ) : (
-          (user?.role === "ADMIN" || user?.role === "HELPER") && (
+          (user?.role === UserRole.ADMIN || user?.role === UserRole.HELPER) && (
             <div className='mb-4 flex items-center justify-center aspect-video w-full rounded-xl border-2 border-dashed border-slate-200 bg-white group'>
               <label className='cursor-pointer flex flex-col items-center gap-2 text-slate-400 group-hover:text-blue-500 transition-colors'>
                 <Plus size={24} />
@@ -251,112 +252,19 @@ export function GemIntakeAndHistory({
       </Card>
 
       {/* Scientific Suggestions */}
-      {user?.role !== "HELPER" && (
-        <Card className='p-5 bg-blue-50/50 border-blue-100 shadow-md animate-in fade-in slide-in-from-left-4 duration-500'>
-          <div className='flex items-center gap-2 mb-4'>
-            <div className='p-1.5 bg-blue-100 rounded-lg'>
-              <Activity size={16} className='text-blue-600' />
-            </div>
-            <h3 className='text-xs font-bold text-blue-800 uppercase tracking-wider'>
-              Scientific Suggestions
-            </h3>
-          </div>
-
-          <p className='text-[10px] text-blue-600 mb-3 leading-relaxed'>
-            Matching species based on current RI, SG, and Hardness readings:
-          </p>
-
-          <div className='space-y-2 overflow-y-auto pr-1' style={{ maxHeight: "calc(5 * 88px)" }}>
-            {suggestions.length > 0 ? (
-              <>
-                {suggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    type='button'
-                    onClick={() => {
-                      onReset({
-                        ...onWatch(),
-                        species: s.species || "",
-                        selectedVariety: s.variety,
-                        hardnessMin:
-                          s.hardnessMin?.toString() || watchedHardness,
-                        hardnessMax:
-                          s.hardnessMax?.toString() || watchedHardness,
-                      })
-                      onSetSpeciesSearch(s.species || "")
-                      onSetVarietySearch(s.variety || "")
-                    }}
-                    className='w-full text-left p-3 bg-white border border-blue-100 rounded-xl hover:border-blue-400 hover:shadow-lg transition-all group relative overflow-hidden'
-                  >
-                    <div className='absolute top-0 right-0 p-1'>
-                      <Badge
-                        variant='outline'
-                        className='text-[7px] h-3 bg-blue-50 border-blue-100 text-blue-600 font-bold px-1'
-                      >
-                        MATCH
-                      </Badge>
-                    </div>
-                    <div className='flex flex-col'>
-                      <p className='text-xs font-black text-slate-800 group-hover:text-blue-700 font-serif transition-colors'>
-                        {s.variety}
-                      </p>
-                      <p className='text-[10px] text-slate-500 italic opacity-80 mb-2'>
-                        {s.species || "Unknown Species"}
-                      </p>
-                      <div className='flex flex-wrap gap-x-3 gap-y-1 mt-1 pt-1 border-t border-blue-50/50'>
-                        <div className='flex flex-col'>
-                          <span className='text-[8px] font-bold text-slate-400 uppercase leading-none'>
-                            R.I.
-                          </span>
-                          <span className='text-[9px] font-bold text-blue-700'>
-                            {s.refractiveIndexMin}
-                            {s.refractiveIndexMax !== s.refractiveIndexMin
-                              ? ` - ${s.refractiveIndexMax}`
-                              : ""}
-                          </span>
-                        </div>
-                        <div className='flex flex-col'>
-                          <span className='text-[8px] font-bold text-slate-400 uppercase leading-none'>
-                            S.G.
-                          </span>
-                          <span className='text-[9px] font-bold text-blue-700'>
-                            {s.specificGravityMin}
-                            {s.specificGravityMax !== s.specificGravityMin
-                              ? ` - ${s.specificGravityMax}`
-                              : ""}
-                          </span>
-                        </div>
-                        <div className='flex flex-col'>
-                          <span className='text-[8px] font-bold text-slate-400 uppercase leading-none'>
-                            H
-                          </span>
-                          <span className='text-[9px] font-bold text-blue-700'>
-                            {s.hardnessMin}
-                            {s.hardnessMax !== s.hardnessMin ? ` - ${s.hardnessMax}` : ""}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </>
-            ) : (
-              <div className='py-8 text-center border-2 border-dashed border-blue-100 rounded-2xl bg-white/40 animate-in fade-in duration-700'>
-                <Search className='mx-auto h-8 w-8 text-blue-200 mb-2' />
-                <p className='text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]'>
-                  No matching gems found
-                </p>
-                <p className='text-[9px] text-blue-300 mt-1 italic'>
-                  Enter Scientific Data to see suggestions
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
+      {user?.role !== UserRole.HELPER && (
+        <ScientificSuggestions
+          suggestions={suggestions}
+          watchedHardness={watchedHardness}
+          onReset={onReset}
+          onWatch={onWatch}
+          onSetSpeciesSearch={onSetSpeciesSearch}
+          onSetVarietySearch={onSetVarietySearch}
+        />
       )}
 
       {/* Historical Blocks */}
-      {(gem.test1?.riMin || gem.test1?.riMax || gem.test2?.riMin || gem.test2?.riMax) && user?.role === "ADMIN" && (
+      {(gem.test1?.riMin || gem.test1?.riMax || gem.test2?.riMin || gem.test2?.riMax) && user?.role === UserRole.ADMIN && (
         <div className='space-y-4'>
           {gem.test1?.riMin || gem.test1?.riMax ? (
             <Card className='p-4 border-l-4 border-l-blue-500 shadow-sm'>
@@ -375,7 +283,7 @@ export function GemIntakeAndHistory({
                       Copy Data
                     </Button>
                   )}
-                  {user?.role === "ADMIN" && (
+                  {user?.role === UserRole.ADMIN && (
                     <Button
                       variant='ghost'
                       size='sm'
@@ -651,7 +559,7 @@ export function GemIntakeAndHistory({
                       Copy Data
                     </Button>
                   )}
-                  {user?.role === "ADMIN" && (
+                  {user?.role === UserRole.ADMIN && (
                     <Button
                       variant='ghost'
                       size='sm'

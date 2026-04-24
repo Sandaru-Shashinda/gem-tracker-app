@@ -13,15 +13,26 @@ import { customersApi } from "@/lib/api/customers"
 import { referencesApi } from "@/lib/api/references"
 import { uploadImage } from "@/lib/api/images"
 import { compressImage } from "@/lib/image-utils"
-import { type GemReference, type Customer, type GemStatus, GEM_STATUSES } from "@/lib/types"
+import { type Gem, type GemReference, type Customer, GEM_STATUSES, UserRole } from "@/lib/types"
 import { GemTimeline } from "@/components/features/gems/GemTimeline"
 import { GemIntakeAndHistory } from "@/components/features/gems/GemIntakeAndHistory"
 import { GemDetailHeader } from "@/components/features/gems/GemDetailHeader"
 import { GemWorkflowStatus } from "@/components/features/gems/GemWorkflowStatus"
 import { GemAnalysisForm } from "@/components/features/gems/GemAnalysisForm"
+import { ApproverCorrectionBanner } from "@/components/features/gems/ApproverCorrectionBanner"
+import { GemFormActions } from "@/components/features/gems/GemFormActions"
 import { getFormFieldsConfig } from "@/components/shared/common/Formfieldsconfig"
+import { FORM_DEFAULTS } from "@/lib/validations/gemFormDefaults"
+import {
+  type SearchSetters,
+  mapSourceToFormValues,
+  syncSearchStates,
+  resolveSubmitStatus,
+} from "@/lib/gemFormUtils"
+
 export function GemDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const {
     user,
     gems,
@@ -29,73 +40,49 @@ export function GemDetailPage() {
     species: globalSpecies,
     handleTestSubmit,
     handleRequestCorrection,
-    handleRequestApproverCorrection,
     handleDismissApproverCorrection,
     handleApproval,
     handleSaveDraft,
+    getGemById,
     loading,
     refreshGems,
   } = useGem()
-  const navigate = useNavigate()
 
   const gem = gems.find((g: any) => g._id === id)
+  const [gemDetail, setGemDetail] = useState<Gem | null>(null)
 
-  const form = useForm<TestFormValues>({
-    resolver: zodResolver(testSchema) as any,
-    defaultValues: {
-      riMin: "",
-      riMax: "",
-      sg: "",
-      hardnessMin: "",
-      hardnessMax: "",
-      species: "",
-      selectedVariety: "",
-      itemDescription: "",
-      colour: "",
-      clarityGrade: "",
-      grade: "",
-      polishingGrade: "Fine",
-      proportionGrade: "Fine",
-      cuttingGrade: 0,
-      colourGrade: 0,
-      finalGrade: 0,
-      cuttingShape: "",
-      crownStyle: "",
-      pavilionStyle: "",
-      messurementX: "",
-      messurementY: "",
-      messurementZ: "",
-      transparency: "",
-      origin: "",
-      spectroscopy: "",
-      comments: "",
-      specialNote: "",
-      treatment: "",
-      clarityEnhancement: "",
-      isHeated: false,
-      isEmerald: false,
-      isMixCut: false,
-    },
-    mode: "onChange",
-  })
+  // ── Role flags ──────────────────────────────────────────────────────────
+  const isHelper = user?.role === UserRole.HELPER
+  const isAdmin = user?.role === UserRole.ADMIN
+  const isTester = user?.role === UserRole.TESTER
 
-  const {
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { isSubmitting, isValid },
-  } = form
+  // ── Stage flags ─────────────────────────────────────────────────────────
+  const isT1 =
+    gem?.status === GEM_STATUSES.READY_FOR_T1 || gem?.status === GEM_STATUSES.DRAFT_TEST_1
+  const isT2 =
+    gem?.status === GEM_STATUSES.READY_FOR_T2 || gem?.status === GEM_STATUSES.DRAFT_TEST_2
+  const isApproval =
+    gem?.status === GEM_STATUSES.READY_FOR_APPROVAL || gem?.status === GEM_STATUSES.DRAFT_APPROVAL
 
-  // Watch fields for suggestions
-  const watchedRiMin = watch("riMin")
-  const watchedRiMax = watch("riMax")
-  const watchedSg = watch("sg")
-  const watchedHardnessMin = watch("hardnessMin")
-  const watchedHardnessMax = watch("hardnessMax")
-  const watchedSpecies = watch("species")
-  const watchedVariety = watch("selectedVariety")
+  // ── Permission flags ────────────────────────────────────────────────────
+  const isAssignedT1 = gem?.assignedTester1 === user?.id
+  const isAssignedT2 = gem?.assignedTester2 === user?.id
+  const isDone = gem?.status === GEM_STATUSES.DONE
+  const isEditingT1AfterSubmit =
+    isTester && isAssignedT1 && !!gemDetail?.test1?.testerId && !isT1 && !isDone
+  const isEditingT2AfterSubmit =
+    isTester && isAssignedT2 && !!gemDetail?.test2?.testerId && !isT2 && !isDone
+  const canTest =
+    (isTester &&
+      ((isT1 && isAssignedT1) ||
+        (isT2 && isAssignedT2) ||
+        isEditingT1AfterSubmit ||
+        isEditingT2AfterSubmit)) ||
+    isAdmin
+  const canApprove = isAdmin
+  const approverCorrectionActive = gemDetail?.finalApproval?.approverCorrectionRequested === true
 
+  // ── Search state ────────────────────────────────────────────────────────
   const [speciesSearch, setSpeciesSearch] = useState("")
   const [showSpeciesList, setShowSpeciesList] = useState(false)
   const [varietySearch, setVarietySearch] = useState("")
@@ -108,29 +95,52 @@ export function GemDetailPage() {
   const [showCuttingShapeList, setShowCuttingShapeList] = useState(false)
   const [colourSearch, setColourSearch] = useState("")
   const [showColourList, setShowColourList] = useState(false)
+
+  // ── Other state ─────────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<GemReference[]>([])
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [customer, setCustomer] = useState<Customer | null>(null)
 
+  // ── Derived data ────────────────────────────────────────────────────────
   const filteredSpecies = globalSpecies.filter((s) =>
     s.toLowerCase().includes(speciesSearch.toLowerCase()),
   )
-
   const filteredVarieties = globalReferences.filter((r) =>
     r.variety.toLowerCase().includes(varietySearch.toLowerCase()),
   )
 
-  const isHelper = user?.role === "HELPER"
-  const isAdmin = user?.role === "ADMIN"
+  // ── Form ────────────────────────────────────────────────────────────────
+  const form = useForm<TestFormValues>({
+    resolver: zodResolver(testSchema) as any,
+    defaultValues: FORM_DEFAULTS,
+    mode: "onChange",
+  })
 
-  const isT1 =
-    gem?.status === GEM_STATUSES.READY_FOR_T1 || gem?.status === GEM_STATUSES.DRAFT_TEST_1
-  const isT2 =
-    gem?.status === GEM_STATUSES.READY_FOR_T2 || gem?.status === GEM_STATUSES.DRAFT_TEST_2
-  const isApproval =
-    gem?.status === GEM_STATUSES.READY_FOR_APPROVAL || gem?.status === GEM_STATUSES.DRAFT_APPROVAL
+  const {
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { isSubmitting, isValid },
+  } = form
 
-  // Get form fields configuration
+  const watchedRiMin = watch("riMin")
+  const watchedRiMax = watch("riMax")
+  const watchedSg = watch("sg")
+  const watchedHardnessMin = watch("hardnessMin")
+  const watchedHardnessMax = watch("hardnessMax")
+  const watchedSpecies = watch("species")
+  const watchedVariety = watch("selectedVariety")
+
+  const searchSetters: SearchSetters = {
+    setSpeciesSearch,
+    setVarietySearch,
+    setCrownStyleSearch,
+    setPavilionStyleSearch,
+    setCuttingShapeSearch,
+    setColourSearch,
+  }
+
   const { scientificFields, identificationFields, gradingFields, textFields } = getFormFieldsConfig(
     {
       speciesSearch,
@@ -165,99 +175,150 @@ export function GemDetailPage() {
     },
   )
 
+  // ── Effects ─────────────────────────────────────────────────────────────
+
+  // Populate form when full gem detail loads or active stage changes.
+  // For Approval stage: always use finalApproval data only.
+  // The approver must manually copy from Tester 1 or Tester 2 — no auto pre-fill.
   useEffect(() => {
-    if (gem) {
-      const activeData = isT1 ? gem.test1 : isT2 ? gem.test2 : gem.finalApproval
-      if (activeData) {
-        // For Approval stage: always use finalApproval data only.
-        // The approver must manually copy from Tester 1 or Tester 2 — no auto pre-fill.
-        const baseData = activeData
-
-        const obs = (baseData as any).observations || (baseData as any).finalObservations || {}
-
-        const newValues = {
-          riMin: baseData.riMin?.toString() || "",
-          riMax: baseData.riMax?.toString() || "",
-          sg: baseData.sg?.toString() || "",
-          hardnessMin: baseData.hardnessMin?.toString() || "",
-          hardnessMax: baseData.hardnessMax?.toString() || "",
-          species: obs.species || "",
-          selectedVariety:
-            (baseData as any).selectedVariety ||
-            (baseData as any).finalVariety ||
-            obs.variety ||
-            "",
-          comments: obs.comments || "",
-          itemDescription:
-            obs.itemDescription || (baseData as any).itemDescription || gem.itemDescription || "",
-          specialNote: obs.specialNote || "",
-          treatment: obs.treatment || "",
-          cuttingShape: obs.cuttingShape || obs.shape || "",
-          crownStyle: obs.crownStyle || obs.cuttingStyle || obs.cut || "",
-          pavilionStyle: obs.pavilionStyle || "",
-          messurementX: obs.messurementX?.toString() || "",
-          messurementY: obs.messurementY?.toString() || "",
-          messurementZ: obs.messurementZ?.toString() || "",
-          transparency: obs.transparency || "",
-          origin: obs.origin || "",
-          cuttingGrade: Number(obs.cuttingGrade) || 0,
-          polishingGrade: obs.polishingGrade || "Fine",
-          proportionGrade: obs.proportionGrade || "Fine",
-          clarityGrade: obs.clarityGrade || "",
-          clarityEnhancement: obs.clarityEnhancement || "",
-          grade: obs.grade || "",
-          spectroscopy: obs.spectroscopy || "",
-          colour: obs.colour || gem.color || "",
-          colourGrade: Number(obs.colourGrade) || 0,
-          finalGrade: Number(obs.finalGrade) || 0,
-          isHeated: obs.isHeated ?? (baseData as any).isHeated ?? false,
-          isEmerald: obs.isEmerald ?? (baseData as any).isEmerald ?? false,
-          isMixCut: obs.isMixCut ?? (baseData as any).isMixCut ?? false,
-        }
-
-        reset(newValues)
-
-        console.log("newValues", newValues)
-
-        // Sync search states
-        setSpeciesSearch(newValues.species)
-        setVarietySearch(newValues.selectedVariety)
-        setCrownStyleSearch(newValues.crownStyle)
-        setPavilionStyleSearch(newValues.pavilionStyle)
-        setCuttingShapeSearch(newValues.cuttingShape)
-        setColourSearch(newValues.colour)
+    if (!gemDetail) return
+    let activeData: any = null
+    if (isAdmin) {
+      activeData = isT1 ? gemDetail.test1 : isT2 ? gemDetail.test2 : gemDetail.finalApproval
+    } else if (isTester) {
+      if (isAssignedT2 && (isT2 || isEditingT2AfterSubmit)) {
+        activeData = gemDetail.test2
+      } else if (isAssignedT1 && (isT1 || isEditingT1AfterSubmit)) {
+        activeData = gemDetail.test1
       }
     }
-  }, [gem, isT1, isT2, isApproval, reset])
+    if (!activeData) return
+
+    const values = mapSourceToFormValues(activeData)
+    if (!values.itemDescription) values.itemDescription = gemDetail.itemDescription || ""
+    if (!values.colour) values.colour = gemDetail.color || ""
+
+    reset(values)
+    syncSearchStates(values, searchSetters)
+  }, [
+    gemDetail,
+    isT1,
+    isT2,
+    isApproval,
+    isAdmin,
+    isTester,
+    isAssignedT1,
+    isAssignedT2,
+    isEditingT1AfterSubmit,
+    isEditingT2AfterSubmit,
+    reset,
+  ])
 
   useEffect(() => {
-    if (gem?.customerId) {
-      customersApi.getCustomer(gem.customerId).then(setCustomer).catch(console.error)
-    }
+    if (!gem?.customerId) return
+    customersApi.getCustomer(gem.customerId).then(setCustomer).catch(console.error)
   }, [gem?.customerId])
 
-  // Auto-suggestion Logic
   useEffect(() => {
-    const getSuggestions = async () => {
-      if (watchedRiMin || watchedRiMax || watchedSg || watchedHardnessMin || watchedHardnessMax) {
-        try {
-          const matches = await referencesApi.searchReferences(
-            watchedRiMin,
-            watchedRiMax,
-            watchedSg,
-            watchedHardnessMin,
-            watchedHardnessMax,
-          )
-          setSuggestions(matches)
-        } catch (err) {
-          console.error("Failed to get suggestions:", err)
-        }
-      } else {
-        setSuggestions([])
-      }
+    if (!id) return
+    getGemById(id).then(setGemDetail).catch(console.error)
+  }, [id, gem?.updatedAt, getGemById])
+
+  // Auto-suggestion based on scientific measurements.
+  useEffect(() => {
+    if (
+      !watchedRiMin &&
+      !watchedRiMax &&
+      !watchedSg &&
+      !watchedHardnessMin &&
+      !watchedHardnessMax
+    ) {
+      setSuggestions([])
+      return
     }
-    getSuggestions()
+    referencesApi
+      .searchReferences(
+        watchedRiMin,
+        watchedRiMax,
+        watchedSg,
+        watchedHardnessMin,
+        watchedHardnessMax,
+      )
+      .then(setSuggestions)
+      .catch((err) => console.error("Failed to get suggestions:", err))
   }, [watchedRiMin, watchedRiMax, watchedSg, watchedHardnessMin, watchedHardnessMax])
+
+  // ── Handlers ────────────────────────────────────────────────────────────
+
+  const onSubmit: SubmitHandler<TestFormValues> = async (data) => {
+    try {
+      if (isAdmin) {
+        const status = resolveSubmitStatus(user?.role, isT1, isT2)
+        await handleApproval(gem!._id, data, status)
+        navigate("/queue")
+      } else if (isEditingT1AfterSubmit || isEditingT2AfterSubmit) {
+        const stage = isEditingT1AfterSubmit ? "test1" : "test2"
+        await handleTestSubmit(gem!._id, stage, data, gem!.status)
+      } else if (canTest) {
+        const status = resolveSubmitStatus(user?.role, isT1, isT2)
+        await handleTestSubmit(gem!._id, isT1 ? "test1" : "test2", data, status)
+        navigate("/queue")
+      }
+    } catch (error) {
+      console.error("Failed to submit:", error)
+    }
+  }
+
+  const handleDraft = async () => {
+    try {
+      setIsActionLoading(true)
+      const data = watch()
+      const stage = isApproval ? "finalApproval" : isT1 ? "test1" : "test2"
+      const status = isApproval
+        ? GEM_STATUSES.DRAFT_APPROVAL
+        : isT1
+          ? GEM_STATUSES.DRAFT_TEST_1
+          : GEM_STATUSES.DRAFT_TEST_2
+      await handleSaveDraft(gem!._id, stage, data, status)
+    } catch (error) {
+      console.error("Failed to save draft:", error)
+    } finally {
+      setIsActionLoading(false)
+    }
+  }
+
+  const handleImageUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0 || !gem) return
+    setIsActionLoading(true)
+    try {
+      const newImageIds = await Promise.all(
+        Array.from(files).map(async (file) => {
+          const compressed = await compressImage(file, 30)
+          const uploaded = await uploadImage({
+            file: compressed,
+            category: "gem",
+            metadata: { gemId: gem.gemId },
+          })
+          return uploaded._id
+        }),
+      )
+      await gemsApi.addGemImages(gem._id, newImageIds)
+      await refreshGems()
+    } catch (error) {
+      console.error("Failed to update images:", error)
+    } finally {
+      setIsActionLoading(false)
+    }
+  }
+
+  const copyValues = (source: any) => {
+    const values = mapSourceToFormValues(source)
+    reset(values)
+    syncSearchStates(values, searchSetters)
+  }
+
+  // ── Early returns ────────────────────────────────────────────────────────
 
   if (loading && !gem) {
     return (
@@ -282,126 +343,13 @@ export function GemDetailPage() {
     )
   }
 
-  const isTester = user?.role === "TESTER"
-  const isAssignedT1 = gem?.assignedTester1 === user?.id
-  const isAssignedT2 = gem?.assignedTester2 === user?.id
-  const canTest = (isTester && ((isT1 && isAssignedT1) || (isT2 && isAssignedT2))) || isAdmin
-  const canApprove = isAdmin
-  const approverCorrectionActive = gem?.finalApproval?.approverCorrectionRequested === true
+  const showDraftButton =
+    !isEditingT1AfterSubmit &&
+    !isEditingT2AfterSubmit &&
+    gem.status !== GEM_STATUSES.SUBMITTED_FOR_REPORT &&
+    gem.status !== GEM_STATUSES.DONE
 
-  const onSubmit: SubmitHandler<TestFormValues> = async (data) => {
-    try {
-      let status: GemStatus
-      if (user?.role === "ADMIN") {
-        status = GEM_STATUSES.SUBMITTED_FOR_REPORT
-      } else if (isT1) {
-        status = GEM_STATUSES.READY_FOR_T2
-      } else if (isT2) {
-        status = GEM_STATUSES.READY_FOR_APPROVAL
-      } else {
-        status = GEM_STATUSES.SUBMITTED_FOR_REPORT
-      }
-
-      if (isAdmin) {
-        await handleApproval(gem!._id, data, status)
-        navigate("/queue")
-      } else if (canTest) {
-        await handleTestSubmit(gem!._id, isT1 ? "test1" : "test2", data, status)
-        navigate("/queue")
-      }
-    } catch (error) {
-      console.error("Failed to submit:", error)
-    }
-  }
-
-  const handleDraft = async () => {
-    try {
-      setIsActionLoading(true)
-      const data = watch() // Get current form values
-      const stage = isApproval ? "finalApproval" : isT1 ? "test1" : "test2"
-      const status = isApproval
-        ? GEM_STATUSES.DRAFT_APPROVAL
-        : isT1
-          ? GEM_STATUSES.DRAFT_TEST_1
-          : GEM_STATUSES.DRAFT_TEST_2
-      await handleSaveDraft(gem!._id, stage, data, status)
-    } catch (error) {
-      console.error("Failed to save draft:", error)
-    } finally {
-      setIsActionLoading(false)
-    }
-  }
-
-  const handleImageUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files || files.length === 0 || !gem) return
-
-    setIsActionLoading(true)
-    try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const compressedImage = await compressImage(file, 30)
-        const uploadedImage = await uploadImage({
-          file: compressedImage,
-          category: "gem",
-          metadata: { gemId: gem.gemId },
-        })
-        return uploadedImage._id
-      })
-
-      const newImageIds = await Promise.all(uploadPromises)
-      await gemsApi.addGemImages(gem._id, newImageIds)
-      await refreshGems()
-    } catch (error) {
-      console.error("Failed to update images:", error)
-    } finally {
-      setIsActionLoading(false)
-    }
-  }
-
-  const copyValues = (source: any) => {
-    const obs = source.observations || source.finalObservations || {}
-    const newValues = {
-      riMin: source.riMin?.toString() || "",
-      riMax: source.riMax?.toString() || "",
-      sg: source.sg?.toString() || "",
-      hardnessMin: source.hardnessMin?.toString() || "",
-      hardnessMax: source.hardnessMax?.toString() || "",
-      cuttingShape: obs.cuttingShape || obs.shape || "",
-      crownStyle: obs.crownStyle || obs.cuttingStyle || obs.cut || "",
-      pavilionStyle: obs.pavilionStyle || "",
-      messurementX: obs.messurementX?.toString() || "",
-      messurementY: obs.messurementY?.toString() || "",
-      messurementZ: obs.messurementZ?.toString() || "",
-      transparency: obs.transparency || "",
-      origin: obs.origin || "",
-      cuttingGrade: Number(obs.cuttingGrade) || 0,
-      polishingGrade: obs.polishingGrade || "Fine",
-      proportionGrade: obs.proportionGrade || "Fine",
-      clarityGrade: obs.clarityGrade || "",
-      clarityEnhancement: obs.clarityEnhancement || "",
-      grade: obs.grade || "",
-      spectroscopy: obs.spectroscopy || "",
-      colour: obs.colour || "",
-      colourGrade: obs.colourGrade || 0,
-      finalGrade: obs.finalGrade || 0,
-      species: obs.species || "",
-      selectedVariety: source.selectedVariety || source.finalVariety || obs.variety || "",
-      comments: obs.comments || "",
-      itemDescription: obs.itemDescription || source.itemDescription || "",
-      specialNote: obs.specialNote || "",
-      treatment: obs.treatment || "",
-      isHeated: obs.isHeated ?? source.isHeated ?? false,
-      isEmerald: obs.isEmerald ?? source.isEmerald ?? false,
-      isMixCut: obs.isMixCut ?? source.isMixCut ?? false,
-    }
-    reset(newValues)
-    setSpeciesSearch(obs.species || "")
-    setVarietySearch(source.selectedVariety || source.finalVariety || obs.variety || "")
-    setCrownStyleSearch(obs.crownStyle || obs.cuttingStyle || obs.cut || "")
-    setPavilionStyleSearch(obs.pavilionStyle || "")
-    setCuttingShapeSearch(obs.cuttingShape || obs.shape || "")
-    setColourSearch(obs.colour || "")
-  }
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <MainLayout>
@@ -414,7 +362,7 @@ export function GemDetailPage() {
 
         <div className='grid grid-cols-1 lg:grid-cols-5 gap-6'>
           <GemIntakeAndHistory
-            gem={gem}
+            gem={gemDetail ?? gem}
             user={user}
             customer={customer}
             suggestions={suggestions}
@@ -432,25 +380,15 @@ export function GemDetailPage() {
           {/* Main Column */}
           <div className='lg:col-span-3'>
             {approverCorrectionActive && (
-              <div className='mb-4 flex items-start justify-between gap-3 rounded-lg border border-yellow-400 bg-yellow-50 p-4'>
-                <div>
-                  <p className='text-sm font-bold text-yellow-800'>Correction Flagged by Approver</p>
-                  {gem.finalApproval?.approverCorrectionNote && (
-                    <p className='mt-1 text-sm text-yellow-700'>{gem.finalApproval.approverCorrectionNote}</p>
-                  )}
-                </div>
-                {isAdmin && (
-                  <button
-                    type='button'
-                    onClick={() => handleDismissApproverCorrection(gem._id)}
-                    className='shrink-0 text-xs font-semibold text-yellow-700 underline hover:text-yellow-900'
-                  >
-                    Dismiss
-                  </button>
-                )}
-              </div>
+              <ApproverCorrectionBanner
+                note={gemDetail?.finalApproval?.approverCorrectionNote}
+                isAdmin={isAdmin}
+                onDismiss={() => handleDismissApproverCorrection(gem._id)}
+              />
             )}
-            {(canTest || (canApprove && isApproval)) && !isHelper ? (
+
+            {/* {(canTest || (canApprove && isApproval)) && !isHelper ? ( */}
+            {!isHelper ? (
               <Card className='p-6'>
                 <form
                   onSubmit={handleSubmit(onSubmit)}
@@ -466,37 +404,13 @@ export function GemDetailPage() {
                     gradingFields={gradingFields}
                     textFields={textFields}
                   />
-
-                  <div className='flex justify-end gap-4 pt-4 border-t'>
-                    <Button
-                      type='submit'
-                      className='h-12 px-8 font-bold border-blue-200 text-blue-700 hover:bg-blue-50'
-                      variant='outline'
-                      disabled={isSubmitting || isActionLoading || !isValid}
-                    >
-                      {isSubmitting || isActionLoading ? (
-                        <Loader2 className='animate-spin h-6 w-6' />
-                      ) : (
-                        "Submit Lab Analysis"
-                      )}
-                    </Button>
-                    {gem?.status !== GEM_STATUSES.SUBMITTED_FOR_REPORT &&
-                      gem?.status !== GEM_STATUSES.DONE && (
-                        <Button
-                          type='button'
-                          variant='outline'
-                          className='h-12 px-8 font-bold border-blue-200 text-blue-700 hover:bg-blue-50'
-                          onClick={handleDraft}
-                          disabled={isSubmitting || isActionLoading}
-                        >
-                          {isActionLoading ? (
-                            <Loader2 className='animate-spin h-5 w-5' />
-                          ) : (
-                            "Save Draft"
-                          )}
-                        </Button>
-                      )}
-                  </div>
+                  <GemFormActions
+                    isSubmitting={isSubmitting}
+                    isActionLoading={isActionLoading}
+                    isValid={isValid}
+                    showDraft={showDraftButton}
+                    onDraft={handleDraft}
+                  />
                 </form>
               </Card>
             ) : (

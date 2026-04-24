@@ -3,6 +3,7 @@ import { createColumnHelper, type PaginationState } from "@tanstack/react-table"
 import { Edit2, Trash2, CreditCard, Calendar, MapPin, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { User } from "@/lib/types"
+import { UserRole } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
 
 interface UserTableProps {
@@ -86,7 +87,7 @@ export function UserTable({
           return (
             <span
               className={`px-3 py-1 rounded-full text-[10px] font-black ${
-                role === "ADMIN"
+                role === UserRole.ADMIN
                   ? "bg-purple-50 text-purple-600 border border-purple-100"
                   : "bg-blue-50 text-blue-600 border border-blue-100"
               }`}
@@ -122,7 +123,7 @@ export function UserTable({
                   onDelete(user.id)
                 }}
                 className='h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg'
-                disabled={user.id === "u1" || user.role === "ADMIN"}
+                disabled={user.id === "u1" || user.role === UserRole.ADMIN}
               >
                 <Trash2 size={14} />
               </Button>

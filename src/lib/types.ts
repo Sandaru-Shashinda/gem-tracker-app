@@ -1,4 +1,8 @@
-export type UserRole = "ADMIN" | "HELPER" | "TESTER"
+export enum UserRole {
+  ADMIN = "ADMIN",
+  HELPER = "HELPER",
+  TESTER = "TESTER",
+}
 
 export interface User {
   id: string
@@ -99,7 +103,7 @@ export interface Gem {
     timestamp?: Date
   }
 
-  test1: {
+  test1?: null | {
     riMin?: number
     riMax?: number
     sg?: number
@@ -115,7 +119,7 @@ export interface Gem {
     history?: any[]
   }
 
-  test2: {
+  test2?: null | {
     riMin?: number
     riMax?: number
     sg?: number
@@ -131,7 +135,7 @@ export interface Gem {
     history?: any[]
   }
 
-  finalApproval: {
+  finalApproval?: null | {
     riMin?: number
     riMax?: number
     sg?: number
@@ -158,4 +162,5 @@ export interface GemReference {
   specificGravityMax: number
   hardnessMin: number
   hardnessMax: number
+  matchScore?: number
 }

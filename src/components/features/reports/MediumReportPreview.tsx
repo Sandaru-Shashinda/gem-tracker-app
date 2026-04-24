@@ -24,21 +24,21 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
   const [scale, setScale] = useState(1)
 
   useEffect(() => {
-    const updateScale = () => {
-      if (containerRef.current) {
-        const parentWidth = containerRef.current.parentElement?.clientWidth || window.innerWidth
-        const availableWidth = parentWidth - 32 // padding
-        if (availableWidth < 1120) {
-          setScale(availableWidth / 1120)
-        } else {
-          setScale(1)
-        }
-      }
+    const updateScale = (width: number) => {
+      const availableWidth = width - 32
+      setScale(availableWidth < 1120 ? availableWidth / 1120 : 1)
     }
 
-    setTimeout(updateScale, 10)
-    window.addEventListener("resize", updateScale)
-    return () => window.removeEventListener("resize", updateScale)
+    const parent = containerRef.current?.parentElement
+    if (!parent) return
+
+    const observer = new ResizeObserver((entries) => {
+      updateScale(entries[0].contentRect.width)
+    })
+    observer.observe(parent)
+    updateScale(parent.clientWidth)
+
+    return () => observer.disconnect()
   }, [])
 
   const handleDownload = async () => {
@@ -79,17 +79,14 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
       </div>
 
       {/* Interactive Screen Preview */}
-      <div className='w-full flex justify-center' style={{ height: `${792 * scale}px` }}>
+      <div style={{ width: `${1120 * scale}px`, height: `${792 * scale}px`, margin: "0 auto", overflow: "hidden" }}>
         <div
           className='relative transition-all duration-300 bg-white shadow-2xl rounded-sm overflow-hidden text-slate-900 border border-slate-200 flex flex-row'
           style={{
             width: "1120px",
-            minWidth: "1120px",
             height: "792px",
-            minHeight: "792px",
-            flexShrink: 0,
             transform: `scale(${scale})`,
-            transformOrigin: "top center",
+            transformOrigin: "top left",
           }}
         >
           <DetailView gem={gem} reportId={reportId} />

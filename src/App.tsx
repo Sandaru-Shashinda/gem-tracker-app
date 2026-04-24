@@ -8,6 +8,7 @@ import { StatsPage } from "./pages/StatsPage"
 import { UsersPage } from "./pages/UsersPage"
 import { CustomersPage } from "./pages/CustomersPage"
 import { useGem } from "./hooks/useGemStore"
+import { UserRole } from "./lib/types"
 import { ReportPreviewPage } from "./pages/ReportPreviewPage"
 import { ReportsPage } from "./pages/ReportsPage"
 import { ReportConfigurationPage } from "./pages/ReportConfigurationPage"
@@ -27,7 +28,7 @@ export default function App() {
         <Route
           path='/intake'
           element={
-            user?.role === "HELPER" || user?.role === "ADMIN" ? (
+            user?.role === UserRole.HELPER || user?.role === UserRole.ADMIN ? (
               <IntakePage />
             ) : (
               <Navigate to='/dashboard' replace />
@@ -37,7 +38,7 @@ export default function App() {
         <Route
           path='/intake/:id'
           element={
-            user?.role === "HELPER" || user?.role === "ADMIN" ? (
+            user?.role === UserRole.HELPER || user?.role === UserRole.ADMIN ? (
               <IntakePage />
             ) : (
               <Navigate to='/dashboard' replace />
@@ -46,16 +47,16 @@ export default function App() {
         />
         <Route
           path='/stats'
-          element={user?.role === "ADMIN" ? <StatsPage /> : <Navigate to='/dashboard' replace />}
+          element={user?.role === UserRole.ADMIN ? <StatsPage /> : <Navigate to='/dashboard' replace />}
         />
         <Route
           path='/users'
-          element={user?.role === "ADMIN" ? <UsersPage /> : <Navigate to='/dashboard' replace />}
+          element={user?.role === UserRole.ADMIN ? <UsersPage /> : <Navigate to='/dashboard' replace />}
         />
         <Route
           path='/customers'
           element={
-            user?.role === "ADMIN" || user?.role === "HELPER" ? (
+            user?.role === UserRole.ADMIN || user?.role === "HELPER" ? (
               <CustomersPage />
             ) : (
               <Navigate to='/dashboard' replace />
@@ -65,7 +66,7 @@ export default function App() {
         <Route
           path='/reports'
           element={
-            user?.role === "ADMIN" || user?.role === "HELPER" ? (
+            user?.role === UserRole.ADMIN || user?.role === "HELPER" ? (
               <ReportsPage />
             ) : (
               <Navigate to='/dashboard' replace />
@@ -76,7 +77,7 @@ export default function App() {
         <Route
           path='/reports/:id/configure'
           element={
-            user?.role === "ADMIN" || user?.role === "HELPER" ? (
+            user?.role === UserRole.ADMIN || user?.role === "HELPER" ? (
               <ReportConfigurationPage />
             ) : (
               <Navigate to='/dashboard' replace />

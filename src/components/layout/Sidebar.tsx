@@ -10,12 +10,11 @@ import {
   Users,
   Building2,
   FileText,
-  ChevronLeft,
-  ChevronRight,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useGem } from "@/hooks/useGemStore"
+import { UserRole } from "@/lib/types"
 
 interface NavButtonProps {
   icon: LucideIcon
@@ -57,14 +56,9 @@ export function Sidebar() {
       className={`hidden md:flex flex-col bg-slate-900 text-white transition-all duration-300 relative border-r border-slate-800 ${
         collapsed ? "w-20" : "w-64"
       }`}
+      onMouseEnter={() => setCollapsed(false)}
+      onMouseLeave={() => setCollapsed(true)}
     >
-      {/* Toggle Button */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className='absolute -right-3 top-9 bg-slate-800 text-slate-400 border border-slate-700 rounded-full p-1 hover:text-white hover:bg-blue-600 transition-colors z-50 shadow-md'
-      >
-        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-      </button>
 
       <div
         className={`h-20 border-b border-slate-800 flex items-center ${
@@ -84,16 +78,16 @@ export function Sidebar() {
       <nav className='flex-1 p-3 space-y-2 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-700'>
         <NavButton icon={LayoutDashboard} label='Dashboard' to='/dashboard' collapsed={collapsed} />
         <NavButton icon={ClipboardCheck} label='My Queue' to='/queue' collapsed={collapsed} />
-        {user.role === "HELPER" && (
+        {user.role === UserRole.HELPER && (
           <NavButton icon={Plus} label='Intake Gem' to='/intake' collapsed={collapsed} />
         )}
-        {(user.role === "ADMIN" || user.role === "HELPER") && (
+        {(user.role === UserRole.ADMIN || user.role === UserRole.HELPER) && (
           <>
             <NavButton icon={Building2} label='Customers' to='/customers' collapsed={collapsed} />
             <NavButton icon={FileText} label='Reports' to='/reports' collapsed={collapsed} />
           </>
         )}
-        {user.role === "ADMIN" && (
+        {user.role === UserRole.ADMIN && (
           <>
             <div
               className={`pt-4 pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider ${

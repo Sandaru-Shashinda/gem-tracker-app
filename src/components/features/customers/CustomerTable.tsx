@@ -3,6 +3,7 @@ import { createColumnHelper, type PaginationState } from "@tanstack/react-table"
 import { Edit2, Trash2, MapPin, Mail, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Customer } from "@/lib/types"
+import { UserRole } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
 
 interface CustomerTableProps {
@@ -15,7 +16,7 @@ interface CustomerTableProps {
   ) => void
   totalRecords: number
   isLoading?: boolean
-  userRole?: string
+  userRole?: UserRole
 }
 
 const columnHelper = createColumnHelper<Customer>()
@@ -84,7 +85,7 @@ export function CustomerTable({
         cell: (info) => {
           const customer = info.row.original
 
-          if (userRole !== "ADMIN") return null
+          if (userRole !== UserRole.ADMIN) return null
 
           return (
             <div className='flex items-center justify-end gap-1'>

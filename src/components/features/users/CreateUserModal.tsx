@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { userSchema, type UserFormValues } from "@/lib/validations/user"
+import { UserRole } from "@/lib/types"
 
 interface CreateUserModalProps {
   isOpen: boolean
@@ -40,7 +41,7 @@ export function CreateUserModal({
     defaultValues: {
       name: "",
       email: "",
-      role: "TESTER",
+      role: UserRole.TESTER,
       age: "",
       dob: new Date(1998, 0, 5).toISOString().split("T")[0],
       idNumber: "",
@@ -110,9 +111,9 @@ export function CreateUserModal({
                         <SelectValue placeholder='Select role' />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value='TESTER'>TESTER</SelectItem>
-                        <SelectItem value='HELPER'>HELPER</SelectItem>
-                        <SelectItem value='ADMIN'>ADMIN</SelectItem>
+                        <SelectItem value={UserRole.TESTER}>TESTER</SelectItem>
+                        <SelectItem value={UserRole.HELPER}>HELPER</SelectItem>
+                        <SelectItem value={UserRole.ADMIN}>ADMIN</SelectItem>
                       </SelectContent>
                     </Select>
                   )}

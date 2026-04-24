@@ -42,27 +42,36 @@ export const gemsApi = {
 
   updateGem: async (gemId: string, updates: any): Promise<Gem> => {
     let endpoint = `${API_BASE_URL}/gems/${gemId}`
-    const method = "PUT"
     let payload = updates
+    let stageKey: string | null = null
 
     if (updates.test1) {
       endpoint = `${API_BASE_URL}/gems/${gemId}/test1`
       payload = { ...updates.test1, status: updates.status }
+      stageKey = "test1"
     } else if (updates.test2) {
       endpoint = `${API_BASE_URL}/gems/${gemId}/test2`
       payload = { ...updates.test2, status: updates.status }
+      stageKey = "test2"
     } else if (updates.finalApproval) {
       endpoint = `${API_BASE_URL}/gems/${gemId}/final-approval`
       payload = { ...updates.finalApproval, status: updates.status }
+      stageKey = "finalApproval"
     }
 
     const response = await fetchWithAuth(endpoint, {
-      method: method,
+      method: "PUT",
       body: JSON.stringify(payload),
     })
 
     if (!response.ok) throw new Error("Failed to update gem")
-    return response.json()
+    const data = await response.json()
+
+    // Stage write endpoints return { gem, test1/test2/finalApproval } — merge into Gem shape
+    if (stageKey && data.gem) {
+      return { ...data.gem, [stageKey]: data[stageKey] } as Gem
+    }
+    return data as Gem
   },
 
   addGemImages: async (gemId: string, imageIds: string[]): Promise<Gem> => {
@@ -80,7 +89,10 @@ export const gemsApi = {
       body: JSON.stringify(updates),
     })
     if (!response.ok) throw new Error("Failed to submit approval")
-    return response.json()
+    const data = await response.json()
+    // Merge { gem, finalApproval } into Gem shape
+    if (data.gem) return { ...data.gem, finalApproval: data.finalApproval } as Gem
+    return data as Gem
   },
 
   requestCorrection: async (

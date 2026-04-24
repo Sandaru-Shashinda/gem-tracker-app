@@ -10,6 +10,7 @@ import { DeleteCustomerDialog } from "@/components/features/customers/DeleteCust
 import { customersApi } from "@/lib/api/customers"
 import { useGem } from "@/hooks/useGemStore"
 import type { Customer } from "@/lib/types"
+import { UserRole } from "@/lib/types"
 
 export function CustomersPage() {
   const { user } = useGem()
@@ -92,7 +93,7 @@ export function CustomersPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            {user?.role === "ADMIN" && (
+            {user?.role === UserRole.ADMIN && (
               <Button
                 onClick={() => setIsCreateModalOpen(true)}
                 className='bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-100 flex items-center gap-2 h-10 px-4 rounded-xl transition-all active:scale-95 whitespace-nowrap'

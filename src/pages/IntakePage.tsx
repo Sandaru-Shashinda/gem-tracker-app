@@ -29,7 +29,7 @@ import { BASE_URL } from "@/lib/api/config"
 import { useGem } from "@/hooks/useGemStore"
 import { usersApi } from "@/lib/api/users"
 import { customersApi } from "@/lib/api/customers"
-import { type User, type Customer, GEM_STATUSES } from "@/lib/types"
+import { type User, type Customer, GEM_STATUSES, UserRole } from "@/lib/types"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
@@ -88,7 +88,7 @@ export function IntakePage() {
       // Always fetch testers and customers
       try {
         const [users, customersData] = await Promise.all([
-          usersApi.getUsers("TESTER"),
+          usersApi.getUsers(UserRole.TESTER),
           customersApi.getCustomers(1, 100),
         ])
         setTesters(users)

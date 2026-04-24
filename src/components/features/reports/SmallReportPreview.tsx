@@ -14,6 +14,8 @@ interface SmallReportPreviewProps {
   reportId?: string
 }
 
+const CARD_WIDTH = 640
+const CARD_HEIGHT = 403.5
 const DOWNLOAD_SCALE = 3
 
 export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
@@ -51,7 +53,9 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
     { label: "Color", value: gem.color },
     {
       label: "Shape & Cut",
-      value: `${obs.cuttingShape || ""} ${obs.cut || ""}`.trim() || undefined,
+      value: obs.isMixCut
+        ? `${obs.cuttingShape || ""} mix cut`.trim() || undefined
+        : obs.cuttingShape || undefined,
     },
     {
       label: "Dimension",
@@ -72,8 +76,8 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
           id='small-report-back-view'
           ref={backRef}
           style={{
-            width: "640px",
-            height: "400px",
+            width: `${CARD_WIDTH}px`,
+            height: `${CARD_HEIGHT}px`,
             backgroundColor: "#ffffff",
             overflow: "hidden",
             display: "flex",
@@ -251,20 +255,6 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                 fontFamily: "Arial, Helvetica, sans-serif",
               }}
             >
-              {obs.isHeated === false && (
-                <p
-                  style={{
-                    fontWeight: 700,
-                    fontSize: "14px",
-                    color: "#1e293b",
-                    lineHeight: 1.2,
-                    margin: 0,
-                    marginBottom: "4px",
-                  }}
-                >
-                  Un - Heated
-                </p>
-              )}
               <p
                 style={{
                   fontWeight: 700,
@@ -276,6 +266,20 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
               >
                 {finalData.finalVariety || obs.variety || "—"}
               </p>
+              {!obs.isHeated && (
+                <p
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "12px",
+                    color: "#1e293b",
+                    lineHeight: 1.2,
+                    margin: 0,
+                    marginBottom: "4px",
+                  }}
+                >
+                  Un - Heated
+                </p>
+              )}
               <p
                 style={{
                   fontSize: "16px",

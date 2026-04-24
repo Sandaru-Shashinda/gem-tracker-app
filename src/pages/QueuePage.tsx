@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { RefreshCcw, X } from "lucide-react"
 import type { Gem, User } from "@/lib/types"
-import { GEM_STATUSES } from "@/lib/types"
+import { GEM_STATUSES, UserRole } from "@/lib/types"
 import type { PaginationState } from "@tanstack/react-table"
 
 export function QueuePage() {
@@ -101,7 +101,7 @@ export function QueuePage() {
         <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
           <div>
             <h2 className='text-2xl font-bold text-slate-800'>
-              {user?.role === "TESTER" ? "Gem Queue" : "System Gems"}
+              {user?.role === UserRole.TESTER ? "Gem Queue" : "System Gems"}
             </h2>
             <p className='text-slate-500 text-sm'>
               {totalRecords} gems found based on current filters
