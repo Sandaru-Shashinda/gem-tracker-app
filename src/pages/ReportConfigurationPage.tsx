@@ -14,6 +14,7 @@ import { type Gem, GEM_STATUSES } from "@/lib/types"
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
+import { VerbalReportPreview } from "@/components/features/reports/VerbalReportPreview"
 import { jsPDF } from "jspdf"
 import html2canvas from "html2canvas"
 import { toJpeg } from "html-to-image"
@@ -32,12 +33,12 @@ interface Report {
 export function ReportConfigurationPage() {
   const { id } = useParams<{ id: string }>() // This ID is now treated as Report ID
   const navigate = useNavigate()
-  const { gems, loading: storeLoading } = useGem()
+  const { loading: storeLoading, getGemById } = useGem()
 
   const [report, setReport] = useState<Report | null>(null)
   const [gem, setGem] = useState<Gem | null>(null)
 
-  const [size, setSize] = useState<"small" | "medium" | "large">("medium")
+  const [size, setSize] = useState<"small" | "medium" | "large" | "verbal">("medium")
   const [includeLogo, setIncludeLogo] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -50,9 +51,6 @@ export function ReportConfigurationPage() {
       if (!id) return
       setIsLoading(true)
       try {
-        // Fetch the specific report by ID.
-        // This ID should be a valid Report ID. If navigating from a Gem,
-        // the caller should ensure they have the Report ID or the API should handle Gem IDs.
         const reportData = await reportsApi.getReportById(id)
 
         if (!reportData) {
@@ -61,31 +59,26 @@ export function ReportConfigurationPage() {
         }
 
         setReport(reportData)
-        if (reportData?.reportType) setSize(reportData.reportType as "small" | "medium" | "large")
+        if (reportData?.reportType) setSize(reportData.reportType as "small" | "medium" | "large" | "verbal")
         if (reportData?.isClientDataAdd !== undefined) setIncludeLogo(reportData.isClientDataAdd)
 
-        // Find associated gem
-        const foundGem = gems.find(
-          (g) =>
-            // Check if matches generic ID string references
-            g._id ===
-            (typeof reportData.gemId === "string" ? reportData.gemId : reportData.gemId._id),
-        )
+        // Always fetch the full gem document so nested finalApproval data is complete
+        const gemId =
+          typeof reportData.gemId === "string" ? reportData.gemId : reportData.gemId._id
+        let foundGem: Gem | null = null
+        try {
+          foundGem = await getGemById(gemId)
+        } catch {
+          // Fall back to the populated object if the direct fetch fails
+          if (typeof reportData.gemId === "object") {
+            foundGem = reportData.gemId as Gem
+          }
+        }
+
         if (foundGem) {
           setGem(foundGem)
-          // If gem is already completed, show preview automatically
           if (foundGem.status === GEM_STATUSES.DONE) {
             setShowPreview(true)
-          }
-        } else {
-          // Need to fetch gem if not in store (though store usually has all active gems)
-          // Or maybe the reportData.gemId object is fully populated?
-          if (typeof reportData.gemId === "object") {
-            const gemData = reportData.gemId as Gem
-            setGem(gemData)
-            if (gemData.status === GEM_STATUSES.DONE) {
-              setShowPreview(true)
-            }
           }
         }
       } catch (error) {
@@ -95,7 +88,7 @@ export function ReportConfigurationPage() {
       }
     }
     fetchReportAndGem()
-  }, [id, gems])
+  }, [id, getGemById])
 
   // Fallback: If passed ID finds a gem directly (e.g. from Gem Detail), we might want to handle that too?
   // But let's assume the user flow generates a report first then configures.
@@ -320,7 +313,7 @@ export function ReportConfigurationPage() {
                   <Label>Paper Size</Label>
                   <RadioGroup
                     value={size}
-                    onValueChange={(val: "small" | "medium" | "large") => setSize(val)}
+                    onValueChange={(val: "small" | "medium" | "large" | "verbal") => setSize(val)}
                     className='grid grid-cols-1 gap-3'
                   >
                     <div className='flex items-center space-x-2 border p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors'>
@@ -344,6 +337,13 @@ export function ReportConfigurationPage() {
                       <Label htmlFor='r-large' className='flex-1 cursor-pointer'>
                         <span className='font-semibold block'>Large (A4 Booklet)</span>
                         <span className='text-xs text-slate-500'>Detailed folded report</span>
+                      </Label>
+                    </div>
+                    <div className='flex items-center space-x-2 border p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors'>
+                      <RadioGroupItem value='verbal' id='r-verbal' />
+                      <Label htmlFor='r-verbal' className='flex-1 cursor-pointer'>
+                        <span className='font-semibold block'>Verbal</span>
+                        <span className='text-xs text-slate-500'>Brief verbal assessment</span>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -420,6 +420,12 @@ export function ReportConfigurationPage() {
                     />
                   ) : size === "medium" ? (
                     <MediumReportPreview
+                      gem={currentGem}
+                      includeLogo={includeLogo}
+                      reportId={report?._id}
+                    />
+                  ) : size === "verbal" ? (
+                    <VerbalReportPreview
                       gem={currentGem}
                       includeLogo={includeLogo}
                       reportId={report?._id}

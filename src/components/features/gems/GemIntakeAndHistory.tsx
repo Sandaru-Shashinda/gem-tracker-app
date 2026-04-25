@@ -276,16 +276,14 @@ export function GemIntakeAndHistory({
                     TESTER 1
                   </span>
                   <div className='flex items-center gap-1'>
-                    {isApproval && (
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        className='h-6 text-[10px]'
-                        onClick={() => onCopyValues(gem.test1)}
-                      >
-                        Copy Data
-                      </Button>
-                    )}
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      className='h-6 text-[10px]'
+                      onClick={() => onCopyValues(gem.test1)}
+                    >
+                      Copy Data
+                    </Button>
                     {user?.role === UserRole.ADMIN && (
                       <Button
                         variant='ghost'
@@ -566,16 +564,14 @@ export function GemIntakeAndHistory({
                     TESTER 2
                   </span>
                   <div className='flex items-center gap-1'>
-                    {isApproval && (
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        className='h-6 text-[10px]'
-                        onClick={() => onCopyValues(gem.test2)}
-                      >
-                        Copy Data
-                      </Button>
-                    )}
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      className='h-6 text-[10px]'
+                      onClick={() => onCopyValues(gem.test2)}
+                    >
+                      Copy Data
+                    </Button>
                     {user?.role === UserRole.ADMIN && (
                       <Button
                         variant='ghost'

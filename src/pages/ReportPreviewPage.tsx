@@ -6,19 +6,20 @@ import { Loader2, AlertCircle } from "lucide-react"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
+import { VerbalReportPreview } from "@/components/features/reports/VerbalReportPreview"
 import type { Gem } from "@/lib/types"
 
 interface ReportData {
   _id: string
   reportId: string
-  reportType: "small" | "medium" | "large"
+  reportType: "small" | "medium" | "large" | "verbal"
   isClientDataAdd?: boolean
   gemId: string | Gem
 }
 
 export function ReportPreviewPage() {
   const { id } = useParams<{ id: string }>()
-  const { gems, refreshGems } = useGem()
+  const { gems, getGemById } = useGem()
 
   const [report, setReport] = useState<ReportData | null>(null)
   const [gem, setGem] = useState<Gem | null>(null)
@@ -38,30 +39,34 @@ export function ReportPreviewPage() {
           reportData = await reportsApi.getReportById(id)
           setReport(reportData)
         } catch (e) {
-          // It's might be a Gem ID, or the report search failed
+          // It might be a Gem ID
         }
 
-        // 2. Identify the Gem
+        // 2. Fetch the full gem document by ID so nested data is always complete
         let targetGem: Gem | null = null
 
         if (reportData) {
-          targetGem =
+          const gemId =
             typeof reportData.gemId === "object"
-              ? (reportData.gemId as Gem)
-              : gems.find((g) => g._id === reportData.gemId) || null
+              ? (reportData.gemId as Gem)._id
+              : (reportData.gemId as string)
+          try {
+            targetGem = await getGemById(gemId)
+          } catch {
+            // Fall back to the populated object from the report response
+            if (typeof reportData.gemId === "object") {
+              targetGem = reportData.gemId as Gem
+            }
+          }
         }
 
-        // 3. Fallback: Search globally if gem not found yet
+        // 3. Fallback: treat the route param as a gem ID
         if (!targetGem) {
-          // Search by internal _id or human readable gemId
-          targetGem = gems.find((g) => g._id === id || g.gemId === id) || null
-
-          // If still not found, try to refresh store once
-          if (!targetGem && gems.length === 0) {
-            await refreshGems()
-            // Check again after refresh
-            // Note: gems from useGem might still be empty if the component doesn't re-render immediately with new context
-            // But we can try to fetch the specific gem from API if we really need it
+          try {
+            targetGem = await getGemById(id)
+          } catch {
+            // Last resort: search the store
+            targetGem = gems.find((g) => g._id === id || g.gemId === id) || null
           }
         }
 
@@ -79,7 +84,7 @@ export function ReportPreviewPage() {
     }
 
     fetchData()
-  }, [id, gems.length])
+  }, [id])
 
   if (loading) {
     return (
@@ -142,6 +147,14 @@ export function ReportPreviewPage() {
           ) : reportType === "small" ? (
             <div className='scale-[0.9] origin-top'>
               <SmallReportPreview
+                gem={gem}
+                includeLogo={includeLogo}
+                reportId={report?._id || gem._id}
+              />
+            </div>
+          ) : reportType === "verbal" ? (
+            <div className='scale-[0.9] origin-top'>
+              <VerbalReportPreview
                 gem={gem}
                 includeLogo={includeLogo}
                 reportId={report?._id || gem._id}

@@ -457,7 +457,7 @@ export function IntakePage() {
                       Report Types
                     </label>
                     <div className='flex flex-wrap gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100'>
-                      {["small", "medium", "large"].map((type) => (
+                      {["small", "medium", "large", "verbal"].map((type) => (
                         <Controller
                           key={type}
                           name='reportTypes'
