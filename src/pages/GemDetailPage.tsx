@@ -22,6 +22,7 @@ import { GemAnalysisForm } from "@/components/features/gems/GemAnalysisForm"
 import { ApproverCorrectionBanner } from "@/components/features/gems/ApproverCorrectionBanner"
 import { GemFormActions } from "@/components/features/gems/GemFormActions"
 import { getFormFieldsConfig } from "@/components/shared/common/Formfieldsconfig"
+import { addCustomOption } from "@/lib/customDropdownOptions"
 import { FORM_DEFAULTS } from "@/lib/validations/gemFormDefaults"
 import {
   type SearchSetters,
@@ -100,6 +101,13 @@ export function GemDetailPage() {
   const [suggestions, setSuggestions] = useState<GemReference[]>([])
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [customer, setCustomer] = useState<Customer | null>(null)
+  const [, setCustomOptTick] = useState(0)
+
+  const makeOptionAdder = (field: "cuttingShape" | "crownStyle" | "pavilionStyle" | "colour") =>
+    (value: string) => {
+      addCustomOption(field, value)
+      setCustomOptTick((t) => t + 1)
+    }
 
   // ── Derived data ────────────────────────────────────────────────────────
   const filteredSpecies = globalSpecies.filter((s) =>
@@ -172,6 +180,10 @@ export function GemDetailPage() {
       setColourSearch,
       showColourList,
       setShowColourList,
+      onAddCuttingShapeOption: makeOptionAdder("cuttingShape"),
+      onAddCrownStyleOption: makeOptionAdder("crownStyle"),
+      onAddPavilionStyleOption: makeOptionAdder("pavilionStyle"),
+      onAddColourOption: makeOptionAdder("colour"),
     },
   )
 

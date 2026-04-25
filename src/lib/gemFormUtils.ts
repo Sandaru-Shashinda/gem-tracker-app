@@ -44,6 +44,7 @@ export function mapSourceToFormValues(source: any): TestFormValues {
     treatment: obs.treatment || "",
     clarityEnhancement: obs.clarityEnhancement || "",
     isHeated: obs.isHeated ?? source.isHeated ?? false,
+    showHeatInReport: obs.showHeatInReport ?? source.showHeatInReport ?? false,
     isEmerald: obs.isEmerald ?? source.isEmerald ?? false,
     isMixCut: obs.isMixCut ?? source.isMixCut ?? false,
   }

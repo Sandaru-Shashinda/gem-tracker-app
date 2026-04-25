@@ -1,4 +1,5 @@
 import { type FieldConfig } from "@/components/shared/common/FormField"
+import { getCustomOptions } from "@/lib/customDropdownOptions"
 
 export const GRADE_OPTIONS = [
   { value: "Ex", label: "Excellent" },
@@ -157,6 +158,11 @@ interface FormFieldsConfigParams {
   setColourSearch: (value: string) => void
   showColourList: boolean
   setShowColourList: (value: boolean) => void
+  // Custom option callbacks
+  onAddCuttingShapeOption?: (value: string) => void
+  onAddCrownStyleOption?: (value: string) => void
+  onAddPavilionStyleOption?: (value: string) => void
+  onAddColourOption?: (value: string) => void
 }
 
 export function getFormFieldsConfig({
@@ -189,7 +195,21 @@ export function getFormFieldsConfig({
   setColourSearch,
   showColourList,
   setShowColourList,
+  onAddCuttingShapeOption,
+  onAddCrownStyleOption,
+  onAddPavilionStyleOption,
+  onAddColourOption,
 }: FormFieldsConfigParams) {
+  const customOpts = getCustomOptions()
+
+  function mergeCustom<T extends { value: string }>(base: T[], custom: T[]): T[] {
+    const baseKeys = new Set(base.map((o) => o.value.toLowerCase()))
+    return [...base, ...custom.filter((o) => !baseKeys.has(o.value.toLowerCase()))]
+  }
+
+  const allCuttingShapeOptions = mergeCustom(CUTTING_SHAPE_OPTIONS, customOpts.cuttingShape as typeof CUTTING_SHAPE_OPTIONS)
+  const allCrownStyleOptions = mergeCustom(CUTTING_STYLE_OPTIONS, customOpts.crownStyle as typeof CUTTING_STYLE_OPTIONS)
+  const allPavilionStyleOptions = mergeCustom(CUTTING_STYLE_OPTIONS, customOpts.pavilionStyle as typeof CUTTING_STYLE_OPTIONS)
   let colorOptions = OTHER_COLORS
   let clarityOptions = CLARITY_OTHER_OPTIONS
 
@@ -223,6 +243,8 @@ export function getFormFieldsConfig({
       colorOptions = SAPPHIRE_COLORS
     }
   }
+
+  const allColourOptions = mergeCustom(colorOptions, customOpts.colour as typeof colorOptions)
 
   const scientificFields: FieldConfig[] = [
     {
@@ -270,7 +292,7 @@ export function getFormFieldsConfig({
       label: "Cutting Shape",
       type: "combobox",
       placeholder: "e.g. Round",
-      comboboxOptions: CUTTING_SHAPE_OPTIONS,
+      comboboxOptions: allCuttingShapeOptions,
       comboboxSearch: cuttingShapeSearch,
       onComboboxSearchChange: (value) => {
         setCuttingShapeSearch(value)
@@ -279,6 +301,7 @@ export function getFormFieldsConfig({
       onComboboxFocus: () => setShowCuttingShapeList(true),
       showComboboxList: showCuttingShapeList,
       onComboboxClose: () => setShowCuttingShapeList(false),
+      onAddCustomOption: onAddCuttingShapeOption,
       className: "",
     },
     {
@@ -292,7 +315,7 @@ export function getFormFieldsConfig({
       label: "Crown Style",
       type: "combobox",
       placeholder: "e.g. Brilliant cut",
-      comboboxOptions: CUTTING_STYLE_OPTIONS,
+      comboboxOptions: allCrownStyleOptions,
       comboboxSearch: crownStyleSearch,
       onComboboxSearchChange: (value) => {
         setCrownStyleSearch(value)
@@ -301,6 +324,7 @@ export function getFormFieldsConfig({
       onComboboxFocus: () => setShowCrownStyleList(true),
       showComboboxList: showCrownStyleList,
       onComboboxClose: () => setShowCrownStyleList(false),
+      onAddCustomOption: onAddCrownStyleOption,
       className: "",
     },
     {
@@ -308,7 +332,7 @@ export function getFormFieldsConfig({
       label: "Pavilion Style",
       type: "combobox",
       placeholder: "e.g. Step cut",
-      comboboxOptions: CUTTING_STYLE_OPTIONS,
+      comboboxOptions: allPavilionStyleOptions,
       comboboxSearch: pavilionStyleSearch,
       onComboboxSearchChange: (value) => {
         setPavilionStyleSearch(value)
@@ -317,6 +341,7 @@ export function getFormFieldsConfig({
       onComboboxFocus: () => setShowPavilionStyleList(true),
       showComboboxList: showPavilionStyleList,
       onComboboxClose: () => setShowPavilionStyleList(false),
+      onAddCustomOption: onAddPavilionStyleOption,
       className: "",
     },
     {
@@ -424,7 +449,7 @@ export function getFormFieldsConfig({
       label: "Colour",
       type: "combobox",
       placeholder: "Select or type colour...",
-      comboboxOptions: colorOptions,
+      comboboxOptions: allColourOptions,
       comboboxSearch: colourSearch,
       onComboboxSearchChange: (value) => {
         setColourSearch(value)
@@ -433,6 +458,7 @@ export function getFormFieldsConfig({
       onComboboxFocus: () => setShowColourList(true),
       showComboboxList: showColourList,
       onComboboxClose: () => setShowColourList(false),
+      onAddCustomOption: onAddColourOption,
       className: "",
     },
     {
@@ -490,6 +516,12 @@ export function getFormFieldsConfig({
     {
       name: "isHeated",
       label: "Is Heated",
+      type: "checkbox",
+      className: "",
+    },
+    {
+      name: "showHeatInReport",
+      label: "Show Heat In Report",
       type: "checkbox",
       className: "",
     },

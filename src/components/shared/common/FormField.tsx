@@ -38,6 +38,7 @@ export interface FieldConfig {
   showComboboxList?: boolean
   onComboboxFocus?: () => void
   onComboboxClose?: () => void
+  onAddCustomOption?: (value: string) => void
 }
 
 interface FormFieldProps {
@@ -72,6 +73,7 @@ export function FormField({ config, register, errors, control, setValue }: FormF
     showComboboxList,
     onComboboxFocus,
     onComboboxClose,
+    onAddCustomOption,
   } = config
 
   const error = errors[name]
@@ -231,7 +233,19 @@ export function FormField({ config, register, errors, control, setValue }: FormF
                   </div>
                 ) : null
               })()}
-              <div className='fixed inset-0 z-40' onClick={onComboboxClose}></div>
+              <div
+                className='fixed inset-0 z-40'
+                onClick={() => {
+                  const trimmed = (comboboxSearch || "").trim()
+                  const isCustom =
+                    trimmed &&
+                    !comboboxOptions?.some(
+                      (opt) => opt.value.toLowerCase() === trimmed.toLowerCase(),
+                    )
+                  if (isCustom) onAddCustomOption?.(trimmed)
+                  onComboboxClose?.()
+                }}
+              />
             </>
           )}
         </>

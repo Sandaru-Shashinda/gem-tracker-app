@@ -32,6 +32,7 @@ export const testSchema = z.object({
   colourGrade: z.number().optional(),
   finalGrade: z.number().optional(),
   isHeated: z.boolean().default(false).optional(),
+  showHeatInReport: z.boolean().default(false).optional(),
   isEmerald: z.boolean().default(false).optional(),
   isMixCut: z.boolean().default(false).optional(),
 })

@@ -74,6 +74,7 @@ export interface ObservationData {
   colourGrade?: number
   finalGrade?: number
   isHeated?: boolean
+  showHeatInReport?: boolean
   isEmerald?: boolean
   isMixCut?: boolean
 }

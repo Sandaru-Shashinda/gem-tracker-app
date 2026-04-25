@@ -92,7 +92,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
           <div
             style={{
               position: "absolute",
-              top: "43%",
+              top: "40%",
               left: "38%",
               transform: "translate(-50%, -50%)",
               opacity: 1,
@@ -103,7 +103,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
             <img
               src={turtlesLogo}
               alt=''
-              style={{ width: "500px", height: "700px", objectFit: "contain" }}
+              style={{ width: "600px", height: "900px", objectFit: "contain" }}
             />
           </div>
 
@@ -185,6 +185,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                 marginTop: "-22px",
                 marginLeft: "-12px",
                 maxWidth: "58%",
+                clipPath: "inset(25% 0 10% 0)",
               }}
             />
           </div>
@@ -266,7 +267,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
               >
                 {finalData.finalVariety || obs.variety || "—"}
               </p>
-              {!obs.isHeated && (
+              {obs.showHeatInReport && (
                 <p
                   style={{
                     fontWeight: 600,
@@ -277,7 +278,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                     marginBottom: "4px",
                   }}
                 >
-                  Un - Heated
+                  {obs.isHeated ? "Heated" : "Un - Heated"}
                 </p>
               )}
               <p

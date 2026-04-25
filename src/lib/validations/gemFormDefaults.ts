@@ -31,6 +31,7 @@ export const FORM_DEFAULTS: TestFormValues = {
   treatment: "",
   clarityEnhancement: "",
   isHeated: false,
+  showHeatInReport: false,
   isEmerald: false,
   isMixCut: false,
 }

@@ -79,9 +79,17 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
       </div>
 
       {/* Interactive Screen Preview */}
-      <div style={{ width: `${1120 * scale}px`, height: `${792 * scale}px`, margin: "0 auto", overflow: "hidden" }}>
+      <div
+        style={{
+          width: `${1120 * scale}px`,
+          height: `${792 * scale}px`,
+          margin: "0 auto",
+          // overflow: "hidden",
+          backgroundColor: "red",
+        }}
+      >
         <div
-          className='relative transition-all duration-300 bg-white shadow-2xl rounded-sm overflow-hidden text-slate-900 border border-slate-200 flex flex-row'
+          className='relative transition-all duration-300 bg-white rounded-sm overflow-hidden text-slate-900 border-2 border-slate-400 flex flex-row'
           style={{
             width: "1120px",
             height: "792px",
@@ -426,7 +434,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
         {/* QR Code and Signature at Bottom Right */}
         <div
           style={{
-            marginTop: "100px",
+            // marginTop: "100px",
             // width: "100%",
             display: "flex",
             justifyContent: "flex-start",

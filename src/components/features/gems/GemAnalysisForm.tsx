@@ -261,17 +261,33 @@ export function GemAnalysisForm({
           />
         </div>
 
+        {/* Heat */}
+        <div className='flex items-center gap-6 p-4 rounded-xl border border-slate-100/50 bg-slate-50/30'>
+          <FormField
+            config={gradingFields[8]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
+          <FormField
+            config={gradingFields[9]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
+        </div>
+
         {/* Overall Lab Assessment */}
-        <div className='p-4 rounded-xl flex items-center justify-between shadow-lg'>
-          <div>
-            <FormField
-              config={gradingFields[8]}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-          </div>
+        <div className='p-4 rounded-xl shadow-lg'>
+          <FormField
+            config={gradingFields[10]}
+            register={register}
+            errors={errors}
+            control={control}
+            setValue={setValue}
+          />
         </div>
 
         {/* Text Fields */}
