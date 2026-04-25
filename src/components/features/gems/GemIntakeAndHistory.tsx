@@ -78,6 +78,8 @@ export function GemIntakeAndHistory({
     }
   }
 
+  console.log(isApproval)
+
   const { refreshGems } = useGem()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [activeImageId, setActiveImageId] = useState<string | null>(

@@ -445,6 +445,20 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
           }}
         >
+          {obs.showHeatInReport && (
+            <div
+              style={{
+                marginTop: "8px",
+                fontSize: "18px",
+                fontWeight: 400,
+                color: "#333",
+                letterSpacing: "1px",
+              }}
+            >
+              {obs.isHeated ? "Heated" : "Un - Heated"}
+            </div>
+          )}
+
           <h2
             style={{
               fontSize: "30px",
@@ -458,19 +472,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
           >
             {finalData.finalVariety || obs.variety || "BLUE SAPPHIRE"}
           </h2>
-          {obs.showHeatInReport && (
-            <div
-              style={{
-                marginTop: "8px",
-                fontSize: "18px",
-                fontWeight: 600,
-                color: "#333",
-                letterSpacing: "1px",
-              }}
-            >
-              {obs.isHeated ? "Heated" : "Un - Heated"}
-            </div>
-          )}
+
           {gem.weight && (
             <div
               style={{
