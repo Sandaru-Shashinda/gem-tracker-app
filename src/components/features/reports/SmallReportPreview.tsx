@@ -256,17 +256,6 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                 fontFamily: "Arial, Helvetica, sans-serif",
               }}
             >
-              <p
-                style={{
-                  fontWeight: 700,
-                  fontSize: "18px",
-                  color: "#1e293b",
-                  lineHeight: 1.2,
-                  margin: 0,
-                }}
-              >
-                {finalData.finalVariety || obs.variety || "—"}
-              </p>
               {obs.showHeatInReport && (
                 <p
                   style={{
@@ -281,6 +270,18 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                   {obs.isHeated ? "Heated" : "Un - Heated"}
                 </p>
               )}
+              <p
+                style={{
+                  fontWeight: 700,
+                  fontSize: "18px",
+                  color: "#1e293b",
+                  lineHeight: 1.2,
+                  margin: 0,
+                }}
+              >
+                {finalData.finalVariety || obs.variety || "—"}
+              </p>
+
               <p
                 style={{
                   fontSize: "16px",
