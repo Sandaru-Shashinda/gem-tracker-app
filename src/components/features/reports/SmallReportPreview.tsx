@@ -92,7 +92,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
           <div
             style={{
               position: "absolute",
-              top: "40%",
+              top: "50%",
               left: "38%",
               transform: "translate(-50%, -50%)",
               opacity: 1,
@@ -154,7 +154,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                   <span
                     style={{
                       flex: 1,
-                      borderBottom: "1.5px dotted #a3a3a3",
+                      borderBottom: "2px dotted #a3a3a3",
                       position: "relative",
                       top: "-4px",
                       minWidth: "20px",
