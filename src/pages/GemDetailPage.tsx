@@ -49,8 +49,11 @@ export function GemDetailPage() {
     refreshGems,
   } = useGem()
 
-  const gem = gems.find((g: any) => g._id === id)
+  const gemFromStore = gems.find((g: any) => g._id === id)
   const [gemDetail, setGemDetail] = useState<Gem | null>(null)
+  const [detailLoading, setDetailLoading] = useState(true)
+  const [detailVersion, setDetailVersion] = useState(0)
+  const gem = gemFromStore ?? gemDetail
 
   // ── Role flags ──────────────────────────────────────────────────────────
   const isHelper = user?.role === UserRole.HELPER
@@ -193,6 +196,7 @@ export function GemDetailPage() {
   // For Approval stage: always use finalApproval data only.
   // The approver must manually copy from Tester 1 or Tester 2 — no auto pre-fill.
   useEffect(() => {
+    console.log(gemDetail)
     if (!gemDetail) return
     let activeData: any = null
     if (isAdmin) {
@@ -233,8 +237,12 @@ export function GemDetailPage() {
 
   useEffect(() => {
     if (!id) return
-    getGemById(id).then(setGemDetail).catch(console.error)
-  }, [id, gem?.updatedAt, getGemById])
+    setDetailLoading(true)
+    getGemById(id)
+      .then(setGemDetail)
+      .catch(console.error)
+      .finally(() => setDetailLoading(false))
+  }, [id, detailVersion, getGemById])
 
   // Auto-suggestion based on scientific measurements.
   useEffect(() => {
@@ -271,6 +279,7 @@ export function GemDetailPage() {
       } else if (isEditingT1AfterSubmit || isEditingT2AfterSubmit) {
         const stage = isEditingT1AfterSubmit ? "test1" : "test2"
         await handleTestSubmit(gem!._id, stage, data, gem!.status)
+        setDetailVersion((v) => v + 1)
       } else if (canTest) {
         const status = resolveSubmitStatus(user?.role, isT1, isT2)
         await handleTestSubmit(gem!._id, isT1 ? "test1" : "test2", data, status)
@@ -292,6 +301,7 @@ export function GemDetailPage() {
           ? GEM_STATUSES.DRAFT_TEST_1
           : GEM_STATUSES.DRAFT_TEST_2
       await handleSaveDraft(gem!._id, stage, data, status)
+      setDetailVersion((v) => v + 1)
     } catch (error) {
       console.error("Failed to save draft:", error)
     } finally {
@@ -332,7 +342,7 @@ export function GemDetailPage() {
 
   // ── Early returns ────────────────────────────────────────────────────────
 
-  if (loading && !gem) {
+  if ((loading || detailLoading) && !gem) {
     return (
       <MainLayout>
         <div className='h-full flex items-center justify-center p-20'>

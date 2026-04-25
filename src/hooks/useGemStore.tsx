@@ -370,13 +370,14 @@ export function GemProvider({ children }: { children: ReactNode }) {
             messurementY: data.messurementY ? parseFloat(data.messurementY) : undefined,
             messurementZ: data.messurementZ ? parseFloat(data.messurementZ) : undefined,
             isHeated: data.isHeated ?? false,
+            showHeatInReport: data.showHeatInReport ?? false,
             isEmerald: data.isEmerald ?? false,
             isMixCut: data.isMixCut ?? false,
           },
         }
       }
 
-      await gemsApi.saveDraft(gemId, { [stage]: update, status })
+      await gemsApi.updateGem(gemId, { [stage]: update, status })
       await refreshGems()
     },
     [user, refreshGems],

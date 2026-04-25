@@ -180,18 +180,16 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
 
   const TypewriterRow = ({ label, value }: { label: string; value?: string | number }) => (
     <div style={{ display: "flex", alignItems: "baseline", width: "100%", gap: "10px" }}>
-      <span style={{ flexShrink: 0, paddingRight: "8px" }}>{label}:</span>
+      <span style={{ flexShrink: 0 }}>{label}:</span>
       <div
         style={{
           flexGrow: 1,
-          borderBottom: "1.5px dotted #a3a3a3",
-          margin: "0 6px",
+          borderBottom: "2px dotted #a3a3a3",
+          margin: "0",
           position: "relative",
         }}
       ></div>
-      <span style={{ flexShrink: 0, paddingLeft: "8px", textAlign: "right", whiteSpace: "nowrap" }}>
-        {value || ""}
-      </span>
+      <span style={{ flexShrink: 0, textAlign: "right", whiteSpace: "nowrap" }}>{value || ""}</span>
     </div>
   )
 
@@ -245,7 +243,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
         <h1
           style={{
             color: GOLD,
-            fontSize: "26px",
+            fontSize: "28px",
             fontWeight: 700,
             textTransform: "uppercase",
             margin: "0 0 36px 0",
@@ -263,9 +261,9 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             flexDirection: "column",
             gap: "6px",
             color: DARK,
-            fontSize: "13px",
-            fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
-            fontWeight: 600,
+            fontSize: "14px",
+            fontFamily: "'Nimbus Mono Antique', 'Courier New', Courier, monospace",
+            fontWeight: 400,
             width: "100%",
             maxWidth: "480px",
           }}
@@ -284,11 +282,12 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             flexDirection: "column",
             gap: "6px",
             color: DARK,
-            fontSize: "13px",
-            fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
-            fontWeight: 600,
+            fontSize: "14px",
+            fontFamily: "'Nimbus Mono Antique', 'Courier New', Courier, monospace",
+            fontWeight: 400,
             width: "100%",
             maxWidth: "480px",
+            marginTop: "10px",
           }}
         >
           {rowsBlock2.map((row, i) => (
@@ -298,38 +297,82 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
 
         <div style={{ height: "20px" }}></div>
 
-        {/* Simple 5-column Clarity Scale Table */}
-        <div
-          style={{
-            fontFamily: "Arial, sans-serif",
-            fontSize: "9px",
-            color: "#111",
-            width: "100%",
-            maxWidth: "460px",
-            margin: "auto",
-          }}
-        >
-          <table style={{ width: "90%", borderCollapse: "collapse", textAlign: "center" }}>
-            <tbody>
-              <tr>
-                <td style={tdStyle}>Clarity Type</td>
-                <td style={tdStyle}>Excellent</td>
-                <td style={tdStyle}>Loupe Clean</td>
-                <td style={tdStyle}>Eye Clean</td>
-                <td style={tdStyle}>Visible Inclusion</td>
-                <td style={tdStyle}>Highly Included</td>
-              </tr>
-              <tr>
-                <td style={tdStyle}>Grade</td>
-                <td style={tdStyle}>1</td>
-                <td style={tdStyle}>2</td>
-                <td style={tdStyle}>3</td>
-                <td style={tdStyle}>4</td>
-                <td style={tdStyle}>5</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {/* Clarity Scale Table */}
+        {(() => {
+          const clarityGrade = (obs.clarityGrade || "").replace(/[\s()]/g, "").toUpperCase()
+          const isActive = (key: string) => key.toUpperCase() === clarityGrade
+
+          const activeTd: React.CSSProperties = {
+            ...tdStyle,
+            backgroundColor: "#1a1a2e",
+            color: "#fff",
+            fontWeight: 700,
+          }
+
+          const grades = [
+            { key: "EXC", label: "Exc" },
+            { key: "LC1", label: "LC 1" },
+            { key: "LC2", label: "LC 2" },
+            { key: "EC1", label: "EC 1" },
+            { key: "EC2", label: "EC 2" },
+            { key: "VI1", label: "VI 1" },
+            { key: "VI2", label: "VI 2" },
+            { key: "HI1", label: "HI 1" },
+            { key: "HI2", label: "HI 2" },
+          ]
+
+          return (
+            <div
+              style={{
+                fontFamily: "Arial, sans-serif",
+                fontSize: "9px",
+                color: "#111",
+                width: "100%",
+                maxWidth: "460px",
+                margin: "auto",
+              }}
+            >
+              <table style={{ width: "90%", borderCollapse: "collapse", textAlign: "center" }}>
+                <tbody>
+                  <tr>
+                    <td rowSpan={2} style={tdStyle}>
+                      Excellent
+                    </td>
+                    <td colSpan={2} style={tdStyle}>
+                      Loup Clean
+                    </td>
+                    <td colSpan={2} style={tdStyle}>
+                      Eye Clean
+                    </td>
+                    <td colSpan={2} style={tdStyle}>
+                      Visible Inclusions
+                    </td>
+                    <td colSpan={2} style={tdStyle}>
+                      Highly Included
+                    </td>
+                  </tr>
+                  <tr>
+                    {(["LC", "EC", "VI", "HI"] as const).flatMap((cat) => [
+                      <td key={`${cat}-minor`} style={tdStyle}>
+                        Minor Inclusions
+                      </td>,
+                      <td key={`${cat}-highly`} style={tdStyle}>
+                        Highly Included
+                      </td>,
+                    ])}
+                  </tr>
+                  <tr>
+                    {grades.map(({ key, label }) => (
+                      <td key={key} style={isActive(key) ? activeTd : tdStyle}>
+                        {label}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )
+        })()}
 
         <div style={{ margin: "auto" }}>
           <div
@@ -337,6 +380,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
               fontSize: "10px",
               color: "#666",
               fontFamily: "Arial, sans-serif",
+              marginTop: "20px",
             }}
           >
             For complete terms and updates, visit www.grc.lk
@@ -362,13 +406,13 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
         {/* Gem Image */}
         <div
           style={{
-            width: "220px",
+            width: "200px",
             height: "200px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             marginBottom: "10px",
-            border: "1px solid #ccc",
+            border: "2px solid #ccc",
           }}
         >
           {firstImageId ? (
@@ -385,7 +429,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
         <div
           style={{
             fontFamily: "Arial, sans-serif",
-            fontSize: "11px",
+            fontSize: "10px",
             color: "#666",
             marginBottom: "30px",
           }}
@@ -403,7 +447,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
         >
           <h2
             style={{
-              fontSize: "28px",
+              fontSize: "30px",
               fontWeight: 900,
               margin: 0,
               textTransform: "uppercase",
@@ -418,8 +462,8 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             <div
               style={{
                 marginTop: "12px",
-                fontSize: "16px",
-                fontWeight: 600,
+                fontSize: "18px",
+                fontWeight: 400,
                 color: "#333",
                 letterSpacing: "1px",
               }}
