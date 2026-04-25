@@ -84,8 +84,6 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
           width: `${1120 * scale}px`,
           height: `${792 * scale}px`,
           margin: "0 auto",
-          // overflow: "hidden",
-          backgroundColor: "red",
         }}
       >
         <div
@@ -434,7 +432,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
         {/* QR Code and Signature at Bottom Right */}
         <div
           style={{
-            // marginTop: "100px",
+            marginTop: "100px",
             // width: "100%",
             display: "flex",
             justifyContent: "flex-start",

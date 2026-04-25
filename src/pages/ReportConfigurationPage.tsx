@@ -408,8 +408,8 @@ export function ReportConfigurationPage() {
                   className={`
                         origin-top transform transition-all p-8 flex justify-center
                         ${size === "small" ? "scale-90 w-full max-w-[800px] mx-auto my-4" : ""}
-                        ${size === "medium" ? "scale-[0.55] w-[1000px] h-[700px] mx-auto origin-top mt-10 mb-[-100px]" : ""}
-                        ${size === "large" ? "scale-[0.5] w-[1200px] min-h-[950px] mx-auto origin-top mt-4 mb-[-400px]" : ""}
+                        ${size === "medium" ? "w-full" : ""}
+                        ${size === "large" ? "w-full" : ""}
                     `}
                 >
                   {size === "large" ? (

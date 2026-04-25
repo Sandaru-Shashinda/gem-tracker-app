@@ -26,16 +26,20 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
   const [scale, setScale] = useState(1)
 
   useEffect(() => {
-    const updateScale = () => {
-      if (containerRef.current) {
-        const parent = containerRef.current.parentElement
-        const available = (parent?.clientWidth ?? window.innerWidth) - 32
-        setScale(available < A4_W ? available / A4_W : 1)
-      }
+    const updateScale = (width: number) => {
+      setScale(width < A4_W ? width / A4_W : 1)
     }
-    setTimeout(updateScale, 10)
-    window.addEventListener("resize", updateScale)
-    return () => window.removeEventListener("resize", updateScale)
+
+    const el = containerRef.current
+    if (!el) return
+
+    const observer = new ResizeObserver((entries) => {
+      updateScale(entries[0].contentRect.width)
+    })
+    observer.observe(el)
+    updateScale(el.clientWidth)
+
+    return () => observer.disconnect()
   }, [])
 
   const handleDownload = async () => {
@@ -76,16 +80,23 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
       </div>
 
       {/* ── SCREEN PREVIEW ── */}
-      <div className='w-full flex justify-center' style={{ height: `${A4_H * scale}px` }}>
+      <div
+        style={{
+          width: `${A4_W * scale}px`,
+          height: `${A4_H * scale}px`,
+          margin: "0 auto",
+          overflow: "hidden",
+        }}
+      >
         <div
           style={{
             width: A4_W,
-            minWidth: A4_W,
             height: A4_H,
-            minHeight: A4_H,
-            flexShrink: 0,
             transform: `scale(${scale})`,
-            transformOrigin: "top center",
+            transformOrigin: "top left",
+            border: "2px solid #94a3b8",
+            borderRadius: "2px",
+            overflow: "hidden",
           }}
         >
           <ReportPage gem={gem} reportId={reportId} />

@@ -80,7 +80,7 @@ export function GemDetailPage() {
         isEditingT1AfterSubmit ||
         isEditingT2AfterSubmit)) ||
     isAdmin
-  const canApprove = isAdmin
+  // const canApprove = isAdmin
   const approverCorrectionActive = gemDetail?.finalApproval?.approverCorrectionRequested === true
 
   // ── Search state ────────────────────────────────────────────────────────
@@ -103,8 +103,8 @@ export function GemDetailPage() {
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [, setCustomOptTick] = useState(0)
 
-  const makeOptionAdder = (field: "cuttingShape" | "crownStyle" | "pavilionStyle" | "colour") =>
-    (value: string) => {
+  const makeOptionAdder =
+    (field: "cuttingShape" | "crownStyle" | "pavilionStyle" | "colour") => (value: string) => {
       addCustomOption(field, value)
       setCustomOptTick((t) => t + 1)
     }
