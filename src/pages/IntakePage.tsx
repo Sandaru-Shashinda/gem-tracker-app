@@ -59,7 +59,7 @@ export function IntakePage() {
     register,
     handleSubmit,
     control,
-    setValue,
+    // setValue,
     formState: { errors, isValid },
     reset,
     getValues,
