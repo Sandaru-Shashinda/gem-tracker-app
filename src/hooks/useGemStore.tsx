@@ -21,6 +21,7 @@ interface GemContextType {
   refreshSpecies: () => Promise<void>
   handleIntake: (
     data: {
+      gemId?: string
       color?: string
       weight?: number
       itemDescription?: string
@@ -133,6 +134,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
   const handleIntake = useCallback(
     async (
       data: {
+        gemId?: string
         color?: string
         weight?: number
         itemDescription?: string

@@ -141,4 +141,10 @@ export const gemsApi = {
     })
     if (!response.ok) throw new Error("Failed to delete gem")
   },
+
+  getLastGrc: async (): Promise<{ gemId: string | null }> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/gems/last-grc`)
+    if (!response.ok) throw new Error("Failed to fetch last GRC")
+    return response.json()
+  },
 }

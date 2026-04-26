@@ -92,7 +92,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
           <div
             style={{
               position: "absolute",
-              top: "50%",
+              top: "40%",
               left: "38%",
               transform: "translate(-50%, -50%)",
               opacity: 1,

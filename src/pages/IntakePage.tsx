@@ -29,6 +29,7 @@ import { BASE_URL } from "@/lib/api/config"
 import { useGem } from "@/hooks/useGemStore"
 import { usersApi } from "@/lib/api/users"
 import { customersApi } from "@/lib/api/customers"
+import { gemsApi } from "@/lib/api/gems"
 import { type User, type Customer, GEM_STATUSES, UserRole } from "@/lib/types"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -52,17 +53,20 @@ export function IntakePage() {
   const [isImageLoading, setIsImageLoading] = useState(false)
   const [testers, setTesters] = useState<User[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [suggestedGrc, setSuggestedGrc] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isValid },
     reset,
     getValues,
   } = useForm<IntakeFormValues>({
     resolver: zodResolver(intakeSchema) as any,
     defaultValues: {
+      gemId: "",
       weight: 0,
       color: "",
       itemDescription: "",
@@ -97,12 +101,23 @@ export function IntakePage() {
         console.error("Failed to fetch initial data:", err)
       }
 
+      // If new intake, fetch last GRC for suggestion
+      if (!id) {
+        try {
+          const { gemId: lastGemId } = await gemsApi.getLastGrc()
+          setSuggestedGrc(lastGemId)
+        } catch (err) {
+          console.error("Failed to fetch last GRC:", err)
+        }
+      }
+
       // If editing, fetch gem details
       if (id) {
         setIsLoading(true)
         try {
           const gem = await getGemById(id)
           reset({
+            gemId: gem.gemId || "",
             weight: gem.weight || 0,
             color: gem.color || "",
             itemDescription: gem.itemDescription || "",
@@ -279,6 +294,30 @@ export function IntakePage() {
                     <div className='w-1 h-6 bg-blue-600 rounded-full' />
                     Gem Details
                   </h3>
+
+                  <div className='space-y-2'>
+                    <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>
+                      GRC Number
+                    </label>
+                    <Input
+                      type='text'
+                      placeholder='e.g. GRC-2026-04-00001'
+                      className='bg-slate-50 border-slate-200 h-11 focus:bg-white transition-colors font-mono'
+                      readOnly={!!id}
+                      {...register("gemId")}
+                    />
+                    {errors.gemId && (
+                      <p className='text-xs text-red-500 font-medium'>{errors.gemId.message}</p>
+                    )}
+                    {!id && suggestedGrc && (
+                      <p className='text-xs text-slate-400 flex'>
+                        Last GRC No:{" "}
+                        <p className='font-mono text-blue-500 hover:text-blue-700 hover:underline ml-2'>
+                          {suggestedGrc}
+                        </p>{" "}
+                      </p>
+                    )}
+                  </div>
 
                   <div className='space-y-2'>
                     <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>

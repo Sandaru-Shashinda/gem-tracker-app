@@ -1,6 +1,7 @@
 import * as z from "zod"
 
 export const intakeSchema = z.object({
+  gemId: z.string().min(1, "GRC Number is required"),
   weight: z.coerce.number().positive("Weight must be a positive number"),
   color: z.string().min(1, "Color is required"),
   itemDescription: z.string().optional(),
