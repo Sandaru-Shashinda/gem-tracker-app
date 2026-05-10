@@ -120,7 +120,7 @@ function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
     variety.toLowerCase().includes("bracelet")
 
   const weightUnit = isJewelry ? "g" : "ct"
-  const weightStr = gem.weight ? `${gem.weight} ${weightUnit}` : ""
+  const weightStr = gem.weight ? `${Number(gem.weight).toFixed(2)} ${weightUnit}` : ""
 
   const formatDate = (d?: string | Date) =>
     d ? new Date(d).toLocaleDateString("en-GB") : new Date().toLocaleDateString("en-GB")

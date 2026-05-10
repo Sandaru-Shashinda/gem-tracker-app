@@ -49,7 +49,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
   const rows = [
     { label: "GRC Number", value: gem.gemId },
     { label: "Date", value: new Date(gem.updatedAt).toLocaleDateString("en-GB") },
-    { label: "Weight", value: gem.weight ? `${gem.weight} ct` : undefined },
+    { label: "Weight", value: gem.weight ? `${Number(gem.weight).toFixed(2)} ct` : undefined },
     { label: "Color", value: gem.color },
     {
       label: "Shape & Cut",
@@ -60,7 +60,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
     {
       label: "Dimension",
       value: obs.messurementX
-        ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm`
+        ? `${Number(obs.messurementX).toFixed(2)} x ${Number(obs.messurementY).toFixed(2)} x ${Number(obs.messurementZ).toFixed(2)} mm`
         : undefined,
     },
     { label: "Species", value: obs.species },
@@ -291,7 +291,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                   margin: 0,
                 }}
               >
-                {gem.weight ? `${gem.weight} ct` : ""}
+                {gem.weight ? `${Number(gem.weight).toFixed(2)} ct` : ""}
               </p>
             </div>
 

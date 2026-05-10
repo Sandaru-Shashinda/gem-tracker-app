@@ -149,7 +149,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
       .includes("bracelet") ||
     (finalData.finalVariety || obs.variety || "").toLowerCase().includes("bracelet")
 
-  const displayWeight = gem.weight ? `${gem.weight} ${isJewelry ? "g" : "ct"}` : ""
+  const displayWeight = gem.weight ? `${Number(gem.weight).toFixed(2)} ${isJewelry ? "g" : "ct"}` : ""
 
   const rowsBlock1 = [
     { label: "Date", value: formatDate(gem.updatedAt) },
@@ -165,7 +165,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
     {
       label: "Measurements",
       value: obs.messurementX
-        ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm`
+        ? `${Number(obs.messurementX).toFixed(2)} x ${Number(obs.messurementY).toFixed(2)} x ${Number(obs.messurementZ).toFixed(2)} mm`
         : undefined,
     },
     { label: "Transparency", value: obs.transparency },

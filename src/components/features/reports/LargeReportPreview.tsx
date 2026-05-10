@@ -275,7 +275,7 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
               label='Measurements'
               value={
                 obs.messurementX
-                  ? `${obs.messurementX} x ${obs.messurementY} x ${obs.messurementZ} mm`
+                  ? `${Number(obs.messurementX).toFixed(2)} x ${Number(obs.messurementY).toFixed(2)} x ${Number(obs.messurementZ).toFixed(2)} mm`
                   : undefined
               }
             />

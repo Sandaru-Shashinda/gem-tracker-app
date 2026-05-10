@@ -65,7 +65,7 @@ export function GemTable({
           const gem = info.row.original
           return (
             <div className='text-sm text-slate-500'>
-              {gem.color} / {gem.weight}ct
+              {gem.color} / {gem.weight ? Number(gem.weight).toFixed(2) : ""}ct
             </div>
           )
         },

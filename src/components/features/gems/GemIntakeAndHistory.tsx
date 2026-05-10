@@ -227,7 +227,7 @@ export function GemIntakeAndHistory({
           </div>
           <div className='flex border-b border-slate-200 pb-1'>
             <span className='text-slate-500 pr-2'>Weight:</span>{" "}
-            <span className='font-bold'>{gem.weight}ct</span>
+            <span className='font-bold'>{gem.weight ? Number(gem.weight).toFixed(2) : ""}ct</span>
           </div>
           <div className='flex flex-col border-b border-slate-200 pb-1 col-span-2'>
             <span className='text-[10px] uppercase font-bold text-slate-400 mb-1'>
@@ -377,9 +377,9 @@ export function GemIntakeAndHistory({
                           Dimensions
                         </p>
                         <p className='font-mono text-[11px] font-medium text-slate-600 tracking-tight'>
-                          {gem.test1.observations?.messurementX} x{" "}
-                          {gem.test1.observations?.messurementY} x{" "}
-                          {gem.test1.observations?.messurementZ}
+                          {gem.test1.observations?.messurementX ? Number(gem.test1.observations.messurementX).toFixed(2) : ""} x{" "}
+                          {gem.test1.observations?.messurementY ? Number(gem.test1.observations.messurementY).toFixed(2) : ""} x{" "}
+                          {gem.test1.observations?.messurementZ ? Number(gem.test1.observations.messurementZ).toFixed(2) : ""}
                         </p>
                         <p className='text-[9px] text-slate-400 mt-0.5'>mm</p>
                       </div>
@@ -665,9 +665,9 @@ export function GemIntakeAndHistory({
                           Dimensions
                         </p>
                         <p className='font-mono text-[11px] font-medium text-slate-600 tracking-tight'>
-                          {gem.test2.observations?.messurementX} x{" "}
-                          {gem.test2.observations?.messurementY} x{" "}
-                          {gem.test2.observations?.messurementZ}
+                          {gem.test2.observations?.messurementX ? Number(gem.test2.observations.messurementX).toFixed(2) : ""} x{" "}
+                          {gem.test2.observations?.messurementY ? Number(gem.test2.observations.messurementY).toFixed(2) : ""} x{" "}
+                          {gem.test2.observations?.messurementZ ? Number(gem.test2.observations.messurementZ).toFixed(2) : ""}
                         </p>
                         <p className='text-[9px] text-slate-400 mt-0.5'>mm</p>
                       </div>
