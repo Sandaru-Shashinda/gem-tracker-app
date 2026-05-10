@@ -65,7 +65,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
     },
     { label: "Species", value: obs.species },
     { label: "Variety", value: obs.variety },
-    { label: "Comments", value: obs.comments },
+    { label: "Comments", value: obs.comments, style: { marginTop: "10px" } },
   ]
 
   return (
@@ -82,7 +82,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
             overflow: "hidden",
             display: "flex",
             border: "1px solid #e2e8f0",
-            padding: "30px 30px 24px 30px",
+            padding: "30px 30px 24px 35px",
             boxSizing: "border-box",
             position: "relative",
             boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)",
@@ -122,7 +122,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
             <div
               style={{
                 width: "175px",
-                marginTop: "-60px",
+                marginTop: "-70px",
                 zIndex: 1,
                 marginLeft: "-15px",
               }}
@@ -135,9 +135,9 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 3,
+                gap: 2,
                 fontSize: "14px",
-                marginTop: "-57px",
+                marginTop: "-65px",
                 padding: "10px 0",
                 fontFamily: "Arial, Helvetica, sans-serif",
                 color: "#1a1a1a",
@@ -147,7 +147,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
               }}
             >
               {rows.map((row, i) => (
-                <div key={i} style={{ display: "flex" }}>
+                <div key={i} style={{ display: "flex", ...row.style }}>
                   <span style={{ whiteSpace: "nowrap", paddingRight: "4px", minWidth: "10px" }}>
                     {row.label}:
                   </span>
@@ -182,7 +182,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
               style={{
                 height: "450px",
                 objectFit: "contain",
-                marginTop: "-22px",
+                marginTop: "-15px",
                 marginLeft: "-12px",
                 maxWidth: "58%",
                 clipPath: "inset(25% 0 10% 0)",
@@ -199,7 +199,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "flex-start",
-              paddingTop: "4px",
+              paddingTop: "50px",
               position: "relative",
               zIndex: 1,
             }}
@@ -207,8 +207,8 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
             {/* Gem image */}
             <div
               style={{
-                width: "135px",
-                height: "135px",
+                width: "120px",
+                height: "120px",
                 backgroundColor: "#ffffff",
                 display: "flex",
                 alignItems: "center",
@@ -296,8 +296,8 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
             </div>
 
             {/* QR code */}
-            <div style={{ marginTop: "0px", marginBottom: "4px" }}>
-              <QRCode value={verificationUrl} size={88} />
+            <div style={{ marginTop: "-10px", marginBottom: "4px" }}>
+              <QRCode value={verificationUrl} size={60} />
             </div>
           </div>
         </div>
