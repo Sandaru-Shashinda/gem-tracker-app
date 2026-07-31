@@ -12,6 +12,7 @@ import { UserRole } from "./lib/types"
 import { ReportPreviewPage } from "./pages/ReportPreviewPage"
 import { ReportsPage } from "./pages/ReportsPage"
 import { ReportConfigurationPage } from "./pages/ReportConfigurationPage"
+import { SpectrometerPage } from "./pages/SpectrometerPage"
 
 export default function App() {
   const { user } = useGem()
@@ -20,6 +21,9 @@ export default function App() {
     <Router>
       <Routes>
         <Route path='/' element={<LoginPage />} />
+
+        {/* Public Routes */}
+        <Route path='/spectro' element={<SpectrometerPage />} />
 
         {/* Protected Routes */}
         <Route path='/dashboard' element={user ? <DashboardPage /> : <Navigate to='/' replace />} />

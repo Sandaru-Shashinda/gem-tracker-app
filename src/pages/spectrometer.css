@@ -1,0 +1,370 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap");
+
+/* All rules are scoped under .spectro so nothing leaks into the rest of the app. */
+.spectro {
+  --sp-bg: #0a0a0f;
+  --sp-surface: #12121a;
+  --sp-surface2: #1c1c28;
+  --sp-border: rgba(255, 255, 255, 0.08);
+  --sp-text: #e8e8f0;
+  --sp-muted: #6b6b80;
+  --sp-accent: #ff3c3c;
+  --sp-accent2: #ffcc44;
+  --sp-mono: "Space Mono", ui-monospace, monospace;
+  --sp-sans: "DM Sans", system-ui, sans-serif;
+
+  background: var(--sp-bg);
+  color: var(--sp-text);
+  font-family: var(--sp-sans);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.spectro *,
+.spectro *::before,
+.spectro *::after {
+  box-sizing: border-box;
+}
+
+.spectro-header {
+  width: 100%;
+  max-width: 760px;
+  padding: 20px 20px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.spectro-header h1 {
+  font-family: var(--sp-mono);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--sp-text);
+  margin: 0;
+}
+
+.spectro-header span {
+  font-size: 12px;
+  color: var(--sp-muted);
+  font-family: var(--sp-mono);
+}
+
+.spectro-container {
+  width: 100%;
+  max-width: 760px;
+  padding: 16px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Viewfinder */
+.spectro-viewfinder {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--sp-border);
+}
+
+.spectro-viewfinder video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.spectro-roi-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(255, 60, 60, 0.08);
+  pointer-events: none;
+}
+
+.spectro-roi-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 60, 60, 0.85);
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(255, 60, 60, 0.5);
+}
+
+.spectro-vf-label {
+  position: absolute;
+  font-family: var(--sp-mono);
+  font-size: 10px;
+  color: rgba(255, 60, 60, 0.8);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2px 6px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.spectro-roi-label {
+  right: 8px;
+}
+
+.spectro-cam-status {
+  left: 8px;
+  top: 8px;
+  color: var(--sp-muted);
+}
+
+.spectro-live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3ddc84;
+  margin-right: 4px;
+  animation: spectro-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes spectro-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Controls */
+.spectro-ctrl-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.spectro-ctrl-box {
+  background: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.spectro-ctrl-box-label {
+  font-size: 11px;
+  color: var(--sp-muted);
+  font-family: var(--sp-mono);
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.spectro-ctrl-box-label span {
+  color: var(--sp-text);
+  font-weight: 700;
+}
+
+.spectro input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  background: var(--sp-surface2);
+  border-radius: 2px;
+  outline: none;
+}
+
+.spectro input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--sp-text);
+  cursor: pointer;
+  border: 2px solid var(--sp-bg);
+}
+
+.spectro input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--sp-text);
+  cursor: pointer;
+  border: 2px solid var(--sp-bg);
+}
+
+/* Buttons */
+.spectro-btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.spectro button {
+  font-family: var(--sp-mono);
+  font-size: 11px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--sp-border);
+  background: var(--sp-surface);
+  color: var(--sp-text);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+  letter-spacing: 0.3px;
+}
+
+.spectro button:hover {
+  background: var(--sp-surface2);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.spectro button.spectro-primary {
+  background: var(--sp-accent);
+  border-color: var(--sp-accent);
+  color: #fff;
+}
+
+.spectro button.spectro-primary:hover {
+  background: #e03030;
+}
+
+.spectro button.spectro-active {
+  border-color: var(--sp-accent2);
+  color: var(--sp-accent2);
+}
+
+.spectro button.spectro-primary.spectro-active {
+  background: var(--sp-surface);
+  color: var(--sp-accent2);
+}
+
+/* Spectrum display */
+.spectro-block {
+  background: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.spectro-rainbow {
+  width: 100%;
+  height: 18px;
+  border-radius: 4px;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.spectro-wl-axis {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--sp-mono);
+  font-size: 10px;
+  color: var(--sp-muted);
+  margin-bottom: 8px;
+  padding: 0 1px;
+}
+
+.spectro-graph {
+  width: 100%;
+  height: 160px;
+  border-radius: 6px;
+  background: #080810;
+  display: block;
+  border: 1px solid var(--sp-border);
+}
+
+/* Peaks */
+.spectro-peaks-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.spectro-peak-chip {
+  font-family: var(--sp-mono);
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--sp-surface2);
+  border: 1px solid var(--sp-border);
+  color: var(--sp-muted);
+}
+
+.spectro-peak-chip b {
+  color: var(--sp-accent2);
+}
+
+/* Calibration panel */
+.spectro-calib-panel {
+  background: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.spectro-calib-title {
+  font-family: var(--sp-mono);
+  font-size: 11px;
+  color: var(--sp-muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.spectro-calib-fields {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.spectro-calib-fields label {
+  font-size: 12px;
+  color: var(--sp-muted);
+  white-space: nowrap;
+}
+
+.spectro-calib-fields input[type="number"] {
+  width: 72px;
+  padding: 6px 10px;
+  background: var(--sp-surface2);
+  border: 1px solid var(--sp-border);
+  border-radius: 6px;
+  color: var(--sp-text);
+  font-family: var(--sp-mono);
+  font-size: 12px;
+  outline: none;
+}
+
+.spectro-calib-hint {
+  font-size: 11px;
+  color: var(--sp-muted);
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+/* Status bar */
+.spectro-status {
+  font-family: var(--sp-mono);
+  font-size: 11px;
+  color: var(--sp-muted);
+  padding: 2px 0;
+}
+
+.spectro-export-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 520px) {
+  .spectro-ctrl-row {
+    grid-template-columns: 1fr;
+  }
+}
