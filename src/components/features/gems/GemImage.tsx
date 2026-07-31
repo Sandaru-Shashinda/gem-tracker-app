@@ -20,10 +20,10 @@ const inflight = new Map<string, Promise<Image>>()
 /**
  * Seed the cache with images that arrived on another payload.
  *
- * The public report verification page has no auth token, so `getImageById` is a
- * guaranteed 401 there. It instead receives the images inline with the report and
+ * The public report verification page receives its images inline with the report and
  * primes them here, letting every preview component keep using `<GemImage imageId>`
- * unchanged. Callers with a token are unaffected — this just skips a round trip.
+ * unchanged. `GET /api/images/:id` is public, so the fetch fallback works without a
+ * token too — priming just skips the round trip.
  */
 export function primeImageCache(images?: Array<Partial<Image> & { _id: string }>) {
   if (!images) return
