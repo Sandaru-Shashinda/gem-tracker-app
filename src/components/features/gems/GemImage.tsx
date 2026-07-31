@@ -17,6 +17,21 @@ const imageCache = new Map<string, Image>()
 // they share one promise instead of making two network requests
 const inflight = new Map<string, Promise<Image>>()
 
+/**
+ * Seed the cache with images that arrived on another payload.
+ *
+ * The public report verification page has no auth token, so `getImageById` is a
+ * guaranteed 401 there. It instead receives the images inline with the report and
+ * primes them here, letting every preview component keep using `<GemImage imageId>`
+ * unchanged. Callers with a token are unaffected — this just skips a round trip.
+ */
+export function primeImageCache(images?: Array<Partial<Image> & { _id: string }>) {
+  if (!images) return
+  for (const image of images) {
+    if (image?._id && image.url) imageCache.set(image._id, image as Image)
+  }
+}
+
 export function GemImage({ imageId, className, alt }: GemImageProps) {
   const cached = imageId ? imageCache.get(imageId) : undefined
   const [image, setImage] = useState<Image | null>(cached ?? null)

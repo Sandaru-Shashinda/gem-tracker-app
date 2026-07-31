@@ -7,6 +7,7 @@ import { MediumReportPreview } from "@/components/features/reports/MediumReportP
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
 import { VerbalReportPreview } from "@/components/features/reports/VerbalReportPreview"
+import { primeImageCache } from "@/components/features/gems/GemImage"
 import type { Gem } from "@/lib/types"
 
 interface ReportData {
@@ -15,6 +16,7 @@ interface ReportData {
   reportType: "small" | "medium" | "large" | "verbal"
   isClientDataAdd?: boolean
   gemId: string | Gem
+  gemImages?: Array<{ _id: string; name: string; url: string }>
 }
 
 export function ReportPreviewPage() {
@@ -37,6 +39,9 @@ export function ReportPreviewPage() {
         let reportData: ReportData | null = null
         try {
           reportData = await reportsApi.getReportById(id)
+          // Visitors here are usually anonymous (QR scan), so the protected image
+          // endpoint is unavailable. The report carries its images inline instead.
+          primeImageCache(reportData?.gemImages)
           setReport(reportData)
         } catch (e) {
           // It might be a Gem ID
@@ -119,64 +124,47 @@ export function ReportPreviewPage() {
   const reportType = report?.reportType || "medium"
   const includeLogo = report?.isClientDataAdd ?? true
 
+  const previewProps = { gem, includeLogo, reportId: report?._id || gem._id }
+
   return (
-    <div className='min-h-screen bg-slate-100/50 py-12 px-4'>
-      <div className='max-w-6xl mx-auto'>
+    <div className='min-h-screen w-full overflow-x-hidden bg-slate-100/50 py-6 px-3 sm:py-12 sm:px-4'>
+      <div className='w-full max-w-6xl mx-auto'>
         {/* Status Header */}
-        <div className='flex flex-col items-center mb-10 text-center'>
-          <div className='bg-emerald-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-emerald-200 mb-4 animate-bounce'>
+        <div className='flex flex-col items-center mb-6 sm:mb-10 text-center'>
+          <div className='bg-emerald-500 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-lg shadow-emerald-200 mb-3 sm:mb-4 animate-bounce'>
             Verified Authentic
           </div>
-          <h1 className='text-2xl font-serif font-bold text-slate-900'>
+          <h1 className='text-lg sm:text-2xl font-serif font-bold text-slate-900 text-balance'>
             Official Gemological Identification
           </h1>
-          <p className='text-slate-500 text-sm mt-1'>
+          <p className='text-slate-500 text-xs sm:text-sm mt-1'>
             Gemological Report of Ceylon Digital Verification
           </p>
         </div>
-        <div className='flex justify-center'>
-          {/* Reuse the configured report components for the verification page */}
+        {/* Reuse the configured report components — each scales itself to the
+            width we give it and centres itself, so this stays a plain block. A
+            flex row here would let the fixed-size cards stretch it past the
+            viewport via min-width:auto, defeating their own scaling. */}
+        <div className='w-full'>
           {reportType === "large" ? (
-            <div className='scale-[0.85] origin-top'>
-              <LargeReportPreview
-                gem={gem}
-                includeLogo={includeLogo}
-                reportId={report?._id || gem._id}
-              />
-            </div>
+            <LargeReportPreview {...previewProps} />
           ) : reportType === "small" ? (
-            <div className='scale-[0.9] origin-top'>
-              <SmallReportPreview
-                gem={gem}
-                includeLogo={includeLogo}
-                reportId={report?._id || gem._id}
-              />
-            </div>
+            <SmallReportPreview {...previewProps} />
           ) : reportType === "verbal" ? (
-            <div className='scale-[0.9] origin-top'>
-              <VerbalReportPreview
-                gem={gem}
-                includeLogo={includeLogo}
-                reportId={report?._id || gem._id}
-              />
-            </div>
+            <VerbalReportPreview {...previewProps} />
           ) : (
-            <div className='scale-[0.85] origin-top'>
-              <MediumReportPreview
-                gem={gem}
-                includeLogo={includeLogo}
-                reportId={report?._id || gem._id}
-              />
-            </div>
+            <MediumReportPreview {...previewProps} />
           )}
         </div>
         {/* Footer Info */}
-        <div className='mt-20 text-center text-slate-400 space-y-2'>
+        <div className='mt-10 sm:mt-20 text-center text-slate-400 space-y-2'>
           <p className='text-xs'>
             © {new Date().getFullYear()} Gemological Report of Ceylon (Pvt) Ltd. All Rights
             Reserved.
           </p>
-          <p className='text-[10px]'>Verification Date: {new Date().toLocaleString()}</p>
+          <p className='text-[10px] break-words'>
+            Verification Date: {new Date().toLocaleString()}
+          </p>
         </div>
       </div>
 

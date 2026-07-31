@@ -72,9 +72,9 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
         <button
           onClick={handleDownload}
           disabled={downloading}
-          className='flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-slate-800 text-white rounded-md hover:bg-slate-700 disabled:opacity-50 transition-colors'
+          className='flex items-center gap-1.5 px-3 py-2 text-xs sm:px-4 sm:text-sm font-medium bg-slate-800 text-white rounded-md hover:bg-slate-700 disabled:opacity-50 transition-colors'
         >
-          <Download className='w-4 h-4' />
+          <Download className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
           {downloading ? "Exporting..." : "Download Report"}
         </button>
       </div>

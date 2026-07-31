@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import QRCode from "react-qr-code"
 import { ImageIcon, Download } from "lucide-react"
 import { toPng } from "html-to-image"
@@ -26,6 +26,27 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
   const [downloading, setDownloading] = useState(false)
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
   const backRef = useRef<HTMLDivElement>(null)
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  // The card is a fixed-size print artefact; shrink it to fit narrow viewports.
+  // The transform lives on a wrapper, so backRef stays at natural size and
+  // downloads keep full resolution regardless of the screen it was taken on.
+  useEffect(() => {
+    const updateScale = (width: number) => {
+      setScale(width < CARD_WIDTH ? width / CARD_WIDTH : 1)
+    }
+
+    const el = containerRef.current
+    if (!el) return
+
+    const observer = new ResizeObserver((entries) => updateScale(entries[0].contentRect.width))
+    observer.observe(el)
+    updateScale(el.clientWidth)
+
+    return () => observer.disconnect()
+  }, [])
 
   const handleDownload = async () => {
     if (!backRef.current) return
@@ -69,242 +90,263 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
   ]
 
   return (
-    <div className='flex flex-col items-center justify-start font-serif text-slate-900'>
+    <div
+      ref={containerRef}
+      className='flex w-full min-w-0 flex-col items-center justify-start font-serif text-slate-900'
+    >
       {/* CARD CONTAINER */}
-      <div className='relative w-full flex justify-center'>
+      <div
+        style={{
+          width: `${CARD_WIDTH * scale}px`,
+          height: `${CARD_HEIGHT * scale}px`,
+          margin: "0 auto",
+        }}
+      >
         <div
-          id='small-report-back-view'
-          ref={backRef}
           style={{
             width: `${CARD_WIDTH}px`,
             height: `${CARD_HEIGHT}px`,
-            backgroundColor: "#ffffff",
-            overflow: "hidden",
-            display: "flex",
-            border: "1px solid #e2e8f0",
-            padding: "30px 30px 24px 35px",
-            boxSizing: "border-box",
-            position: "relative",
-            boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)",
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
           }}
         >
-          {/* Watermark */}
           <div
+            id='small-report-back-view'
+            ref={backRef}
             style={{
-              position: "absolute",
-              top: "40%",
-              left: "38%",
-              transform: "translate(-50%, -50%)",
-              opacity: 1,
-              pointerEvents: "none",
-              zIndex: 0,
-            }}
-          >
-            <img
-              src={turtlesLogo}
-              alt=''
-              style={{ width: "600px", height: "900px", objectFit: "contain" }}
-            />
-          </div>
-
-          {/* ── LEFT COLUMN ── */}
-          <div
-            style={{
-              flex: 1,
+              width: `${CARD_WIDTH}px`,
+              height: `${CARD_HEIGHT}px`,
+              backgroundColor: "#ffffff",
+              overflow: "hidden",
               display: "flex",
-              flexDirection: "column",
-              marginRight: "65px",
+              border: "1px solid #e2e8f0",
+              padding: "30px 30px 24px 35px",
+              boxSizing: "border-box",
               position: "relative",
-              minWidth: 0,
+              boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)",
             }}
           >
-            {/* Logo */}
+            {/* Watermark */}
             <div
               style={{
-                width: "175px",
-                marginTop: "-70px",
-                zIndex: 1,
-                marginLeft: "-15px",
+                position: "absolute",
+                top: "40%",
+                left: "38%",
+                transform: "translate(-50%, -50%)",
+                opacity: 1,
+                pointerEvents: "none",
+                zIndex: 0,
               }}
             >
-              <img src={grcMemoLogo} alt='GRC Logo' style={{ height: "175px" }} />
+              <img
+                src={turtlesLogo}
+                alt=''
+                style={{ width: "600px", height: "900px", objectFit: "contain" }}
+              />
             </div>
 
-            {/* Data rows */}
+            {/* ── LEFT COLUMN ── */}
             <div
               style={{
+                flex: 1,
                 display: "flex",
                 flexDirection: "column",
-                gap: 2,
-                fontSize: "14px",
-                marginTop: "-65px",
-                padding: "10px 0",
-                fontFamily: "Arial, Helvetica, sans-serif",
-                color: "#1a1a1a",
-                lineHeight: 1.3,
-                flex: 1,
-                zIndex: 2,
+                marginRight: "65px",
+                position: "relative",
+                minWidth: 0,
               }}
             >
-              {rows.map((row, i) => (
-                <div key={i} style={{ display: "flex", ...row.style }}>
-                  <span style={{ whiteSpace: "nowrap", paddingRight: "4px", minWidth: "10px" }}>
-                    {row.label}:
-                  </span>
-                  <span
+              {/* Logo */}
+              <div
+                style={{
+                  width: "175px",
+                  marginTop: "-70px",
+                  zIndex: 1,
+                  marginLeft: "-15px",
+                }}
+              >
+                <img src={grcMemoLogo} alt='GRC Logo' style={{ height: "175px" }} />
+              </div>
+
+              {/* Data rows */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  fontSize: "14px",
+                  marginTop: "-65px",
+                  padding: "10px 0",
+                  fontFamily: "Arial, Helvetica, sans-serif",
+                  color: "#1a1a1a",
+                  lineHeight: 1.3,
+                  flex: 1,
+                  zIndex: 2,
+                }}
+              >
+                {rows.map((row, i) => (
+                  <div key={i} style={{ display: "flex", ...row.style }}>
+                    <span style={{ whiteSpace: "nowrap", paddingRight: "4px", minWidth: "10px" }}>
+                      {row.label}:
+                    </span>
+                    <span
+                      style={{
+                        flex: 1,
+                        borderBottom: "2px dotted #a3a3a3",
+                        position: "relative",
+                        top: "-4px",
+                        minWidth: "20px",
+                      }}
+                    />
+                    <span
+                      style={{
+                        whiteSpace: "nowrap",
+                        paddingLeft: "6px",
+                        maxWidth: "220px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {row.value || " "}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Signature */}
+              <img
+                src={signatureImg}
+                alt='Signature'
+                style={{
+                  height: "450px",
+                  objectFit: "contain",
+                  marginTop: "-15px",
+                  marginLeft: "-12px",
+                  maxWidth: "58%",
+                  clipPath: "inset(25% 0 10% 0)",
+                }}
+              />
+            </div>
+
+            {/* ── RIGHT COLUMN ── */}
+            <div
+              style={{
+                width: "160px",
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                paddingTop: "50px",
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              {/* Gem image */}
+              <div
+                style={{
+                  width: "120px",
+                  height: "120px",
+                  backgroundColor: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  border: "1px solid #666",
+                }}
+              >
+                {firstImageId ? (
+                  <div
                     style={{
-                      flex: 1,
-                      borderBottom: "2px dotted #a3a3a3",
-                      position: "relative",
-                      top: "-4px",
-                      minWidth: "20px",
-                    }}
-                  />
-                  <span
-                    style={{
-                      whiteSpace: "nowrap",
-                      paddingLeft: "6px",
-                      maxWidth: "220px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
+                      width: "85%",
+                      height: "85%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    {row.value || " "}
-                  </span>
-                </div>
-              ))}
-            </div>
+                    <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
+                  </div>
+                ) : (
+                  <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
+                )}
+              </div>
 
-            {/* Signature */}
-            <img
-              src={signatureImg}
-              alt='Signature'
-              style={{
-                height: "450px",
-                objectFit: "contain",
-                marginTop: "-15px",
-                marginLeft: "-12px",
-                maxWidth: "58%",
-                clipPath: "inset(25% 0 10% 0)",
-              }}
-            />
-          </div>
+              <p
+                style={{
+                  fontSize: "9px",
+                  fontFamily: "Arial, Helvetica, sans-serif",
+                  color: "#888",
+                  textAlign: "center",
+                  marginTop: "5px",
+                  marginBottom: "16px",
+                  lineHeight: 1.3,
+                }}
+              >
+                Image is approximate
+              </p>
 
-          {/* ── RIGHT COLUMN ── */}
-          <div
-            style={{
-              width: "160px",
-              flexShrink: 0,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              paddingTop: "50px",
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            {/* Gem image */}
-            <div
-              style={{
-                width: "120px",
-                height: "120px",
-                backgroundColor: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                border: "1px solid #666",
-              }}
-            >
-              {firstImageId ? (
-                <div
-                  style={{
-                    width: "85%",
-                    height: "85%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
-                </div>
-              ) : (
-                <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
-              )}
-            </div>
-
-            <p
-              style={{
-                fontSize: "9px",
-                fontFamily: "Arial, Helvetica, sans-serif",
-                color: "#888",
-                textAlign: "center",
-                marginTop: "5px",
-                marginBottom: "16px",
-                lineHeight: 1.3,
-              }}
-            >
-              Image is approximate
-            </p>
-
-            {/* Gem name & weight */}
-            <div
-              style={{
-                textAlign: "center",
-                marginBottom: "16px",
-                fontFamily: "Arial, Helvetica, sans-serif",
-              }}
-            >
-              {obs.showHeatInReport && (
+              {/* Gem name & weight */}
+              <div
+                style={{
+                  textAlign: "center",
+                  marginBottom: "16px",
+                  fontFamily: "Arial, Helvetica, sans-serif",
+                }}
+              >
+                {obs.showHeatInReport && (
+                  <p
+                    style={{
+                      fontWeight: 600,
+                      fontSize: "12px",
+                      color: "#1e293b",
+                      lineHeight: 1.2,
+                      margin: 0,
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {obs.isHeated ? "Heated" : "Un - Heated"}
+                  </p>
+                )}
                 <p
                   style={{
-                    fontWeight: 600,
-                    fontSize: "12px",
+                    fontWeight: 700,
+                    fontSize: "18px",
                     color: "#1e293b",
                     lineHeight: 1.2,
                     margin: 0,
-                    marginBottom: "4px",
                   }}
                 >
-                  {obs.isHeated ? "Heated" : "Un - Heated"}
+                  {finalData.finalVariety || obs.variety || "—"}
                 </p>
-              )}
-              <p
-                style={{
-                  fontWeight: 700,
-                  fontSize: "18px",
-                  color: "#1e293b",
-                  lineHeight: 1.2,
-                  margin: 0,
-                }}
-              >
-                {finalData.finalVariety || obs.variety || "—"}
-              </p>
 
-              <p
-                style={{
-                  fontSize: "16px",
-                  color: "#1e293b",
-                  fontWeight: 700,
-                  marginTop: "4px",
-                  margin: 0,
-                }}
-              >
-                {gem.weight ? `${Number(gem.weight).toFixed(2)} ct` : ""}
-              </p>
-            </div>
+                <p
+                  style={{
+                    fontSize: "16px",
+                    color: "#1e293b",
+                    fontWeight: 700,
+                    marginTop: "4px",
+                    margin: 0,
+                  }}
+                >
+                  {gem.weight ? `${Number(gem.weight).toFixed(2)} ct` : ""}
+                </p>
+              </div>
 
-            {/* QR code */}
-            <div style={{ marginTop: "-10px", marginBottom: "4px" }}>
-              <QRCode value={verificationUrl} size={60} />
+              {/* QR code */}
+              <div style={{ marginTop: "-10px", marginBottom: "4px" }}>
+                <QRCode value={verificationUrl} size={60} />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Download button */}
-      <div className='mt-4 flex justify-end w-full max-w-[640px] print:hidden'>
+      <div
+        className='mt-4 flex justify-end print:hidden'
+        style={{ width: `${CARD_WIDTH * scale}px` }}
+      >
         <button
           onClick={handleDownload}
           disabled={downloading}
