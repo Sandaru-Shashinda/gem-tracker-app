@@ -130,7 +130,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
             <div
               style={{
                 position: "absolute",
-                top: "40%",
+                top: "45%",
                 left: "38%",
                 transform: "translate(-50%, -50%)",
                 opacity: 1,
@@ -141,7 +141,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
               <img
                 src={turtlesLogo}
                 alt=''
-                style={{ width: "600px", height: "900px", objectFit: "contain" }}
+                style={{ width: "700px", height: "950px", objectFit: "contain" }}
               />
             </div>
 
