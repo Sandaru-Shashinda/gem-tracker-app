@@ -100,6 +100,7 @@ export interface Gem {
   assignedTester1?: string
   assignedTester2?: string
   reportTypes?: string[]
+  skipTesting?: boolean
 
   intake: {
     helperId?: string

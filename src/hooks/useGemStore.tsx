@@ -30,6 +30,7 @@ interface GemContextType {
       customerId?: string
       status?: GemStatus
       reportTypes?: string[]
+      skipTesting?: boolean
     },
     images?: File[],
     id?: string,
@@ -143,6 +144,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
         customerId?: string
         status?: GemStatus
         reportTypes?: string[]
+        skipTesting?: boolean
       },
       images?: File[],
       id?: string,

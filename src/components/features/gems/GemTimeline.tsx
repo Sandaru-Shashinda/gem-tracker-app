@@ -1,11 +1,11 @@
 import { type Gem, GEM_STATUSES } from "@/lib/types"
-import { CheckCircle2, Clock, Circle } from "lucide-react"
+import { CheckCircle2, Clock, Circle, MinusCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface TimelineStep {
   id: string
   label: string
-  status: "completed" | "current" | "pending"
+  status: "completed" | "current" | "pending" | "skipped"
   timestamp?: string | Date
   helperText?: string
 }
@@ -15,6 +15,8 @@ interface GemTimelineProps {
 }
 
 export function GemTimeline({ gem }: GemTimelineProps) {
+  const skipTesting = gem.skipTesting === true
+
   const steps: TimelineStep[] = [
     {
       id: "INTAKE",
@@ -26,30 +28,34 @@ export function GemTimeline({ gem }: GemTimelineProps) {
     {
       id: "READY_FOR_T1",
       label: "Test 1",
-      status: [GEM_STATUSES.READY_FOR_T1, GEM_STATUSES.DRAFT_TEST_1].includes(gem.status)
-        ? "current"
-        : gem.test1?.timestamp ||
-            [
-              GEM_STATUSES.READY_FOR_T2,
-              GEM_STATUSES.READY_FOR_APPROVAL,
-              GEM_STATUSES.DONE,
-            ].includes(gem.status)
-          ? "completed"
-          : "pending",
-      timestamp: gem.test1?.timestamp,
-      helperText: "Basic analysis",
+      status: skipTesting
+        ? "skipped"
+        : [GEM_STATUSES.READY_FOR_T1, GEM_STATUSES.DRAFT_TEST_1].includes(gem.status)
+          ? "current"
+          : gem.test1?.timestamp ||
+              [
+                GEM_STATUSES.READY_FOR_T2,
+                GEM_STATUSES.READY_FOR_APPROVAL,
+                GEM_STATUSES.DONE,
+              ].includes(gem.status)
+            ? "completed"
+            : "pending",
+      timestamp: skipTesting ? undefined : gem.test1?.timestamp,
+      helperText: skipTesting ? "Bypassed" : "Basic analysis",
     },
     {
       id: "READY_FOR_T2",
       label: "Test 2",
-      status: [GEM_STATUSES.READY_FOR_T2, GEM_STATUSES.DRAFT_TEST_2].includes(gem.status)
-        ? "current"
-        : gem.test2?.timestamp ||
-            [GEM_STATUSES.READY_FOR_APPROVAL, GEM_STATUSES.DONE].includes(gem.status)
-          ? "completed"
-          : "pending",
-      timestamp: gem.test2?.timestamp,
-      helperText: "Second verification",
+      status: skipTesting
+        ? "skipped"
+        : [GEM_STATUSES.READY_FOR_T2, GEM_STATUSES.DRAFT_TEST_2].includes(gem.status)
+          ? "current"
+          : gem.test2?.timestamp ||
+              [GEM_STATUSES.READY_FOR_APPROVAL, GEM_STATUSES.DONE].includes(gem.status)
+            ? "completed"
+            : "pending",
+      timestamp: skipTesting ? undefined : gem.test2?.timestamp,
+      helperText: skipTesting ? "Bypassed" : "Second verification",
     },
     {
       id: "READY_FOR_APPROVAL",
@@ -81,13 +87,14 @@ export function GemTimeline({ gem }: GemTimelineProps) {
         <div
           className='absolute left-0 top-1/2 h-0.5 -translate-y-1/2 bg-blue-500 transition-all duration-500'
           style={{
-            width: `${(steps.filter((s) => s.status === "completed").length - 1) * 25}%`,
+            width: `${(steps.filter((s) => s.status === "completed" || s.status === "skipped").length - 1) * 25}%`,
           }}
         />
 
         {steps.map((step, index) => {
           const isCompleted = step.status === "completed"
           const isCurrent = step.status === "current"
+          const isSkipped = step.status === "skipped"
 
           return (
             <div key={step.id} className='relative flex flex-col items-center flex-1 group'>
@@ -101,7 +108,13 @@ export function GemTimeline({ gem }: GemTimelineProps) {
                 <p
                   className={cn(
                     "text-[10px] font-bold uppercase tracking-wider",
-                    isCompleted ? "text-green-600" : isCurrent ? "text-blue-500" : "text-slate-400",
+                    isCompleted
+                      ? "text-green-600"
+                      : isCurrent
+                        ? "text-blue-500"
+                        : isSkipped
+                          ? "text-amber-500 line-through"
+                          : "text-slate-400",
                   )}
                 >
                   {step.label}
@@ -111,6 +124,7 @@ export function GemTimeline({ gem }: GemTimelineProps) {
                     {new Date(step.timestamp).toLocaleDateString()}
                   </p>
                 )}
+                {isSkipped && <p className='text-[8px] text-amber-500'>Skipped</p>}
               </div>
 
               {/* Node */}
@@ -121,13 +135,17 @@ export function GemTimeline({ gem }: GemTimelineProps) {
                     ? "border-green-500 bg-white"
                     : isCurrent
                       ? "border-blue-500 bg-blue-50 animate-pulse"
-                      : "border-slate-200 bg-slate-50",
+                      : isSkipped
+                        ? "border-amber-300 border-dashed bg-amber-50"
+                        : "border-slate-200 bg-slate-50",
                 )}
               >
                 {isCompleted ? (
                   <CheckCircle2 className='h-5 w-5 text-green-500' />
                 ) : isCurrent ? (
                   <Clock className='h-5 w-5 text-blue-500' />
+                ) : isSkipped ? (
+                  <MinusCircle className='h-4 w-4 text-amber-400' />
                 ) : (
                   <Circle className='h-3 w-3 text-slate-300' />
                 )}
@@ -143,7 +161,13 @@ export function GemTimeline({ gem }: GemTimelineProps) {
                 <p
                   className={cn(
                     "text-[10px] font-bold uppercase tracking-wider",
-                    isCompleted ? "text-blue-600" : isCurrent ? "text-blue-500" : "text-slate-400",
+                    isCompleted
+                      ? "text-blue-600"
+                      : isCurrent
+                        ? "text-blue-500"
+                        : isSkipped
+                          ? "text-amber-500 line-through"
+                          : "text-slate-400",
                   )}
                 >
                   {step.label}
@@ -153,6 +177,7 @@ export function GemTimeline({ gem }: GemTimelineProps) {
                     {new Date(step.timestamp).toLocaleDateString()}
                   </p>
                 )}
+                {isSkipped && <p className='text-[8px] text-amber-500'>Skipped</p>}
               </div>
 
               {/* Helper Text (Subtitles) */}

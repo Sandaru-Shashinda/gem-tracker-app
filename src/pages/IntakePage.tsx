@@ -59,7 +59,8 @@ export function IntakePage() {
     register,
     handleSubmit,
     control,
-    // setValue,
+    setValue,
+    watch,
     formState: { errors, isValid },
     reset,
     getValues,
@@ -74,9 +75,12 @@ export function IntakePage() {
       testerId1: "",
       testerId2: "",
       reportTypes: [],
+      skipTesting: false,
     },
     mode: "onChange",
   })
+
+  const skipTesting = watch("skipTesting")
 
   // Track initialization to prevent duplicate calls (especially in Strict Mode)
   // IMPORTANT: Use a unique sentinel (not undefined) so the initial check doesn't
@@ -134,6 +138,7 @@ export function IntakePage() {
               gem.assignedTester2 ||
               "",
             reportTypes: gem.reportTypes || [],
+            skipTesting: gem.skipTesting ?? false,
           })
 
           const gemImageIds = gem.images && gem.images.length > 0 ? gem.images : []
@@ -217,8 +222,17 @@ export function IntakePage() {
   const onSubmit = async (data: IntakeFormValues) => {
     setIsSubmitting(true)
     try {
+      // Skipping the testing flow sends the gem straight to the approver,
+      // with no testers assigned.
       await handleIntake(
-        { ...data, status: GEM_STATUSES.READY_FOR_T1 },
+        data.skipTesting
+          ? {
+              ...data,
+              testerId1: "",
+              testerId2: "",
+              status: GEM_STATUSES.READY_FOR_APPROVAL,
+            }
+          : { ...data, status: GEM_STATUSES.READY_FOR_T1 },
         images,
         id,
         existingImageIds,
@@ -457,6 +471,40 @@ export function IntakePage() {
                     Workflow Assignment
                   </h3>
 
+                  <Controller
+                    name='skipTesting'
+                    control={control}
+                    render={({ field }) => (
+                      <div className='flex items-start gap-3 p-4 bg-amber-50/60 rounded-xl border border-amber-200'>
+                        <Checkbox
+                          id='skip-testing'
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => {
+                            const isSkipping = checked === true
+                            field.onChange(isSkipping)
+                            if (isSkipping) {
+                              setValue("testerId1", "", { shouldValidate: true })
+                              setValue("testerId2", "", { shouldValidate: true })
+                            }
+                          }}
+                          className='mt-0.5 border-amber-400 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600'
+                        />
+                        <div>
+                          <label
+                            htmlFor='skip-testing'
+                            className='text-sm font-bold text-amber-900 cursor-pointer'
+                          >
+                            Input data without testing flow
+                          </label>
+                          <p className='text-xs text-amber-700/80 leading-relaxed mt-1'>
+                            Bypasses Test 1 and Test 2. The gem goes straight to Final Approval,
+                            where all data is entered at once. No testers are assigned.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  />
+
                   <div className='space-y-3'>
                     <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>
                       Customer
@@ -533,63 +581,81 @@ export function IntakePage() {
                   </div>
 
                   <div className='space-y-6 pt-4'>
-                    <div className='space-y-3'>
-                      <label className='text-[11px] font-black uppercase text-blue-600 tracking-wider flex items-center gap-2'>
-                        Tester 1 (Initial Analysis)
-                      </label>
-                      <Controller
-                        name='testerId1'
-                        control={control}
-                        render={({ field }) => (
-                          <Select onValueChange={field.onChange} value={field.value || undefined}>
-                            <SelectTrigger className='w-full bg-blue-50/50 border-blue-100 h-12 focus:bg-white transition-colors'>
-                              <SelectValue placeholder='Assign Tester 1...' />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {testers.map((tester) => (
-                                <SelectItem key={tester.id} value={tester.id}>
-                                  {tester.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                      {errors.testerId1 && (
-                        <p className='text-xs text-red-500 font-medium'>
-                          {errors.testerId1.message}
+                    {skipTesting ? (
+                      <div className='p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center'>
+                        <p className='text-sm font-bold text-slate-600'>Testing stage skipped</p>
+                        <p className='text-xs text-slate-500 leading-relaxed mt-1'>
+                          Tester assignment is not required. This gem will appear directly in the
+                          Final Approval queue.
                         </p>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className='space-y-3'>
+                          <label className='text-[11px] font-black uppercase text-blue-600 tracking-wider flex items-center gap-2'>
+                            Tester 1 (Initial Analysis)
+                          </label>
+                          <Controller
+                            name='testerId1'
+                            control={control}
+                            render={({ field }) => (
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value || undefined}
+                              >
+                                <SelectTrigger className='w-full bg-blue-50/50 border-blue-100 h-12 focus:bg-white transition-colors'>
+                                  <SelectValue placeholder='Assign Tester 1...' />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {testers.map((tester) => (
+                                    <SelectItem key={tester.id} value={tester.id}>
+                                      {tester.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                          {errors.testerId1 && (
+                            <p className='text-xs text-red-500 font-medium'>
+                              {errors.testerId1.message}
+                            </p>
+                          )}
+                        </div>
 
-                    <div className='space-y-3'>
-                      <label className='text-[11px] font-black uppercase text-purple-600 tracking-wider flex items-center gap-2'>
-                        Tester 2 (Secondary Analysis)
-                      </label>
-                      <Controller
-                        name='testerId2'
-                        control={control}
-                        render={({ field }) => (
-                          <Select onValueChange={field.onChange} value={field.value || undefined}>
-                            <SelectTrigger className='w-full bg-purple-50/50 border-purple-100 h-12 focus:bg-white transition-colors'>
-                              <SelectValue placeholder='Assign Tester 2...' />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {testers.map((tester) => (
-                                <SelectItem key={tester.id} value={tester.id}>
-                                  {tester.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                      {errors.testerId2 && (
-                        <p className='text-xs text-red-500 font-medium'>
-                          {errors.testerId2.message}
-                        </p>
-                      )}
-                    </div>
+                        <div className='space-y-3'>
+                          <label className='text-[11px] font-black uppercase text-purple-600 tracking-wider flex items-center gap-2'>
+                            Tester 2 (Secondary Analysis)
+                          </label>
+                          <Controller
+                            name='testerId2'
+                            control={control}
+                            render={({ field }) => (
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value || undefined}
+                              >
+                                <SelectTrigger className='w-full bg-purple-50/50 border-purple-100 h-12 focus:bg-white transition-colors'>
+                                  <SelectValue placeholder='Assign Tester 2...' />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {testers.map((tester) => (
+                                    <SelectItem key={tester.id} value={tester.id}>
+                                      {tester.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                          {errors.testerId2 && (
+                            <p className='text-xs text-red-500 font-medium'>
+                              {errors.testerId2.message}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )}
 
                     <div className='p-6 bg-slate-50 rounded-2xl border border-slate-100 mt-8'>
                       <div className='flex items-start gap-4'>

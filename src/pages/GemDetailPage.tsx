@@ -208,6 +208,17 @@ export function GemDetailPage() {
         activeData = gemDetail.test1
       }
     }
+    // Gems that bypassed testing have no Test 1 / Test 2 data to copy from, so
+    // seed the approval form straight from the intake record.
+    if (!activeData && gemDetail.skipTesting && isApproval) {
+      const seeded = { ...FORM_DEFAULTS }
+      seeded.itemDescription = gemDetail.itemDescription || ""
+      seeded.colour = gemDetail.color || ""
+      reset(seeded)
+      syncSearchStates(seeded, searchSetters)
+      return
+    }
+
     if (!activeData) return
 
     const values = mapSourceToFormValues(activeData)
