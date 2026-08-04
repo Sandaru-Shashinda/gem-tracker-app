@@ -32,7 +32,13 @@ export function primeImageCache(images?: Array<Partial<Image> & { _id: string }>
   }
 }
 
-export function GemImage({ imageId, className, alt }: GemImageProps) {
+/**
+ * Fetches an image by id, sharing the module-level cache and in-flight dedup above.
+ *
+ * Extracted so RealSizeGemImage can read the same record — it needs `metadata.gemCrop`
+ * as well as the URL — without a second network round trip or a second cache.
+ */
+export function useGemImage(imageId: string) {
   const cached = imageId ? imageCache.get(imageId) : undefined
   const [image, setImage] = useState<Image | null>(cached ?? null)
   const [loading, setLoading] = useState(!cached && !!imageId)
@@ -90,6 +96,12 @@ export function GemImage({ imageId, className, alt }: GemImageProps) {
       isMounted = false
     }
   }, [imageId])
+
+  return { image, loading, error }
+}
+
+export function GemImage({ imageId, className, alt }: GemImageProps) {
+  const { image, loading, error } = useGemImage(imageId)
 
   if (loading) {
     return (

@@ -35,6 +35,8 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
 import { getImageById, deleteImage } from "@/lib/api/images"
+import { GemCropDialog, type CropResult } from "@/components/features/gems/GemCropDialog"
+import { cropImageFile, setCropMeta } from "@/lib/gem-crop"
 
 export function IntakePage() {
   const navigate = useNavigate()
@@ -43,6 +45,7 @@ export function IntakePage() {
 
   const [images, setImages] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
+  const [pendingCropFiles, setPendingCropFiles] = useState<File[]>([])
   const [existingImageIds, setExistingImageIds] = useState<string[]>([])
   const [existingImagePreviews, setExistingImagePreviews] = useState<string[]>([])
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
@@ -173,20 +176,42 @@ export function IntakePage() {
     initializePage()
   }, [id, reset, getGemById])
 
-  // Handle image change
+  // Handle image change — every photo goes through outline confirmation first, so the
+  // stored image is tight to the stone and the certificate can print it at real size.
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      const newFiles = Array.from(files)
-      setImages((prev) => [...prev, ...newFiles])
+      setPendingCropFiles(Array.from(files))
+    }
+    // Let the same file be picked again after a cancel.
+    e.target.value = ""
+  }
 
-      newFiles.forEach((file) => {
+  const handleCropComplete = async (results: CropResult[]) => {
+    const queued = pendingCropFiles
+    setPendingCropFiles([])
+    if (queued.length === 0) return
+
+    try {
+      const croppedFiles = await Promise.all(
+        results.map(async (result, i) => {
+          const cropped = await cropImageFile(queued[i], result.rect)
+          setCropMeta(cropped, result.meta)
+          return cropped
+        }),
+      )
+
+      setImages((prev) => [...prev, ...croppedFiles])
+      croppedFiles.forEach((file) => {
         const reader = new FileReader()
         reader.onloadend = () => {
           setPreviews((prev) => [...prev, reader.result as string])
         }
         reader.readAsDataURL(file)
       })
+    } catch (err) {
+      console.error("Failed to crop images:", err)
+      alert("Could not crop one or more images. Please try again.")
     }
   }
 
@@ -713,6 +738,13 @@ export function IntakePage() {
           )}
         </Card>
       </div>
+
+      <GemCropDialog
+        files={pendingCropFiles}
+        open={pendingCropFiles.length > 0}
+        onComplete={handleCropComplete}
+        onCancel={() => setPendingCropFiles([])}
+      />
 
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className='max-w-4xl p-0 bg-transparent border-none'>

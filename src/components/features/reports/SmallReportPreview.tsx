@@ -3,7 +3,8 @@ import QRCode from "react-qr-code"
 import { ImageIcon, Download } from "lucide-react"
 import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
-import { GemImage } from "../gems/GemImage"
+import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
+import { downloadReportPdf } from "@/lib/report-pdf"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo.png"
@@ -24,8 +25,17 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
 
   const [downloading, setDownloading] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
   const backRef = useRef<HTMLDivElement>(null)
+
+  // 120px box less the 85% inner inset the card layout uses.
+  const gemImage = useRealSizeGemImage({
+    imageId: firstImageId ?? undefined,
+    obs,
+    reportSize: "small",
+    box: { w: 102, h: 102 },
+  })
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
@@ -64,6 +74,23 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
       console.error("Download failed", err)
     } finally {
       setDownloading(false)
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!backRef.current) return
+    setDownloadingPdf(true)
+    try {
+      await downloadReportPdf({
+        element: backRef.current,
+        reportSize: "small",
+        fileName: `GRC-${gem.gemId || gem._id}-card-1to1.pdf`,
+        pixelRatio: DOWNLOAD_SCALE,
+      })
+    } catch (err) {
+      console.error("PDF download failed", err)
+    } finally {
+      setDownloadingPdf(false)
     }
   }
 
@@ -265,7 +292,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                       justifyContent: "center",
                     }}
                   >
-                    <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
+                    {gemImage.node}
                   </div>
                 ) : (
                   <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
@@ -283,7 +310,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                   lineHeight: 1.3,
                 }}
               >
-                Image is approximate
+                {firstImageId ? gemImage.caption : "Image is approximate"}
               </p>
 
               {/* Gem name & weight */}
@@ -342,11 +369,14 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
         </div>
       </div>
 
-      {/* Download button */}
+      {/* Download buttons */}
       <div
-        className='mt-4 flex justify-end print:hidden'
+        className='mt-4 flex items-center justify-end gap-2 print:hidden'
         style={{ width: `${CARD_WIDTH * scale}px` }}
       >
+        <span className='mr-auto text-[10px] text-slate-400'>
+          Print the PDF at 100% — not "fit to page" — for a true-size gem image.
+        </span>
         <button
           onClick={handleDownload}
           disabled={downloading}
@@ -354,6 +384,14 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
         >
           <Download className='w-3 h-3' />
           {downloading ? "Exporting..." : "Download Card"}
+        </button>
+        <button
+          onClick={handleDownloadPdf}
+          disabled={downloadingPdf}
+          className='flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-500 disabled:opacity-50 transition-colors'
+        >
+          <Download className='w-3 h-3' />
+          {downloadingPdf ? "Exporting..." : "Download PDF (1:1)"}
         </button>
       </div>
     </div>

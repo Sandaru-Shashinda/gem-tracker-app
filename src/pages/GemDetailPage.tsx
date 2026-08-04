@@ -13,6 +13,8 @@ import { customersApi } from "@/lib/api/customers"
 import { referencesApi } from "@/lib/api/references"
 import { uploadImage } from "@/lib/api/images"
 import { compressImage } from "@/lib/image-utils"
+import { GemCropDialog, type CropResult } from "@/components/features/gems/GemCropDialog"
+import { cropImageFile } from "@/lib/gem-crop"
 import { type Gem, type GemReference, type Customer, GEM_STATUSES, UserRole } from "@/lib/types"
 import { GemTimeline } from "@/components/features/gems/GemTimeline"
 import { GemIntakeAndHistory } from "@/components/features/gems/GemIntakeAndHistory"
@@ -103,6 +105,7 @@ export function GemDetailPage() {
   // ── Other state ─────────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<GemReference[]>([])
   const [isActionLoading, setIsActionLoading] = useState(false)
+  const [pendingCropFiles, setPendingCropFiles] = useState<File[]>([])
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [, setCustomOptTick] = useState(0)
 
@@ -320,18 +323,31 @@ export function GemDetailPage() {
     }
   }
 
-  const handleImageUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Photos are confirmed against the detected gem outline before upload, so the stored
+  // image is tight to the stone and the certificate can print it at real size.
+  const handleImageUpdate = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0 || !gem) return
+    setPendingCropFiles(Array.from(files))
+    // Let the same file be picked again after a cancel.
+    e.target.value = ""
+  }
+
+  const handleCropComplete = async (results: CropResult[]) => {
+    const queued = pendingCropFiles
+    setPendingCropFiles([])
+    if (queued.length === 0 || !gem) return
+
     setIsActionLoading(true)
     try {
       const newImageIds = await Promise.all(
-        Array.from(files).map(async (file) => {
-          const compressed = await compressImage(file, 30)
+        results.map(async (result, i) => {
+          const cropped = await cropImageFile(queued[i], result.rect)
+          const compressed = await compressImage(cropped, 30)
           const uploaded = await uploadImage({
             file: compressed,
             category: "gem",
-            metadata: { gemId: gem.gemId },
+            metadata: { gemId: gem.gemId, gemCrop: result.meta },
           })
           return uploaded._id
         }),
@@ -452,6 +468,13 @@ export function GemDetailPage() {
           </div>
         </div>
       </div>
+
+      <GemCropDialog
+        files={pendingCropFiles}
+        open={pendingCropFiles.length > 0}
+        onComplete={handleCropComplete}
+        onCancel={() => setPendingCropFiles([])}
+      />
     </MainLayout>
   )
 }

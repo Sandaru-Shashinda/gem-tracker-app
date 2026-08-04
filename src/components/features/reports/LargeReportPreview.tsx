@@ -3,7 +3,8 @@ import QRCode from "react-qr-code"
 import { Download, ImageIcon } from "lucide-react"
 import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
-import { GemImage } from "../gems/GemImage"
+import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
+import { downloadReportPdf } from "@/lib/report-pdf"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo.png"
@@ -21,6 +22,7 @@ interface LargeReportPreviewProps {
 
 export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
   const [downloading, setDownloading] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const captureRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
@@ -61,14 +63,34 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
     }
   }
 
+  const handleDownloadPdf = async () => {
+    if (!captureRef.current) return
+    setDownloadingPdf(true)
+    try {
+      await downloadReportPdf({
+        element: captureRef.current,
+        reportSize: "large",
+        fileName: `GRC-${gem.gemId || gem._id}-report-1to1.pdf`,
+        pixelRatio: DOWNLOAD_SCALE,
+      })
+    } catch (err) {
+      console.error("PDF download failed", err)
+    } finally {
+      setDownloadingPdf(false)
+    }
+  }
+
   return (
     <div
       ref={containerRef}
       className='flex flex-col w-full max-w-[860px] mx-auto pb-8 overflow-hidden'
       style={{ colorScheme: "light" }}
     >
-      {/* Download button */}
-      <div className='flex items-center justify-end w-full mb-4 print:hidden'>
+      {/* Download buttons */}
+      <div className='flex items-center justify-end gap-2 w-full mb-4 print:hidden'>
+        <span className='mr-auto text-[10px] sm:text-xs text-slate-400'>
+          Print the PDF at 100% — not "fit to page" — for a true-size gem image.
+        </span>
         <button
           onClick={handleDownload}
           disabled={downloading}
@@ -76,6 +98,14 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
         >
           <Download className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
           {downloading ? "Exporting..." : "Download Report"}
+        </button>
+        <button
+          onClick={handleDownloadPdf}
+          disabled={downloadingPdf}
+          className='flex items-center gap-1.5 px-3 py-2 text-xs sm:px-4 sm:text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-500 disabled:opacity-50 transition-colors'
+        >
+          <Download className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
+          {downloadingPdf ? "Exporting..." : "Download PDF (1:1)"}
         </button>
       </div>
 
@@ -139,6 +169,14 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
   const obs = finalData.finalObservations || {}
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
+
+  // 170x160px box, less its 1px border on each side.
+  const gemImage = useRealSizeGemImage({
+    imageId: firstImageId ?? undefined,
+    obs,
+    reportSize: "large",
+    box: { w: 168, h: 158 },
+  })
 
   const formatDate = (d?: string | Date) =>
     d
@@ -446,7 +484,7 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
             }}
           >
             {firstImageId ? (
-              <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
+              gemImage.node
             ) : (
               <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
             )}
@@ -460,7 +498,7 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
               marginBottom: "8px",
             }}
           >
-            Image is approximate
+            {firstImageId ? gemImage.caption : "Image is approximate"}
           </p>
 
           {/* Gem name + weight */}

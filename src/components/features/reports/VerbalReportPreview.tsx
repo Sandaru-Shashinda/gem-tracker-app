@@ -3,7 +3,8 @@ import QRCode from "react-qr-code"
 import { Download } from "lucide-react"
 import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
-import { GemImage } from "../gems/GemImage"
+import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
+import { downloadReportPdf } from "@/lib/report-pdf"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 
@@ -19,6 +20,7 @@ const CARD_H = 560
 
 export function VerbalReportPreview({ gem, reportId }: VerbalReportPreviewProps) {
   const [downloading, setDownloading] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
   const innerRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
@@ -52,13 +54,33 @@ export function VerbalReportPreview({ gem, reportId }: VerbalReportPreviewProps)
     }
   }
 
+  const handleDownloadPdf = async () => {
+    if (!innerRef.current) return
+    setDownloadingPdf(true)
+    try {
+      await downloadReportPdf({
+        element: innerRef.current,
+        reportSize: "verbal",
+        fileName: `GRC-${gem.gemId || gem._id}-verbal-1to1.pdf`,
+        pixelRatio: SCALE_FACTOR,
+      })
+    } catch (err) {
+      console.error("PDF download failed", err)
+    } finally {
+      setDownloadingPdf(false)
+    }
+  }
+
   return (
     <div
       ref={containerRef}
       className='flex flex-col w-full max-w-[826px] mx-auto overflow-hidden pb-8'
       style={{ colorScheme: "light" }}
     >
-      <div className='flex items-center justify-end w-full mb-4 sm:mb-6 print:hidden'>
+      <div className='flex items-center justify-end gap-2 w-full mb-4 sm:mb-6 print:hidden'>
+        <span className='mr-auto text-[10px] sm:text-xs text-slate-400'>
+          Print the PDF at 100% — not "fit to page" — for a true-size gem image.
+        </span>
         <button
           onClick={handleDownload}
           disabled={downloading}
@@ -66,6 +88,14 @@ export function VerbalReportPreview({ gem, reportId }: VerbalReportPreviewProps)
         >
           <Download className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
           {downloading ? "Exporting..." : "Download Report"}
+        </button>
+        <button
+          onClick={handleDownloadPdf}
+          disabled={downloadingPdf}
+          className='flex items-center gap-1.5 px-3 py-2 text-xs sm:px-4 sm:text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-500 disabled:opacity-50 transition-colors'
+        >
+          <Download className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
+          {downloadingPdf ? "Exporting..." : "Download PDF (1:1)"}
         </button>
       </div>
 
@@ -108,6 +138,14 @@ function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
   const obs = finalData.finalObservations || {}
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
+
+  // 110px box, less its 1px border on each side.
+  const gemImage = useRealSizeGemImage({
+    imageId: firstImageId ?? undefined,
+    obs,
+    reportSize: "verbal",
+    box: { w: 108, h: 108 },
+  })
 
   const GOLD = "#D4AF37"
   const DARK = "#111111"
@@ -218,23 +256,35 @@ function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
           </div>
 
           {/* Gem image */}
-          <div
-            style={{
-              width: "110px",
-              height: "110px",
-              border: "1px solid #ccc",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              flexShrink: 0,
-            }}
-          >
-            {firstImageId ? (
-              <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
-            ) : (
-              <img src={turtlesLogo} style={{ opacity: 0.1, width: "100%", height: "100%", objectFit: "contain" }} alt='' />
-            )}
+          <div style={{ flexShrink: 0 }}>
+            <div
+              style={{
+                width: "110px",
+                height: "110px",
+                border: "1px solid #ccc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+              }}
+            >
+              {firstImageId ? (
+                gemImage.node
+              ) : (
+                <img src={turtlesLogo} style={{ opacity: 0.1, width: "100%", height: "100%", objectFit: "contain" }} alt='' />
+              )}
+            </div>
+            <p
+              style={{
+                fontFamily: "Arial, sans-serif",
+                fontSize: "8px",
+                color: "#888",
+                textAlign: "center",
+                marginTop: "3px",
+              }}
+            >
+              {firstImageId ? gemImage.caption : "Image is approximate"}
+            </p>
           </div>
         </div>
 

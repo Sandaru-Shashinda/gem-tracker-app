@@ -3,7 +3,8 @@ import QRCode from "react-qr-code"
 import { Download } from "lucide-react"
 import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
-import { GemImage } from "../gems/GemImage"
+import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
+import { downloadReportPdf } from "@/lib/report-pdf"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 
@@ -17,6 +18,7 @@ const SCALE_FACTOR = 3
 
 export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps) {
   const [downloading, setDownloading] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   const innerRef = useRef<HTMLDivElement>(null)
 
@@ -61,13 +63,33 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
     }
   }
 
+  const handleDownloadPdf = async () => {
+    if (!innerRef.current) return
+    setDownloadingPdf(true)
+    try {
+      await downloadReportPdf({
+        element: innerRef.current,
+        reportSize: "medium",
+        fileName: `GRC-${gem.gemId || gem._id}-report-1to1.pdf`,
+        pixelRatio: SCALE_FACTOR,
+      })
+    } catch (err) {
+      console.error("PDF download failed", err)
+    } finally {
+      setDownloadingPdf(false)
+    }
+  }
+
   return (
     <div
       ref={containerRef}
       className='flex flex-col w-full max-w-[1240px] mx-auto overflow-hidden pb-8'
       style={{ colorScheme: "light" }}
     >
-      <div className='flex items-center justify-end w-full mb-4 sm:mb-6 print:hidden'>
+      <div className='flex items-center justify-end gap-2 w-full mb-4 sm:mb-6 print:hidden'>
+        <span className='mr-auto text-[10px] sm:text-xs text-slate-400'>
+          Print the PDF at 100% — not "fit to page" — for a true-size gem image.
+        </span>
         <button
           onClick={handleDownload}
           disabled={downloading}
@@ -75,6 +97,14 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
         >
           <Download className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
           {downloading ? "Exporting..." : "Download Report"}
+        </button>
+        <button
+          onClick={handleDownloadPdf}
+          disabled={downloadingPdf}
+          className='flex items-center gap-1.5 px-3 py-2 text-xs sm:px-4 sm:text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-500 disabled:opacity-50 transition-colors'
+        >
+          <Download className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
+          {downloadingPdf ? "Exporting..." : "Download PDF (1:1)"}
         </button>
       </div>
 
@@ -134,6 +164,14 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
   const obs = finalData.finalObservations || {}
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
+
+  // 200px box, less its 2px border on each side.
+  const gemImage = useRealSizeGemImage({
+    imageId: firstImageId ?? undefined,
+    obs,
+    reportSize: "medium",
+    box: { w: 196, h: 196 },
+  })
 
   const GOLD = "#D4AF37"
   const DARK = "#111111"
@@ -416,7 +454,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
           }}
         >
           {firstImageId ? (
-            <GemImage imageId={firstImageId} className='w-full h-full object-contain' />
+            gemImage.node
           ) : (
             <img
               src={turtlesLogo}
@@ -434,7 +472,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             marginBottom: "30px",
           }}
         >
-          Image is approximate
+          {firstImageId ? gemImage.caption : "Image is approximate"}
         </div>
 
         {/* Gem Name + Weight */}

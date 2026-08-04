@@ -7,6 +7,7 @@ import { usersApi } from "@/lib/api/users"
 import { referencesApi } from "@/lib/api/references"
 import { uploadImage } from "@/lib/api/images"
 import { compressImage } from "@/lib/image-utils"
+import { getCropMeta } from "@/lib/gem-crop"
 
 interface GemContextType {
   user: User | null
@@ -156,10 +157,14 @@ export function GemProvider({ children }: { children: ReactNode }) {
       if (images && images.length > 0) {
         try {
           const uploadPromises = images.map(async (file) => {
+            // Read the crop before compressing — compressImage returns a new File,
+            // and the crop registry is keyed by the file the dialog handed back.
+            const gemCrop = getCropMeta(file)
             const compressed = await compressImage(file, 30)
             const uploaded = await uploadImage({
               file: compressed,
               category: "gem",
+              ...(gemCrop ? { metadata: { gemCrop } } : {}),
             })
             return uploaded._id
           })
