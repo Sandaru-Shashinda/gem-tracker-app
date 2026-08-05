@@ -36,7 +36,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
 import { getImageById, deleteImage } from "@/lib/api/images"
 import { GemCropDialog, type CropResult } from "@/components/features/gems/GemCropDialog"
-import { cropImageFile, setCropMeta } from "@/lib/gem-crop"
+import {
+  analyzeGemPhotos,
+  cropImageFile,
+  setCropMeta,
+  type CropRect,
+  type GemCropMeta,
+  type PendingCrop,
+} from "@/lib/gem-crop"
 
 export function IntakePage() {
   const navigate = useNavigate()
@@ -45,7 +52,7 @@ export function IntakePage() {
 
   const [images, setImages] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
-  const [pendingCropFiles, setPendingCropFiles] = useState<File[]>([])
+  const [pendingCrops, setPendingCrops] = useState<PendingCrop[]>([])
   const [existingImageIds, setExistingImageIds] = useState<string[]>([])
   const [existingImagePreviews, setExistingImagePreviews] = useState<string[]>([])
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
@@ -176,27 +183,14 @@ export function IntakePage() {
     initializePage()
   }, [id, reset, getGemById])
 
-  // Handle image change — every photo goes through outline confirmation first, so the
-  // stored image is tight to the stone and the certificate can print it at real size.
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      setPendingCropFiles(Array.from(files))
-    }
-    // Let the same file be picked again after a cancel.
-    e.target.value = ""
-  }
-
-  const handleCropComplete = async (results: CropResult[]) => {
-    const queued = pendingCropFiles
-    setPendingCropFiles([])
-    if (queued.length === 0) return
-
+  /** Crops each photo to its detected outline and adds it to the pending upload list. */
+  const addCroppedImages = async (jobs: Array<{ file: File; rect: CropRect; meta: GemCropMeta }>) => {
+    if (jobs.length === 0) return
     try {
       const croppedFiles = await Promise.all(
-        results.map(async (result, i) => {
-          const cropped = await cropImageFile(queued[i], result.rect)
-          setCropMeta(cropped, result.meta)
+        jobs.map(async ({ file, rect, meta }) => {
+          const cropped = await cropImageFile(file, rect)
+          setCropMeta(cropped, meta)
           return cropped
         }),
       )
@@ -213,6 +207,33 @@ export function IntakePage() {
       console.error("Failed to crop images:", err)
       alert("Could not crop one or more images. Please try again.")
     }
+  }
+
+  // Photos are cropped to the gem outline automatically. The review dialog only opens
+  // for the ones detection wasn't confident about — a clean shot never interrupts.
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    // Let the same file be picked again after a cancel.
+    const picked = files ? Array.from(files) : []
+    e.target.value = ""
+    if (picked.length === 0) return
+
+    setIsImageLoading(true)
+    try {
+      const { auto, review } = await analyzeGemPhotos(picked)
+      await addCroppedImages(auto)
+      setPendingCrops(review)
+    } finally {
+      setIsImageLoading(false)
+    }
+  }
+
+  const handleCropComplete = async (results: CropResult[]) => {
+    const queued = pendingCrops
+    setPendingCrops([])
+    await addCroppedImages(
+      results.map((result, i) => ({ file: queued[i].file, rect: result.rect, meta: result.meta })),
+    )
   }
 
   const removeNewImage = (index: number) => {
@@ -740,10 +761,10 @@ export function IntakePage() {
       </div>
 
       <GemCropDialog
-        files={pendingCropFiles}
-        open={pendingCropFiles.length > 0}
+        items={pendingCrops}
+        open={pendingCrops.length > 0}
         onComplete={handleCropComplete}
-        onCancel={() => setPendingCropFiles([])}
+        onCancel={() => setPendingCrops([])}
       />
 
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>

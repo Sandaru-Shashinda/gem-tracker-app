@@ -234,7 +234,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                         textOverflow: "ellipsis",
                       }}
                     >
-                      {row.value || " "}
+                      {row.value || "-"}
                     </span>
                   </div>
                 ))}
@@ -245,7 +245,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                 src={signatureImg}
                 alt='Signature'
                 style={{
-                  height: "450px",
+                  height: "500px",
                   objectFit: "contain",
                   marginTop: "-15px",
                   marginLeft: "-12px",
@@ -310,7 +310,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                   lineHeight: 1.3,
                 }}
               >
-                {firstImageId ? gemImage.caption : "Image is approximate"}
+                Image is approximate
               </p>
 
               {/* Gem name & weight */}

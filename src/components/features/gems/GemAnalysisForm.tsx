@@ -1,3 +1,4 @@
+import { type ReactNode } from "react"
 import { Microscope, Search } from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { FormField, type FieldConfig } from "@/components/shared/common/FormField"
@@ -9,6 +10,8 @@ interface GemAnalysisFormProps {
   identificationFields: FieldConfig[]
   gradingFields: FieldConfig[]
   textFields: FieldConfig[]
+  /** Rendered after Color & Grade — the gem's weight is saved outside this form. */
+  weightField?: ReactNode
 }
 
 export function GemAnalysisForm({
@@ -17,6 +20,7 @@ export function GemAnalysisForm({
   identificationFields,
   gradingFields,
   textFields,
+  weightField,
 }: GemAnalysisFormProps) {
   const {
     register,
@@ -243,6 +247,8 @@ export function GemAnalysisForm({
             />
           </div>
         </div>
+
+        {weightField}
 
         <div className='grid grid-cols-2 gap-4 pt-4'>
           <FormField

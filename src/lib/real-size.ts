@@ -35,13 +35,63 @@ export interface RealSizeResult {
   /** Render size in report canvas pixels. Meaningless when mode is "unavailable". */
   width: number
   height: number
-  caption: string
-  /** Why 1:1 was not possible, for the console / future debugging. */
+  /**
+   * Why 1:1 was not possible. Diagnostic only — the certificates always print the
+   * fixed "Image is approximate" disclaimer regardless of how the sizing turned out.
+   */
   reason?: string
 }
 
 /** Beyond this disagreement between crop aspect and L:W, the crop and the numbers don't describe the same view. */
 const ASPECT_TOLERANCE = 0.15
+
+/**
+ * Share of the image box a gem may fill once it has to be scaled down anyway,
+ * leaving the remainder for its drop shadow to fall into.
+ *
+ * Applied only on the already-scaled path. A gem printing at true 1:1 must never be
+ * shrunk for decoration, so this deliberately does not touch the exact case.
+ */
+const SHADOW_ROOM = 0.9
+
+/** Shadow width, as a share of the image width. Narrower than the stone reads as ground contact. */
+const SHADOW_WIDTH_FRAC = 0.55
+/** Shadow height, as a share of the image's longest edge. */
+const SHADOW_HEIGHT_FRAC = 0.1
+
+/**
+ * A soft ellipse sitting under the gem, proportional to how large it renders.
+ *
+ * This is deliberately a separate element rather than a `box-shadow`. Stored gem
+ * photos are opaque JPEGs — the crop flattens them onto white — so they are white
+ * rectangles on a white certificate, and any box-shadow traces the *photo's* border,
+ * advertising the image as a pasted-in rectangle. Clipping that back with a negative
+ * spread leaves a lip exactly as wide as the photo, which still reads as the bottom
+ * edge of a box. A box-shadow's spread is uniform on all four sides, so its width
+ * cannot be narrowed independently at all.
+ *
+ * An ellipse narrower than the stone, fading to nothing at its own edges, has no
+ * straight edge anywhere to give the rectangle away.
+ *
+ * Sizes are fractions of the image because gems render at true physical size: the
+ * same layout shows a 23px melee and a 190px stone, and a fixed shadow would be a
+ * smudge under one and invisible under the other.
+ */
+export function gemShadow(longestEdgePx: number) {
+  const height = Math.max(4, longestEdgePx * SHADOW_HEIGHT_FRAC)
+  return {
+    /** Share of the image's width, applied as a CSS percentage. */
+    widthFrac: SHADOW_WIDTH_FRAC,
+    height,
+    /**
+     * Centred on the image's bottom edge, so the upper half hides behind the photo
+     * and only the lower half shows — this is what {@link SHADOW_ROOM} accommodates.
+     */
+    reachBelow: height / 2,
+    background:
+      "radial-gradient(ellipse closest-side, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.2) 55%, rgba(15, 23, 42, 0) 100%)",
+  }
+}
 
 const toNumber = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") return null
@@ -53,7 +103,6 @@ const UNAVAILABLE = (reason: string): RealSizeResult => ({
   mode: "unavailable",
   width: 0,
   height: 0,
-  caption: "Image is approximate",
   reason,
 })
 
@@ -111,6 +160,9 @@ export function computeRealSize({
   const measuredAspect = width / height
   const aspectOff = Math.abs(cropAspect - measuredAspect) / measuredAspect
 
+  let mode: RealSizeResult["mode"] = "exact"
+  let reason: string | undefined
+
   if (aspectOff > ASPECT_TOLERANCE) {
     const longPx = Math.max(width, height)
     if (cropAspect >= 1) {
@@ -120,26 +172,24 @@ export function computeRealSize({
       height = longPx
       width = longPx * cropAspect
     }
-    return {
-      mode: "scaled",
-      width,
-      height,
-      caption: "Not to scale",
-      reason: "Crop shape does not match the measured dimensions.",
-    }
+    mode = "scaled"
+    reason = "Crop shape does not match the measured dimensions."
   }
 
-  // A large stone can simply be bigger than the box the certificate layout allows.
+  // Fit to the box last, and unconditionally — a large stone can simply be bigger than
+  // the image area the certificate layout allows, and the reshaping above can push it
+  // past the box too. Overflowing here would spill the gem over the certificate's
+  // border, so this clamp has to sit after every branch that sets a size.
   if (width > box.w || height > box.h) {
-    const fit = Math.min(box.w / width, box.h / height)
-    return {
-      mode: "scaled",
-      width: width * fit,
-      height: height * fit,
-      caption: "Not to scale",
-      reason: "Gem is larger than the image area on this report size.",
-    }
+    // SHADOW_ROOM keeps the drop shadow inside the box rather than clipped against it.
+    // Safe to apply here because this branch is already not to scale; the exact path
+    // above never reaches it and so is never shrunk for decoration.
+    const fit = Math.min(box.w / width, box.h / height) * SHADOW_ROOM
+    width *= fit
+    height *= fit
+    mode = "scaled"
+    reason = reason ?? "Gem is larger than the image area on this report size."
   }
 
-  return { mode: "exact", width, height, caption: "Actual size (1:1)" }
+  return { mode, width, height, reason }
 }

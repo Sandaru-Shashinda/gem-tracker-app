@@ -3,7 +3,13 @@ import { Loader2, Search } from "lucide-react"
 
 import { useGemImage } from "./GemImage"
 import type { GemCropMeta } from "@/lib/gem-crop"
-import { computeRealSize, PX_PER_MM, type MeasurementSource, type ReportSize } from "@/lib/real-size"
+import {
+  computeRealSize,
+  gemShadow,
+  PX_PER_MM,
+  type MeasurementSource,
+  type ReportSize,
+} from "@/lib/real-size"
 
 /**
  * Renders a gem photo at its true physical size on a certificate.
@@ -33,8 +39,10 @@ interface UseRealSizeGemImageArgs {
 interface UseRealSizeGemImageResult {
   /** Ready to drop inside the certificate's existing image box. */
   node: ReactNode
-  /** "Actual size (1:1)", "Not to scale", or "Image is approximate". */
-  caption: string
+  /**
+   * How the image ended up being sized. Diagnostic only — certificates carry a fixed
+   * "Image is approximate" disclaimer whatever this says.
+   */
   mode: "exact" | "scaled" | "unavailable"
   loading: boolean
   error: boolean
@@ -63,7 +71,6 @@ export function useRealSizeGemImage({
   if (loading) {
     return {
       node: <Loader2 className='w-4 h-4 animate-spin' style={{ color: "#cbd5e1" }} />,
-      caption: sizing.caption,
       mode: sizing.mode,
       loading,
       error,
@@ -73,7 +80,6 @@ export function useRealSizeGemImage({
   if (error || !image?.url) {
     return {
       node: <Search className='w-4 h-4' style={{ color: "#94a3b8" }} />,
-      caption: sizing.caption,
       mode: sizing.mode,
       loading,
       error: true,
@@ -84,29 +90,67 @@ export function useRealSizeGemImage({
   // until `natural` is known, sizing falls through to the contain-fit branch.
   const sized = sizing.mode !== "unavailable"
 
+  // Scale the shadow to how big the gem actually comes out. Before the image has been
+  // measured there is no rendered size yet, so fall back to the box it sits in.
+  const longestEdge = sized ? Math.max(sizing.width, sizing.height) : Math.max(box.w, box.h)
+  const shadow = gemShadow(longestEdge)
+
   return {
     node: (
-      <img
-        src={image.url}
-        alt={alt || image.name}
-        onLoad={(e) => {
-          const el = e.currentTarget
-          if (el.naturalWidth && el.naturalHeight) {
-            setNatural((prev) =>
-              prev?.w === el.naturalWidth && prev?.h === el.naturalHeight
-                ? prev
-                : { w: el.naturalWidth, h: el.naturalHeight },
-            )
+      // Shrink-wraps the image so the shadow's percentage width resolves against the
+      // photo rather than the certificate's image box, which is usually much wider.
+      <div style={{ position: "relative", display: "inline-block", lineHeight: 0 }}>
+        {/* First in DOM and absolutely positioned, so the statically-positioned image
+            paints over its top half — only the lower half of the ellipse shows. */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: `${((1 - shadow.widthFrac) / 2) * 100}%`,
+            width: `${shadow.widthFrac * 100}%`,
+            height: `${shadow.height}px`,
+            bottom: `-${shadow.height / 2}px`,
+            background: shadow.background,
+            pointerEvents: "none",
+          }}
+        />
+        <img
+          src={image.url}
+          alt={alt || image.name}
+          onLoad={(e) => {
+            const el = e.currentTarget
+            if (el.naturalWidth && el.naturalHeight) {
+              setNatural((prev) =>
+                prev?.w === el.naturalWidth && prev?.h === el.naturalHeight
+                  ? prev
+                  : { w: el.naturalWidth, h: el.naturalHeight },
+              )
+            }
+          }}
+          style={
+            sized
+              ? {
+                  width: `${sizing.width}px`,
+                  height: `${sizing.height}px`,
+                  display: "block",
+                  position: "relative",
+                  // computeRealSize already fits the box; this is the backstop that keeps
+                  // a gem from ever spilling over the certificate's border if it doesn't.
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                }
+              : {
+                  display: "block",
+                  position: "relative",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                }
           }
-        }}
-        style={
-          sized
-            ? { width: `${sizing.width}px`, height: `${sizing.height}px`, display: "block" }
-            : { maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }
-        }
-      />
+        />
+      </div>
     ),
-    caption: sizing.caption,
     mode: sizing.mode,
     loading,
     error,

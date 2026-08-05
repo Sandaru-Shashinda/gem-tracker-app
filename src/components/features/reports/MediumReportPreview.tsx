@@ -227,7 +227,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
           position: "relative",
         }}
       ></div>
-      <span style={{ flexShrink: 0, textAlign: "right", whiteSpace: "nowrap" }}>{value || ""}</span>
+      <span style={{ flexShrink: 0, textAlign: "right", whiteSpace: "nowrap" }}>{value || "-"}</span>
     </div>
   )
 
@@ -472,7 +472,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
             marginBottom: "30px",
           }}
         >
-          {firstImageId ? gemImage.caption : "Image is approximate"}
+          Image is approximate
         </div>
 
         {/* Gem Name + Weight */}

@@ -498,7 +498,7 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
               marginBottom: "8px",
             }}
           >
-            {firstImageId ? gemImage.caption : "Image is approximate"}
+            Image is approximate
           </p>
 
           {/* Gem name + weight */}

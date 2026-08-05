@@ -1,4 +1,4 @@
-import type { CropRect } from "./gem-outline"
+import { detectGemBounds, type CropRect, type GemBounds } from "./gem-outline"
 
 /**
  * Crop bookkeeping for gem photos.
@@ -100,6 +100,78 @@ export const cropImageFile = async (file: File, rect: CropRect): Promise<File> =
   if (!blob) throw new Error("Canvas toBlob failed while cropping")
 
   return new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: "image/jpeg" })
+}
+
+/**
+ * Detection at or above this confidence is accepted without asking.
+ *
+ * A clean stone on a plain card scores 1.0, so the ordinary intake photo never
+ * interrupts anyone. Anything that scores lower — clutter in frame, a background the
+ * flood could not separate, more than one stone — is worth two seconds of a human's
+ * attention, because a wrong crop silently produces a certificate claiming a size the
+ * stone does not have.
+ */
+export const AUTO_CONFIRM_CONFIDENCE = 0.85
+
+export interface PendingCrop {
+  file: File
+  bounds: GemBounds
+  naturalSize: { w: number; h: number }
+}
+
+export interface CropDecision {
+  /** Accepted automatically; ready to crop and upload. */
+  auto: Array<{ file: File; rect: CropRect; meta: GemCropMeta }>
+  /** Detection was not confident enough — put these in front of the operator. */
+  review: PendingCrop[]
+}
+
+/** Builds the metadata for a box that came straight from detection, unedited. */
+export const autoCropMeta = (bounds: GemBounds, naturalSize: { w: number; h: number }): GemCropMeta => ({
+  version: 1,
+  source: "auto",
+  rect: bounds.rect,
+  originalSize: naturalSize,
+  padFrac: bounds.padFrac,
+  confidence: bounds.confidence,
+  tight: true,
+})
+
+/**
+ * Runs outline detection over a batch of photos and splits them by whether a human
+ * needs to look. Files that fail to decode go to review so the operator sees the
+ * problem rather than having it swallowed.
+ */
+export const analyzeGemPhotos = async (files: File[]): Promise<CropDecision> => {
+  const decision: CropDecision = { auto: [], review: [] }
+
+  for (const file of files) {
+    try {
+      const img = await loadImageFromFile(file)
+      const naturalSize = { w: img.naturalWidth, h: img.naturalHeight }
+      const bounds = detectGemBounds(img)
+
+      if (bounds.ok && bounds.confidence >= AUTO_CONFIRM_CONFIDENCE) {
+        decision.auto.push({ file, rect: bounds.rect, meta: autoCropMeta(bounds, naturalSize) })
+      } else {
+        decision.review.push({ file, bounds, naturalSize })
+      }
+    } catch {
+      decision.review.push({
+        file,
+        bounds: {
+          rect: { x: 0, y: 0, w: 0, h: 0 },
+          padFrac: 0,
+          confidence: 0,
+          ok: false,
+          reason: "This image file could not be read.",
+        },
+        naturalSize: { w: 0, h: 0 },
+      })
+    }
+  }
+
+  return decision
 }
 
 /** The metadata to record when the operator opts out of cropping entirely. */

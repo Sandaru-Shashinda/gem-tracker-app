@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AlertTriangle, Loader2, Maximize2, RotateCcw } from "lucide-react"
+import { AlertTriangle, Maximize2, RotateCcw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,19 +12,20 @@ import {
 } from "@/components/ui/dialog"
 import {
   clampRect,
-  loadImageFromFile,
   wholeImageMeta,
   type CropRect,
   type GemCropMeta,
+  type PendingCrop,
 } from "@/lib/gem-crop"
-import { detectGemBounds } from "@/lib/gem-outline"
 
 /**
- * Confirms the gem outline before upload.
+ * Reviews gem outlines that detection was not confident about.
  *
- * Auto-detection handles the ordinary plain-background shot, but it cannot be trusted
- * blind — a certificate that claims 1:1 has to be right — so every upload passes
- * through here and the operator gets the last word.
+ * Confident detections never reach this dialog — they are cropped and uploaded
+ * without interrupting anyone. What lands here is the leftovers: clutter in frame,
+ * a background the flood could not separate, several stones in one shot. Those are
+ * worth a human's eye, because a wrong crop silently yields a certificate claiming a
+ * size the stone does not have.
  */
 
 export interface CropResult {
@@ -33,10 +34,10 @@ export interface CropResult {
 }
 
 interface GemCropDialogProps {
-  /** Files queued for cropping; the dialog walks them one at a time. */
-  files: File[]
+  /** Pre-analysed photos needing review; the dialog walks them one at a time. */
+  items: PendingCrop[]
   open: boolean
-  /** Called once per file, in queue order, after the operator confirms. */
+  /** Called once per item, in queue order, after the operator confirms. */
   onComplete: (results: CropResult[]) => void
   onCancel: () => void
 }
@@ -58,66 +59,34 @@ const HANDLES: { id: Handle; className: string; cursor: string }[] = [
   { id: "w", className: "left-0 top-1/2 -translate-x-1/2 -translate-y-1/2", cursor: "ew-resize" },
 ]
 
-export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDialogProps) {
+export function GemCropDialog({ items, open, onComplete, onCancel }: GemCropDialogProps) {
   const [index, setIndex] = useState(0)
   const [results, setResults] = useState<CropResult[]>([])
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 })
   const [rect, setRect] = useState<CropRect | null>(null)
-  const [detected, setDetected] = useState<CropRect | null>(null)
-  const [detectedPadFrac, setDetectedPadFrac] = useState(0)
-  const [confidence, setConfidence] = useState(0)
-  const [warning, setWarning] = useState<string | undefined>()
-  const [analyzing, setAnalyzing] = useState(false)
   const [edited, setEdited] = useState(false)
 
   const frameRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<DragState>(null)
 
-  const current = files[index]
+  const current = items[index]
+  const naturalSize = current?.naturalSize ?? { w: 0, h: 0 }
+  const detected = current?.bounds.rect ?? null
+  const confidence = current?.bounds.confidence ?? 0
+  const warning = current?.bounds.reason
+  // Detection already ran before the dialog opened, so there is nothing to wait for
+  // here beyond the browser painting the photo.
+  const readable = naturalSize.w > 0 && naturalSize.h > 0
 
-  // Run detection whenever the queue advances to a new file.
+  // Show the photo and seed the box whenever the queue advances.
   useEffect(() => {
     if (!open || !current) return
-    let cancelled = false
-    const url = URL.createObjectURL(current)
-
-    const analyze = async () => {
-      setAnalyzing(true)
-      setEdited(false)
-      setImageUrl(url)
-      // Clear first: a stale size from the previous file would otherwise be recorded
-      // as this one's originalSize if the read fails.
-      setNaturalSize({ w: 0, h: 0 })
-      setWarning(undefined)
-      try {
-        const img = await loadImageFromFile(current)
-        if (cancelled) return
-        const bounds = detectGemBounds(img)
-        setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight })
-        setRect(bounds.rect)
-        setDetected(bounds.rect)
-        setDetectedPadFrac(bounds.padFrac)
-        setConfidence(bounds.confidence)
-        setWarning(bounds.reason)
-      } catch {
-        if (cancelled) return
-        // Only a genuine file-read failure lands here — detectGemBounds reports its
-        // own failures through `reason` with the frame as a fallback rect. There is
-        // nothing to crop by hand in this case.
-        setRect(null)
-        setWarning("This image file could not be read. Please cancel and try another photo.")
-      } finally {
-        if (!cancelled) setAnalyzing(false)
-      }
-    }
-
-    analyze()
-    return () => {
-      cancelled = true
-      URL.revokeObjectURL(url)
-    }
-  }, [open, current])
+    const url = URL.createObjectURL(current.file)
+    setImageUrl(url)
+    setRect(readable ? current.bounds.rect : null)
+    setEdited(false)
+    return () => URL.revokeObjectURL(url)
+  }, [open, current, readable])
 
   // Reset the queue each time the dialog is opened with a fresh batch.
   useEffect(() => {
@@ -125,7 +94,7 @@ export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDial
       setIndex(0)
       setResults([])
     }
-  }, [open, files])
+  }, [open, items])
 
   /** Converts a pointer delta in on-screen pixels into source-image pixels. */
   const scaleFactor = useCallback(() => {
@@ -197,7 +166,7 @@ export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDial
 
   const advance = (result: CropResult) => {
     const next = [...results, result]
-    if (index + 1 < files.length) {
+    if (index + 1 < items.length) {
       setResults(next)
       setIndex(index + 1)
     } else {
@@ -206,7 +175,7 @@ export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDial
   }
 
   const handleConfirm = () => {
-    if (!rect) return
+    if (!rect || !current) return
     advance({
       rect,
       meta: {
@@ -217,7 +186,7 @@ export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDial
         // A hand-drawn box is placed on the stone's edge, so it carries no padding.
         // The detected box reports the padding it actually ended up with, which is
         // not quite PAD_FRAC once rounding and the edge trims have had their say.
-        padFrac: edited ? 0 : detectedPadFrac,
+        padFrac: edited ? 0 : current.bounds.padFrac,
         confidence: edited ? 1 : confidence,
         tight: true,
       },
@@ -251,28 +220,27 @@ export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDial
         }
       : null
 
-  const lowConfidence = !analyzing && (confidence < 0.6 || !!warning)
-
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
       <DialogContent className='max-w-3xl'>
         <DialogHeader>
           <DialogTitle>
-            Confirm gem outline
-            {files.length > 1 ? ` (${index + 1} of ${files.length})` : ""}
+            Check gem outline
+            {items.length > 1 ? ` (${index + 1} of ${items.length})` : ""}
           </DialogTitle>
           <DialogDescription>
-            The box should sit on the edges of the stone. This crop is what lets the certificate
-            print the gem at its true size, so check it before confirming.
+            Automatic detection wasn't sure about this photo. The box should sit on the edges of
+            the stone — it is what lets the certificate print the gem at its true size.
           </DialogDescription>
         </DialogHeader>
 
-        {lowConfidence && (
-          <div className='flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800'>
-            <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0' />
-            <span>{warning ?? "Detection is uncertain — please check the box before confirming."}</span>
-          </div>
-        )}
+        <div className='flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800'>
+          <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0' />
+          <span>
+            {warning ??
+              `Detection confidence was only ${Math.round(confidence * 100)}% — please adjust the box if it is wrong.`}
+          </span>
+        </div>
 
         {/* The frame shrink-wraps the image rather than filling the row, so the
             percentage-positioned overlay lines up with the photo instead of with
@@ -286,19 +254,13 @@ export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDial
             {imageUrl && (
               <img
                 src={imageUrl}
-                alt={current.name}
+                alt={current.file.name}
                 className='block max-h-[55vh] max-w-full'
                 draggable={false}
               />
             )}
 
-            {analyzing && (
-              <div className='absolute inset-0 flex items-center justify-center bg-white/70'>
-                <Loader2 className='h-6 w-6 animate-spin text-slate-400' />
-              </div>
-            )}
-
-            {box && !analyzing && (
+            {box && (
               <div
                 className='absolute cursor-move border-2 border-blue-500 shadow-[0_0_0_9999px_rgba(15,23,42,0.45)]'
                 style={box}
@@ -320,9 +282,11 @@ export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDial
 
         <div className='flex items-center justify-between text-xs text-slate-500'>
           <span>
-            {rect ? `Crop: ${Math.round(rect.w)} × ${Math.round(rect.h)} px` : "Analysing…"}
+            {rect
+              ? `Crop: ${Math.round(rect.w)} × ${Math.round(rect.h)} px`
+              : "This file could not be read."}
           </span>
-          {!analyzing && !edited && confidence > 0 && (
+          {!edited && confidence > 0 && (
             <span>Detection confidence: {Math.round(confidence * 100)}%</span>
           )}
         </div>
@@ -331,7 +295,7 @@ export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDial
           <Button type='button' variant='ghost' onClick={onCancel}>
             Cancel
           </Button>
-          <Button type='button' variant='outline' onClick={handleUseWhole} disabled={analyzing}>
+          <Button type='button' variant='outline' onClick={handleUseWhole} disabled={!readable}>
             <Maximize2 className='mr-2 h-4 w-4' />
             Use whole image
           </Button>
@@ -339,13 +303,13 @@ export function GemCropDialog({ files, open, onComplete, onCancel }: GemCropDial
             type='button'
             variant='outline'
             onClick={resetToDetected}
-            disabled={analyzing || !detected || !edited}
+            disabled={!detected || !edited}
           >
             <RotateCcw className='mr-2 h-4 w-4' />
             Reset
           </Button>
-          <Button type='button' onClick={handleConfirm} disabled={analyzing || !rect}>
-            {index + 1 < files.length ? "Confirm & next" : "Confirm"}
+          <Button type='button' onClick={handleConfirm} disabled={!rect}>
+            {index + 1 < items.length ? "Confirm & next" : "Confirm"}
           </Button>
         </DialogFooter>
       </DialogContent>

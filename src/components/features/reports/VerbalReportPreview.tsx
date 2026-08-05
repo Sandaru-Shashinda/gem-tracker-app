@@ -283,7 +283,7 @@ function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
                 marginTop: "3px",
               }}
             >
-              {firstImageId ? gemImage.caption : "Image is approximate"}
+              Image is approximate
             </p>
           </div>
         </div>

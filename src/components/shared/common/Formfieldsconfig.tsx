@@ -353,7 +353,7 @@ export function getFormFieldsConfig({
     },
     {
       name: "messurementX",
-      label: "Measurement X",
+      label: "Measurement X (Length)",
       type: "number",
       step: "0.01",
       placeholder: "L",
@@ -361,7 +361,7 @@ export function getFormFieldsConfig({
     },
     {
       name: "messurementY",
-      label: "Measurement Y",
+      label: "Measurement Y (Width)",
       type: "number",
       step: "0.01",
       placeholder: "W",
@@ -369,10 +369,10 @@ export function getFormFieldsConfig({
     },
     {
       name: "messurementZ",
-      label: "Measurement Z",
+      label: "Measurement Z (Height)",
       type: "number",
       step: "0.01",
-      placeholder: "D",
+      placeholder: "H",
       className: "",
     },
   ]
