@@ -3,7 +3,7 @@ import * as z from "zod"
 export const testSchema = z.object({
   riMin: z.string().min(1, "Min R.I. is required"),
   riMax: z.string().min(1, "Max R.I. is required"),
-  sg: z.string().min(1, "S.G. is required"),
+  sg: z.string().optional(),
   hardnessMin: z.string().optional(),
   hardnessMax: z.string().optional(),
   cuttingShape: z.string().optional(),
