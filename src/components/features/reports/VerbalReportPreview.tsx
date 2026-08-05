@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react"
-import QRCode from "react-qr-code"
 import { Download } from "lucide-react"
 import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
@@ -18,7 +17,21 @@ const SCALE_FACTOR = 3
 const CARD_W = 794
 const CARD_H = 560
 
-export function VerbalReportPreview({ gem, reportId }: VerbalReportPreviewProps) {
+/**
+ * The signature asset is 1800x1200 (3:2) and mostly whitespace: its ink measures out to
+ * x 0.108-0.915, y 0.288-0.685 of the frame. Scaling by height alone therefore spends
+ * most of the card's remaining vertical space on empty margin rather than on the
+ * signature, so the image is rendered oversized inside a window cropped to the ink band
+ * (with a little slack on each edge). Keep the window inside those measured bounds.
+ */
+const SIG_IMG_H = 180
+const SIG_IMG_W = SIG_IMG_H * 1.5
+const SIG_CROP_TOP = SIG_IMG_H * 0.26
+const SIG_CROP_LEFT = SIG_IMG_W * 0.09
+const SIG_BOX_W = SIG_IMG_W * 0.85
+const SIG_BOX_H = SIG_IMG_H * 0.44
+
+export function VerbalReportPreview({ gem }: VerbalReportPreviewProps) {
   const [downloading, setDownloading] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const innerRef = useRef<HTMLDivElement>(null)
@@ -109,7 +122,7 @@ export function VerbalReportPreview({ gem, reportId }: VerbalReportPreviewProps)
             transformOrigin: "top left",
           }}
         >
-          <VerbalContent gem={gem} reportId={reportId} />
+          <VerbalContent gem={gem} />
         </div>
       </div>
 
@@ -126,17 +139,16 @@ export function VerbalReportPreview({ gem, reportId }: VerbalReportPreviewProps)
             color: "#1e293b",
           }}
         >
-          <VerbalContent gem={gem} reportId={reportId} />
+          <VerbalContent gem={gem} />
         </div>
       </div>
     </div>
   )
 }
 
-function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
+function VerbalContent({ gem }: { gem: Gem }) {
   const finalData = gem.finalApproval || {}
   const obs = finalData.finalObservations || {}
-  const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
 
   // 110px box, less its 1px border on each side.
@@ -165,31 +177,34 @@ function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
 
   const heatStatement = obs.showHeatInReport
     ? obs.isHeated
-      ? "Evidence of heat treatment has been detected."
-      : "No indications of heating have been detected."
+      ? "Evidence of heat treatment detected"
+      : "No indications of heating detected"
     : ""
 
-  const statement = [
-    `The submitted specimen has been examined and identified as a natural`,
-    variety ? `${variety}` : "gemstone",
-    obs.species ? `(${obs.species})` : "",
-    weightStr ? `weighing ${weightStr}.` : ".",
-    obs.shape || obs.cuttingShape
-      ? `The stone is ${obs.shape || obs.cuttingShape} shaped`
-      : "",
-    obs.crownStyle || obs.cuttingStyle
-      ? `with a ${obs.crownStyle || obs.cuttingStyle} cut.`
-      : obs.shape || obs.cuttingShape
-      ? "."
-      : "",
-    gem.color ? `The color is ${gem.color}.` : "",
-    obs.transparency ? `Transparency: ${obs.transparency}.` : "",
-    obs.clarityGrade ? `Clarity grade: ${obs.clarityGrade}.` : "",
-    heatStatement,
-    obs.comments ? `Additional observations: ${obs.comments}.` : "",
-  ]
-    .filter(Boolean)
-    .join(" ")
+  // Shape and cut read as one field, matching SmallReportPreview: the shape carries
+  // the cut, and a mix cut is a suffix rather than a separate style value.
+  const shapeValue = obs.shape || obs.cuttingShape || ""
+  const shapeAndCut = obs.isMixCut ? `${shapeValue} mix cut`.trim() : shapeValue
+
+  // X/Y/Z are Length/Width/Height — always presented in that order and spelled out.
+  const dimensions = obs.messurementX
+    ? `${Number(obs.messurementX).toFixed(2)} × ${Number(obs.messurementY).toFixed(2)} × ${Number(
+        obs.messurementZ
+      ).toFixed(2)} mm (L × W × H)`
+    : ""
+
+  // `wide` points span both grid columns — their values are prose-length and would
+  // wrap badly in a half-width cell, and the card height leaves no room for that.
+  const points: { label: string; value: string; wide?: boolean }[] = [
+    { label: "Species", value: obs.species || "" },
+    { label: "Variety", value: variety },
+    { label: "Weight", value: weightStr },
+    { label: "Color", value: gem.color || "" },
+    { label: "Shape & Cut", value: shapeAndCut, wide: true },
+    { label: "Dimensions", value: dimensions, wide: true },
+    { label: "Heat Treatment", value: heatStatement, wide: true },
+    { label: "Comments", value: obs.comments || "", wide: true },
+  ].filter((p) => Boolean(p.value))
 
   return (
     <>
@@ -221,7 +236,7 @@ function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
           display: "flex",
           flexDirection: "column",
           height: "100%",
-          padding: "44px 52px 36px 52px",
+          padding: "40px 52px 28px 52px",
           boxSizing: "border-box",
         }}
       >
@@ -289,7 +304,7 @@ function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
         </div>
 
         {/* Divider */}
-        <div style={{ borderBottom: `2px solid ${GOLD}`, margin: "20px 0 24px 0" }} />
+        <div style={{ borderBottom: `2px solid ${GOLD}`, margin: "16px 0 18px 0" }} />
 
         {/* Meta row */}
         <div
@@ -299,7 +314,7 @@ function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
             fontSize: "12px",
             fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
             color: DARK,
-            marginBottom: "24px",
+            marginBottom: "18px",
           }}
         >
           {gem.gemId && <span><strong>GRC No:</strong> {gem.gemId}</span>}
@@ -307,56 +322,83 @@ function VerbalContent({ gem, reportId }: { gem: Gem; reportId?: string }) {
           {weightStr && <span><strong>Weight:</strong> {weightStr}</span>}
         </div>
 
-        {/* Verbal statement */}
+        {/* Verbal statement — point wise. minHeight/overflow keep an unusually long
+            Comments value from pushing the signature off the fixed-height card. */}
         <div
           style={{
             flex: 1,
-            fontSize: "15px",
-            lineHeight: "1.85",
+            minHeight: 0,
+            overflow: "hidden",
+            fontSize: "12px",
             color: DARK,
             fontFamily: "'Nimbus Mono Antique', 'Courier New', Courier, monospace",
             fontWeight: 400,
-            maxWidth: "600px",
           }}
         >
-          {statement}
+          <p style={{ margin: "0 0 16px 0", fontSize: "11px", lineHeight: 1.5, color: "#444" }}>
+            The submitted specimen has been examined, with the following results:
+          </p>
+          <ul
+            style={{
+              margin: 0,
+              padding: 0,
+              listStyle: "none",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              columnGap: "28px",
+              rowGap: "7px",
+            }}
+          >
+            {points.map((p) => (
+              <li
+                key={p.label}
+                style={{
+                  gridColumn: p.wide ? "1 / -1" : "auto",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "6px",
+                  lineHeight: 1.5,
+                }}
+              >
+                <span style={{ color: GOLD, flexShrink: 0 }}>•</span>
+                <span style={{ width: "104px", flexShrink: 0 }}>{p.label}</span>
+                <span style={{ flexShrink: 0 }}>:</span>
+                <span style={{ flex: 1 }}>{p.value}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Footer row: signature + QR */}
+        {/* Footer row: signature */}
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent: "flex-start",
             alignItems: "flex-end",
-            marginTop: "16px",
+            marginTop: "12px",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column" }}>
+          <div
+            style={{
+              position: "relative",
+              width: `${SIG_BOX_W}px`,
+              height: `${SIG_BOX_H}px`,
+              overflow: "hidden",
+              marginLeft: "-4px",
+            }}
+          >
             <img
               src={signatureImg}
               alt='Signature'
-              style={{ height: "130px", objectFit: "contain", marginLeft: "-8px" }}
-            />
-            <span
               style={{
-                fontSize: "10px",
-                color: "#555",
-                fontFamily: "Arial, sans-serif",
-                marginTop: "2px",
+                position: "absolute",
+                top: `${-SIG_CROP_TOP}px`,
+                left: `${-SIG_CROP_LEFT}px`,
+                width: `${SIG_IMG_W}px`,
+                height: `${SIG_IMG_H}px`,
+                objectFit: "contain",
               }}
-            >
-              R. Milinda Edirisinghe — Authorized Signature
-            </span>
-            <span style={{ fontSize: "9px", color: "#888", fontFamily: "Arial, sans-serif" }}>
-              Gemological Report of Ceylon (Pvt) Ltd
-            </span>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
-            <QRCode value={verificationUrl} size={72} />
-            <span style={{ fontSize: "9px", color: "#888", fontFamily: "Arial, sans-serif" }}>
-              Scan to verify
-            </span>
+            />
           </div>
         </div>
       </div>
