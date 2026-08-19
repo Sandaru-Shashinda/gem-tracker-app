@@ -141,7 +141,7 @@
 /* Controls */
 .spectro-ctrl-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
 }
 
@@ -251,6 +251,61 @@
   padding: 14px;
 }
 
+.spectro-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.spectro-block-title {
+  font-family: var(--sp-mono);
+  font-size: 11px;
+  color: var(--sp-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.spectro-block-title em {
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--sp-accent2);
+  margin-left: 8px;
+}
+
+.spectro-view-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--sp-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.spectro-view-tabs button {
+  border: none;
+  border-radius: 0;
+  padding: 5px 12px;
+  background: transparent;
+}
+
+.spectro-view-tabs button + button {
+  border-left: 1px solid var(--sp-border);
+}
+
+.spectro-view-tabs button.spectro-active {
+  background: var(--sp-surface2);
+}
+
+/* Chart-style absorption strip */
+.spectro-band {
+  width: 100%;
+  display: block;
+  margin-bottom: 3px;
+}
+
 .spectro-rainbow {
   width: 100%;
   height: 18px;
@@ -287,6 +342,9 @@
 }
 
 .spectro-peak-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--sp-mono);
   font-size: 10px;
   padding: 4px 10px;
@@ -298,6 +356,18 @@
 
 .spectro-peak-chip b {
   color: var(--sp-accent2);
+}
+
+.spectro-peak-chip.spectro-empty {
+  opacity: 0.6;
+}
+
+.spectro-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 /* Calibration panel */
