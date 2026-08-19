@@ -423,13 +423,11 @@ export function GemDetailPage() {
 
   const intakeGem = gemDetail ?? gem
   const weight = savedWeight ?? intakeGem.weight
-  // Anyone still working the gem can correct the weight, until it's completed.
-  const canEditWeight = (isAdmin || isHelper || isTester) && gem.status !== GEM_STATUSES.DONE
+
   const weightEditor = (
     <GemWeightEditor
       gemId={gem._id}
       weight={weight}
-      canEdit={canEditWeight}
       onSaved={setSavedWeight}
     />
   )

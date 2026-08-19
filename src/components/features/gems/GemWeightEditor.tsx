@@ -8,8 +8,6 @@ import { useGem } from "@/hooks/useGemStore"
 interface GemWeightEditorProps {
   gemId: string
   weight?: number | null
-  canEdit: boolean
-  /** Reports the newly saved weight so the rest of the page can show it. */
   onSaved: (weight: number) => void
 }
 
@@ -19,7 +17,7 @@ const toDraft = (weight?: number | null) => (weight != null ? String(weight) : "
  * Weight belongs to the gem itself, not to a test stage, so it is saved on its own
  * rather than with the surrounding analysis form.
  */
-export function GemWeightEditor({ gemId, weight, canEdit, onSaved }: GemWeightEditorProps) {
+export function GemWeightEditor({ gemId, weight, onSaved }: GemWeightEditorProps) {
   const { refreshGems } = useGem()
   const [draft, setDraft] = useState(toDraft(weight))
   const [error, setError] = useState<string | null>(null)
@@ -75,7 +73,7 @@ export function GemWeightEditor({ gemId, weight, canEdit, onSaved }: GemWeightEd
             min='0'
             placeholder='14.36'
             value={draft}
-            disabled={!canEdit || isSaving}
+            disabled={isSaving}
             onChange={(e) => {
               setDraft(e.target.value)
               setError(null)
@@ -93,7 +91,7 @@ export function GemWeightEditor({ gemId, weight, canEdit, onSaved }: GemWeightEd
             ct
           </span>
         </div>
-        {canEdit && (
+     
           <Button
             type='button'
             size='sm'
@@ -103,7 +101,7 @@ export function GemWeightEditor({ gemId, weight, canEdit, onSaved }: GemWeightEd
           >
             {isSaving ? <Loader2 size={14} className='animate-spin' /> : "Save"}
           </Button>
-        )}
+     
       </div>
       {error && <p className='text-[10px] font-bold text-red-500'>{error}</p>}
       {!error && justSaved && <p className='text-[10px] font-bold text-green-600'>Weight saved</p>}
