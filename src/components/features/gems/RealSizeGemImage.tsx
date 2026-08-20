@@ -5,9 +5,11 @@ import { useGemImage } from "./GemImage"
 import type { GemCropMeta } from "@/lib/gem-crop"
 import {
   computeRealSize,
+  fitBoxFor,
   gemShadow,
   PX_PER_MM,
   type MeasurementSource,
+  type RenderTarget,
   type ReportSize,
 } from "@/lib/real-size"
 
@@ -33,6 +35,13 @@ interface UseRealSizeGemImageArgs {
   reportSize: ReportSize
   /** Space available for the image, in report canvas pixels. */
   box: { w: number; h: number }
+  /**
+   * Which copy of the certificate this is — the off-screen one that becomes the PDF,
+   * or the one on screen, which insets the box so a stone can never sit against its
+   * frame on a phone. Defaults to "print" so a caller that forgets cannot silently
+   * shrink a certificate.
+   */
+  target?: RenderTarget
   alt?: string
 }
 
@@ -53,6 +62,7 @@ export function useRealSizeGemImage({
   obs,
   reportSize,
   box,
+  target = "print",
   alt,
 }: UseRealSizeGemImageArgs): UseRealSizeGemImageResult {
   const { image, loading, error } = useGemImage(imageId ?? "")
@@ -60,12 +70,14 @@ export function useRealSizeGemImage({
 
   const crop = (image?.metadata?.gemCrop as GemCropMeta | undefined) ?? null
 
+  const fitBox = fitBoxFor(box, target)
+
   const sizing = computeRealSize({
     obs,
     crop,
     natural,
     pxPerMm: PX_PER_MM[reportSize],
-    box,
+    box: fitBox,
   })
 
   if (loading) {
@@ -92,8 +104,11 @@ export function useRealSizeGemImage({
 
   // Scale the shadow to how big the gem actually comes out. Before the image has been
   // measured there is no rendered size yet, so fall back to the box it sits in.
-  const longestEdge = sized ? Math.max(sizing.width, sizing.height) : Math.max(box.w, box.h)
+  const longestEdge = sized ? Math.max(sizing.width, sizing.height) : Math.max(fitBox.w, fitBox.h)
   const shadow = gemShadow(longestEdge)
+
+  /** Hard ceiling in pixels, so no path can draw the gem outside its frame. */
+  const boxLimit = { maxWidth: `${fitBox.w}px`, maxHeight: `${fitBox.h}px` }
 
   return {
     node: (
@@ -134,17 +149,21 @@ export function useRealSizeGemImage({
                   height: `${sizing.height}px`,
                   display: "block",
                   position: "relative",
-                  // computeRealSize already fits the box; this is the backstop that keeps
-                  // a gem from ever spilling over the certificate's border if it doesn't.
-                  maxWidth: "100%",
-                  maxHeight: "100%",
+                  // computeRealSize already fits the box; these are the backstop that
+                  // keeps a gem from ever spilling over the certificate's border if it
+                  // doesn't.
+                  ...boxLimit,
                   objectFit: "contain",
                 }
               : {
                   display: "block",
                   position: "relative",
-                  maxWidth: "100%",
-                  maxHeight: "100%",
+                  // Percentages were the obvious way to write this and were wrong: the
+                  // wrapper shrink-wraps the image, so `max-height: 100%` resolves
+                  // against an auto height and is dropped entirely. A portrait photo
+                  // then rendered past the frame and was clipped by its overflow —
+                  // which is what a QR visitor saw whenever crop metadata was missing.
+                  ...boxLimit,
                   objectFit: "contain",
                 }
           }

@@ -4,6 +4,7 @@ import { Download, ImageIcon } from "lucide-react"
 import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
 import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
+import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
@@ -129,7 +130,7 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
             overflow: "hidden",
           }}
         >
-          <ReportPage gem={gem} reportId={reportId} />
+          <ReportPage gem={gem} reportId={reportId} target='screen' />
         </div>
       </div>
 
@@ -164,7 +165,15 @@ export function LargeReportPreview({ gem, reportId }: LargeReportPreviewProps) {
 // The actual A4 page – shared by preview and capture engine
 // ---------------------------------------------------------------------------
 
-function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
+function ReportPage({
+  gem,
+  reportId,
+  target = "print",
+}: {
+  gem: Gem
+  reportId?: string
+  target?: RenderTarget
+}) {
   const finalData = gem.finalApproval || {}
   const obs = finalData.finalObservations || {}
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
@@ -176,6 +185,7 @@ function ReportPage({ gem, reportId }: { gem: Gem; reportId?: string }) {
     obs,
     reportSize: "large",
     box: { w: 168, h: 158 },
+    target,
   })
 
   const formatDate = (d?: string | Date) =>

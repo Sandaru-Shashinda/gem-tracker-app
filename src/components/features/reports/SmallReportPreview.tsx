@@ -4,6 +4,7 @@ import { ImageIcon, Download } from "lucide-react"
 import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
 import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
+import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
@@ -29,12 +30,22 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
   const backRef = useRef<HTMLDivElement>(null)
 
-  // 120px box less the 85% inner inset the card layout uses.
-  const gemImage = useRealSizeGemImage({
+  // 120px box less the 85% inner inset the card layout uses. Sized once per copy of
+  // the card: only the off-screen one becomes the PDF, so only it is drawn 1:1.
+  const gemImageBox = { w: 102, h: 102 }
+  const screenGem = useRealSizeGemImage({
     imageId: firstImageId ?? undefined,
     obs,
     reportSize: "small",
-    box: { w: 102, h: 102 },
+    box: gemImageBox,
+    target: "screen",
+  })
+  const printGem = useRealSizeGemImage({
+    imageId: firstImageId ?? undefined,
+    obs,
+    reportSize: "small",
+    box: gemImageBox,
+    target: "print",
   })
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -116,6 +127,246 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
     { label: "Comments", value: obs.comments, style: { marginTop: "10px" } },
   ]
 
+  /**
+   * The card itself, drawn twice.
+   *
+   * The screen copy lives inside the scale transform; the print copy is rendered
+   * off-screen at natural size and is what the exporters capture. They were one node
+   * until the gem needed to sit smaller on screen than on paper — a single node
+   * cannot do both, since anything done for the phone follows into the PDF.
+   */
+  const card = (target: RenderTarget) => (
+    <div
+      id={target === "print" ? "small-report-back-view" : undefined}
+      ref={target === "print" ? backRef : undefined}
+      style={{
+        width: `${CARD_WIDTH}px`,
+        height: `${CARD_HEIGHT}px`,
+        backgroundColor: "#ffffff",
+        overflow: "hidden",
+        display: "flex",
+        border: "1px solid #e2e8f0",
+        padding: "30px 30px 24px 35px",
+        boxSizing: "border-box",
+        position: "relative",
+        boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)",
+      }}
+    >
+      {/* Watermark */}
+      <div
+        style={{
+          position: "absolute",
+          top: "45%",
+          left: "38%",
+          transform: "translate(-50%, -50%)",
+          opacity: 1,
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      >
+        <img
+          src={turtlesLogo}
+          alt=''
+          style={{ width: "700px", height: "950px", objectFit: "contain" }}
+        />
+      </div>
+
+      {/* ── LEFT COLUMN ── */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          marginRight: "65px",
+          position: "relative",
+          minWidth: 0,
+        }}
+      >
+        {/* Logo */}
+        <div
+          style={{
+            width: "175px",
+            marginTop: "-70px",
+            zIndex: 1,
+            marginLeft: "-15px",
+          }}
+        >
+          <img src={grcMemoLogo} alt='GRC Logo' style={{ height: "175px" }} />
+        </div>
+
+        {/* Data rows */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            fontSize: "14px",
+            marginTop: "-65px",
+            padding: "10px 0",
+            fontFamily: "Arial, Helvetica, sans-serif",
+            color: "#1a1a1a",
+            lineHeight: 1.3,
+            flex: 1,
+            zIndex: 2,
+          }}
+        >
+          {rows.map((row, i) => (
+            <div key={i} style={{ display: "flex", ...row.style }}>
+              <span style={{ whiteSpace: "nowrap", paddingRight: "4px", minWidth: "10px" }}>
+                {row.label}:
+              </span>
+              <span
+                style={{
+                  flex: 1,
+                  borderBottom: "2px dotted #a3a3a3",
+                  position: "relative",
+                  top: "-4px",
+                  minWidth: "20px",
+                }}
+              />
+              <span
+                style={{
+                  whiteSpace: "nowrap",
+                  paddingLeft: "6px",
+                  maxWidth: "220px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {row.value || "-"}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Signature */}
+        <img
+          src={signatureImg}
+          alt='Signature'
+          style={{
+            height: "500px",
+            objectFit: "contain",
+            marginTop: "-15px",
+            marginLeft: "-12px",
+            maxWidth: "58%",
+            clipPath: "inset(25% 0 10% 0)",
+          }}
+        />
+      </div>
+
+      {/* ── RIGHT COLUMN ── */}
+      <div
+        style={{
+          width: "160px",
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          paddingTop: "50px",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {/* Gem image */}
+        <div
+          style={{
+            width: "120px",
+            height: "120px",
+            backgroundColor: "#ffffff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            border: "1px solid #666",
+          }}
+        >
+          {firstImageId ? (
+            <div
+              style={{
+                width: "85%",
+                height: "85%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {(target === "print" ? printGem : screenGem).node}
+            </div>
+          ) : (
+            <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
+          )}
+        </div>
+
+        <p
+          style={{
+            fontSize: "9px",
+            fontFamily: "Arial, Helvetica, sans-serif",
+            color: "#888",
+            textAlign: "center",
+            marginTop: "5px",
+            marginBottom: "16px",
+            lineHeight: 1.3,
+          }}
+        >
+          Image is approximate
+        </p>
+
+        {/* Gem name & weight */}
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "16px",
+            fontFamily: "Arial, Helvetica, sans-serif",
+          }}
+        >
+          {obs.showHeatInReport && (
+            <p
+              style={{
+                fontWeight: 600,
+                fontSize: "12px",
+                color: "#1e293b",
+                lineHeight: 1.2,
+                margin: 0,
+                marginBottom: "4px",
+              }}
+            >
+              {obs.isHeated ? "Heated" : "Un - Heated"}
+            </p>
+          )}
+          <p
+            style={{
+              fontWeight: 700,
+              fontSize: "18px",
+              color: "#1e293b",
+              lineHeight: 1.2,
+              margin: 0,
+            }}
+          >
+            {finalData.finalVariety || obs.variety || "—"}
+          </p>
+
+          <p
+            style={{
+              fontSize: "16px",
+              color: "#1e293b",
+              fontWeight: 700,
+              marginTop: "4px",
+              margin: 0,
+            }}
+          >
+            {gem.weight ? `${Number(gem.weight).toFixed(2)} ct` : ""}
+          </p>
+        </div>
+
+        {/* QR code */}
+        <div style={{ marginTop: "-10px", marginBottom: "4px" }}>
+          <QRCode value={verificationUrl} size={60} />
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div
       ref={containerRef}
@@ -137,235 +388,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
             transformOrigin: "top left",
           }}
         >
-          <div
-            id='small-report-back-view'
-            ref={backRef}
-            style={{
-              width: `${CARD_WIDTH}px`,
-              height: `${CARD_HEIGHT}px`,
-              backgroundColor: "#ffffff",
-              overflow: "hidden",
-              display: "flex",
-              border: "1px solid #e2e8f0",
-              padding: "30px 30px 24px 35px",
-              boxSizing: "border-box",
-              position: "relative",
-              boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)",
-            }}
-          >
-            {/* Watermark */}
-            <div
-              style={{
-                position: "absolute",
-                top: "45%",
-                left: "38%",
-                transform: "translate(-50%, -50%)",
-                opacity: 1,
-                pointerEvents: "none",
-                zIndex: 0,
-              }}
-            >
-              <img
-                src={turtlesLogo}
-                alt=''
-                style={{ width: "700px", height: "950px", objectFit: "contain" }}
-              />
-            </div>
-
-            {/* ── LEFT COLUMN ── */}
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                marginRight: "65px",
-                position: "relative",
-                minWidth: 0,
-              }}
-            >
-              {/* Logo */}
-              <div
-                style={{
-                  width: "175px",
-                  marginTop: "-70px",
-                  zIndex: 1,
-                  marginLeft: "-15px",
-                }}
-              >
-                <img src={grcMemoLogo} alt='GRC Logo' style={{ height: "175px" }} />
-              </div>
-
-              {/* Data rows */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                  fontSize: "14px",
-                  marginTop: "-65px",
-                  padding: "10px 0",
-                  fontFamily: "Arial, Helvetica, sans-serif",
-                  color: "#1a1a1a",
-                  lineHeight: 1.3,
-                  flex: 1,
-                  zIndex: 2,
-                }}
-              >
-                {rows.map((row, i) => (
-                  <div key={i} style={{ display: "flex", ...row.style }}>
-                    <span style={{ whiteSpace: "nowrap", paddingRight: "4px", minWidth: "10px" }}>
-                      {row.label}:
-                    </span>
-                    <span
-                      style={{
-                        flex: 1,
-                        borderBottom: "2px dotted #a3a3a3",
-                        position: "relative",
-                        top: "-4px",
-                        minWidth: "20px",
-                      }}
-                    />
-                    <span
-                      style={{
-                        whiteSpace: "nowrap",
-                        paddingLeft: "6px",
-                        maxWidth: "220px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {row.value || "-"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Signature */}
-              <img
-                src={signatureImg}
-                alt='Signature'
-                style={{
-                  height: "500px",
-                  objectFit: "contain",
-                  marginTop: "-15px",
-                  marginLeft: "-12px",
-                  maxWidth: "58%",
-                  clipPath: "inset(25% 0 10% 0)",
-                }}
-              />
-            </div>
-
-            {/* ── RIGHT COLUMN ── */}
-            <div
-              style={{
-                width: "160px",
-                flexShrink: 0,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                paddingTop: "50px",
-                position: "relative",
-                zIndex: 1,
-              }}
-            >
-              {/* Gem image */}
-              <div
-                style={{
-                  width: "120px",
-                  height: "120px",
-                  backgroundColor: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  border: "1px solid #666",
-                }}
-              >
-                {firstImageId ? (
-                  <div
-                    style={{
-                      width: "85%",
-                      height: "85%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {gemImage.node}
-                  </div>
-                ) : (
-                  <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
-                )}
-              </div>
-
-              <p
-                style={{
-                  fontSize: "9px",
-                  fontFamily: "Arial, Helvetica, sans-serif",
-                  color: "#888",
-                  textAlign: "center",
-                  marginTop: "5px",
-                  marginBottom: "16px",
-                  lineHeight: 1.3,
-                }}
-              >
-                Image is approximate
-              </p>
-
-              {/* Gem name & weight */}
-              <div
-                style={{
-                  textAlign: "center",
-                  marginBottom: "16px",
-                  fontFamily: "Arial, Helvetica, sans-serif",
-                }}
-              >
-                {obs.showHeatInReport && (
-                  <p
-                    style={{
-                      fontWeight: 600,
-                      fontSize: "12px",
-                      color: "#1e293b",
-                      lineHeight: 1.2,
-                      margin: 0,
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {obs.isHeated ? "Heated" : "Un - Heated"}
-                  </p>
-                )}
-                <p
-                  style={{
-                    fontWeight: 700,
-                    fontSize: "18px",
-                    color: "#1e293b",
-                    lineHeight: 1.2,
-                    margin: 0,
-                  }}
-                >
-                  {finalData.finalVariety || obs.variety || "—"}
-                </p>
-
-                <p
-                  style={{
-                    fontSize: "16px",
-                    color: "#1e293b",
-                    fontWeight: 700,
-                    marginTop: "4px",
-                    margin: 0,
-                  }}
-                >
-                  {gem.weight ? `${Number(gem.weight).toFixed(2)} ct` : ""}
-                </p>
-              </div>
-
-              {/* QR code */}
-              <div style={{ marginTop: "-10px", marginBottom: "4px" }}>
-                <QRCode value={verificationUrl} size={60} />
-              </div>
-            </div>
-          </div>
+          {card("screen")}
         </div>
       </div>
 
@@ -393,6 +416,14 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
           <Download className='w-3 h-3' />
           {downloadingPdf ? "Exporting..." : "Download PDF (1:1)"}
         </button>
+      </div>
+
+      {/* CAPTURE ENGINE ISOLATION — natural size, never transformed, so the exports
+          keep full resolution and true-to-life sizing whatever screen this is on. */}
+      <div
+        style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1, pointerEvents: "none" }}
+      >
+        {card("print")}
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { Download } from "lucide-react"
 import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
 import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
+import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
@@ -125,7 +126,7 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
             transformOrigin: "top left",
           }}
         >
-          <DetailView gem={gem} reportId={reportId} />
+          <DetailView gem={gem} reportId={reportId} target='screen' />
         </div>
       </div>
 
@@ -159,7 +160,15 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
   )
 }
 
-function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
+function DetailView({
+  gem,
+  reportId,
+  target = "print",
+}: {
+  gem: Gem
+  reportId?: string
+  target?: RenderTarget
+}) {
   const finalData = gem.finalApproval || {}
   const obs = finalData.finalObservations || {}
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
@@ -171,6 +180,7 @@ function DetailView({ gem, reportId }: { gem: Gem; reportId?: string }) {
     obs,
     reportSize: "medium",
     box: { w: 196, h: 196 },
+    target,
   })
 
   const GOLD = "#D4AF37"

@@ -22,6 +22,31 @@ export const PX_PER_MM = {
 
 export type ReportSize = keyof typeof PX_PER_MM
 
+/**
+ * Which copy of a certificate a gem is being drawn into.
+ *
+ * Every preview renders its card twice: the copy shown on screen, and an off-screen
+ * copy at natural size that becomes the PNG/PDF. Only the second is a physical
+ * artefact, so only it is sized 1:1 — see {@link fitBoxFor} for why the other is not.
+ */
+export type RenderTarget = "print" | "screen"
+
+/**
+ * Share of the certificate's image box a gem may fill on screen.
+ *
+ * A phone that scans the QR code shrinks the whole card to its viewport, and at that
+ * size a stone drawn edge-to-edge in its frame reads as artwork that has been cropped
+ * rather than as a gem — the more so for a large stone, whose true size genuinely does
+ * fill the frame. The screen copy therefore keeps a margin inside the frame; the print
+ * copy never does, because a millimetre on paper is the whole point of it.
+ */
+const SCREEN_FIT = 0.85
+
+/** The space a gem may occupy on the given copy: the frame itself, or an inset of it. */
+export function fitBoxFor(box: { w: number; h: number }, target: RenderTarget) {
+  return target === "screen" ? { w: box.w * SCREEN_FIT, h: box.h * SCREEN_FIT } : box
+}
+
 /** The dimension fields as they exist on the stage observations (misspelling is the schema's). */
 export interface MeasurementSource {
   messurementX?: number | string | null

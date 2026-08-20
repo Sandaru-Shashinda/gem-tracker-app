@@ -3,6 +3,7 @@ import { Download } from "lucide-react"
 import { toPng } from "html-to-image"
 import type { Gem } from "@/lib/types"
 import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
+import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
@@ -122,7 +123,7 @@ export function VerbalReportPreview({ gem }: VerbalReportPreviewProps) {
             transformOrigin: "top left",
           }}
         >
-          <VerbalContent gem={gem} />
+          <VerbalContent gem={gem} target='screen' />
         </div>
       </div>
 
@@ -146,7 +147,7 @@ export function VerbalReportPreview({ gem }: VerbalReportPreviewProps) {
   )
 }
 
-function VerbalContent({ gem }: { gem: Gem }) {
+function VerbalContent({ gem, target = "print" }: { gem: Gem; target?: RenderTarget }) {
   const finalData = gem.finalApproval || {}
   const obs = finalData.finalObservations || {}
   const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
@@ -157,6 +158,7 @@ function VerbalContent({ gem }: { gem: Gem }) {
     obs,
     reportSize: "verbal",
     box: { w: 108, h: 108 },
+    target,
   })
 
   const GOLD = "#D4AF37"

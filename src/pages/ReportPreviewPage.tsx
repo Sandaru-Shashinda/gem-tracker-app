@@ -8,6 +8,7 @@ import { LargeReportPreview } from "@/components/features/reports/LargeReportPre
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
 import { VerbalReportPreview } from "@/components/features/reports/VerbalReportPreview"
 import { primeImageCache } from "@/components/features/gems/GemImage"
+import type { Image } from "@/lib/api/images"
 import type { Gem } from "@/lib/types"
 
 interface ReportData {
@@ -16,7 +17,7 @@ interface ReportData {
   reportType: "small" | "medium" | "large" | "verbal"
   isClientDataAdd?: boolean
   gemId: string | Gem
-  gemImages?: Array<{ _id: string; name: string; url: string }>
+  gemImages?: Array<Partial<Image> & { _id: string }>
 }
 
 export function ReportPreviewPage() {
