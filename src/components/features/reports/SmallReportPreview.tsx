@@ -146,7 +146,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
         overflow: "hidden",
         display: "flex",
         border: "1px solid #e2e8f0",
-        padding: "30px 30px 24px 35px",
+        padding: "30px 30px 24px 40px",
         boxSizing: "border-box",
         position: "relative",
         boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)",
