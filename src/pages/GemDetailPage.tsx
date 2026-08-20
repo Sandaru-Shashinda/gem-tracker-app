@@ -155,6 +155,7 @@ export function GemDetailPage() {
   const watchedHardnessMax = watch("hardnessMax")
   const watchedSpecies = watch("species")
   const watchedVariety = watch("selectedVariety")
+  const watchedColour = watch("colour")
 
   const searchSetters: SearchSetters = {
     setSpeciesSearch,
@@ -234,9 +235,8 @@ export function GemDetailPage() {
 
     if (!activeData) return
 
-    const values = mapSourceToFormValues(activeData)
+    const values = mapSourceToFormValues(activeData, gemDetail.color)
     if (!values.itemDescription) values.itemDescription = gemDetail.itemDescription || ""
-    if (!values.colour) values.colour = gemDetail.color || ""
 
     reset(values)
     syncSearchStates(values, searchSetters)
@@ -391,7 +391,7 @@ export function GemDetailPage() {
   }
 
   const copyValues = (source: any) => {
-    const values = mapSourceToFormValues(source)
+    const values = mapSourceToFormValues(source, gemDetail?.color)
     reset(values)
     syncSearchStates(values, searchSetters)
   }
@@ -423,6 +423,9 @@ export function GemDetailPage() {
 
   const intakeGem = gemDetail ?? gem
   const weight = savedWeight ?? intakeGem.weight
+  // Colour belongs to the gem, and the analysis form is where it gets entered, so the
+  // intake panel shows whatever the form holds rather than a second, stale value.
+  const color = watchedColour || intakeGem.color
 
   const weightEditor = (
     <GemWeightEditor
@@ -451,7 +454,7 @@ export function GemDetailPage() {
 
         <div className='grid grid-cols-1 lg:grid-cols-5 gap-6'>
           <GemIntakeAndHistory
-            gem={savedWeight == null ? intakeGem : { ...intakeGem, weight: savedWeight }}
+            gem={{ ...intakeGem, weight, color }}
             user={user}
             customer={customer}
             suggestions={suggestions}

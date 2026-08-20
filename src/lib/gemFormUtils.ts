@@ -10,8 +10,14 @@ export type SearchSetters = {
   setColourSearch: (v: string) => void
 }
 
-/** Maps raw gem stage data (test1 / test2 / finalApproval) into form values. */
-export function mapSourceToFormValues(source: any): TestFormValues {
+/**
+ * Maps raw gem stage data (test1 / test2 / finalApproval) into form values.
+ *
+ * Colour is the one field that does not come from the stage — it is stored on the gem,
+ * so the caller passes it in. Stage data written before that change is still read as a
+ * fallback, since those records physically hold the old value.
+ */
+export function mapSourceToFormValues(source: any, gemColour = ""): TestFormValues {
   const obs = source.observations || source.finalObservations || {}
   return {
     riMin: source.riMin?.toString() || "",
@@ -22,7 +28,7 @@ export function mapSourceToFormValues(source: any): TestFormValues {
     species: obs.species || "",
     selectedVariety: source.selectedVariety || source.finalVariety || obs.variety || "",
     itemDescription: obs.itemDescription || source.itemDescription || "",
-    colour: obs.colour || "",
+    colour: gemColour || obs.colour || "",
     clarityGrade: obs.clarityGrade || "",
     grade: obs.grade || "",
     polishingGrade: obs.polishingGrade || "Fine",

@@ -204,6 +204,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
         hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
         hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
         selectedVariety: data.selectedVariety,
+        // Colour is stored on the gem, not on this stage.
+        color: data.colour,
         observations: {
           cuttingShape: data.cuttingShape,
           crownStyle: data.crownStyle,
@@ -221,7 +223,6 @@ export function GemProvider({ children }: { children: ReactNode }) {
           itemDescription: data.itemDescription,
           specialNote: data.specialNote,
           treatment: data.treatment,
-          colour: data.colour,
           colourGrade: data.colourGrade,
           grade: data.grade,
           finalGrade: data.finalGrade,
@@ -256,6 +257,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
         hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
         hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
         finalVariety: data.selectedVariety,
+        // Colour is stored on the gem, not on this stage.
+        color: data.colour,
         itemDescription: data.itemDescription || data.comments,
         finalObservations: {
           cuttingShape: data.cuttingShape,
@@ -274,7 +277,6 @@ export function GemProvider({ children }: { children: ReactNode }) {
           itemDescription: data.itemDescription,
           specialNote: data.specialNote,
           treatment: data.treatment,
-          colour: data.colour,
           colourGrade: data.colourGrade,
           grade: data.grade,
           finalGrade: data.finalGrade,
@@ -314,6 +316,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
           hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
           hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
           finalVariety: data.selectedVariety,
+          // Colour is stored on the gem, not on this stage.
+          color: data.colour,
           itemDescription: data.itemDescription || data.comments,
           finalObservations: {
             cuttingShape: data.cuttingShape,
@@ -332,7 +336,6 @@ export function GemProvider({ children }: { children: ReactNode }) {
             itemDescription: data.itemDescription,
             specialNote: data.specialNote,
             treatment: data.treatment,
-            colour: data.colour,
             colourGrade: data.colourGrade,
             grade: data.grade,
             finalGrade: data.finalGrade,
@@ -354,6 +357,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
           hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
           hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
           selectedVariety: data.selectedVariety,
+          // Colour is stored on the gem, not on this stage.
+          color: data.colour,
           observations: {
             cuttingShape: data.cuttingShape,
             crownStyle: data.crownStyle,
@@ -371,7 +376,6 @@ export function GemProvider({ children }: { children: ReactNode }) {
             itemDescription: data.itemDescription,
             specialNote: data.specialNote,
             treatment: data.treatment,
-            colour: data.colour,
             colourGrade: data.colourGrade,
             grade: data.grade,
             finalGrade: data.finalGrade,
