@@ -78,11 +78,9 @@ export function Sidebar() {
       <nav className='flex-1 p-3 space-y-2 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-700'>
         <NavButton icon={LayoutDashboard} label='Dashboard' to='/dashboard' collapsed={collapsed} />
         <NavButton icon={ClipboardCheck} label='My Queue' to='/queue' collapsed={collapsed} />
-        {user.role === UserRole.HELPER && (
-          <NavButton icon={Plus} label='Intake Gem' to='/intake' collapsed={collapsed} />
-        )}
         {(user.role === UserRole.ADMIN || user.role === UserRole.HELPER) && (
           <>
+            <NavButton icon={Plus} label='Intake Gem' to='/intake' collapsed={collapsed} />
             <NavButton icon={Building2} label='Customers' to='/customers' collapsed={collapsed} />
             <NavButton icon={FileText} label='Reports' to='/reports' collapsed={collapsed} />
           </>
