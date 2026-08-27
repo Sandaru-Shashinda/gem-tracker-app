@@ -148,8 +148,7 @@ export function GemDetailPage() {
     formState: { isSubmitting, isValid },
   } = form
 
-  const watchedRiMin = watch("riMin")
-  const watchedRiMax = watch("riMax")
+  const watchedRi = watch("ri")
   const watchedSg = watch("sg")
   const watchedHardnessMin = watch("hardnessMin")
   const watchedHardnessMax = watch("hardnessMax")
@@ -271,27 +270,15 @@ export function GemDetailPage() {
 
   // Auto-suggestion based on scientific measurements.
   useEffect(() => {
-    if (
-      !watchedRiMin &&
-      !watchedRiMax &&
-      !watchedSg &&
-      !watchedHardnessMin &&
-      !watchedHardnessMax
-    ) {
+    if (!watchedRi && !watchedSg && !watchedHardnessMin && !watchedHardnessMax) {
       setSuggestions([])
       return
     }
     referencesApi
-      .searchReferences(
-        watchedRiMin,
-        watchedRiMax,
-        watchedSg,
-        watchedHardnessMin,
-        watchedHardnessMax,
-      )
+      .searchReferences(watchedRi, watchedSg, watchedHardnessMin, watchedHardnessMax)
       .then(setSuggestions)
       .catch((err) => console.error("Failed to get suggestions:", err))
-  }, [watchedRiMin, watchedRiMax, watchedSg, watchedHardnessMin, watchedHardnessMax])
+  }, [watchedRi, watchedSg, watchedHardnessMin, watchedHardnessMax])
 
   // ── Handlers ────────────────────────────────────────────────────────────
 

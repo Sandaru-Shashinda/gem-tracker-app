@@ -1,8 +1,7 @@
 import { type TestFormValues } from "@/lib/validations/test"
 
 export const FORM_DEFAULTS: TestFormValues = {
-  riMin: "",
-  riMax: "",
+  ri: "",
   sg: "",
   hardnessMin: "",
   hardnessMax: "",

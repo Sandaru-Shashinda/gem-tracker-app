@@ -20,8 +20,7 @@ export type SearchSetters = {
 export function mapSourceToFormValues(source: any, gemColour = ""): TestFormValues {
   const obs = source.observations || source.finalObservations || {}
   return {
-    riMin: source.riMin?.toString() || "",
-    riMax: source.riMax?.toString() || "",
+    ri: source.ri?.toString() || "",
     sg: source.sg?.toString() || "",
     hardnessMin: source.hardnessMin?.toString() || "",
     hardnessMax: source.hardnessMax?.toString() || "",

@@ -44,11 +44,7 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
                 <div className='p-4 bg-slate-50 rounded-xl border border-slate-100'>
                   <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>R.I.</p>
                   <p className='text-base font-black text-slate-800'>
-                    {gem.finalApproval.riMin && gem.finalApproval.riMax
-                      ? gem.finalApproval.riMin === gem.finalApproval.riMax
-                        ? gem.finalApproval.riMin
-                        : `${gem.finalApproval.riMin} - ${gem.finalApproval.riMax}`
-                      : gem.finalApproval.riMin || gem.finalApproval.riMax || "N/A"}
+                    {gem.finalApproval.ri ?? "N/A"}
                   </p>
                 </div>
                 <div className='p-4 bg-slate-50 rounded-xl border border-slate-100'>

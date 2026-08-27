@@ -248,19 +248,11 @@ export function getFormFieldsConfig({
 
   const scientificFields: FieldConfig[] = [
     {
-      name: "riMin",
-      label: "Min R.I.",
+      name: "ri",
+      label: "R.I.",
       type: "number",
       step: "0.001",
       placeholder: "e.g. 1.62",
-      className: "",
-    },
-    {
-      name: "riMax",
-      label: "Max R.I.",
-      type: "number",
-      step: "0.001",
-      placeholder: "e.g. 1.70",
       className: "",
     },
     {

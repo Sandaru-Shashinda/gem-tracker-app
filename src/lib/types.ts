@@ -108,8 +108,7 @@ export interface Gem {
   }
 
   test1?: null | {
-    riMin?: number
-    riMax?: number
+    ri?: number
     sg?: number
     hardnessMin?: number
     hardnessMax?: number
@@ -124,8 +123,7 @@ export interface Gem {
   }
 
   test2?: null | {
-    riMin?: number
-    riMax?: number
+    ri?: number
     sg?: number
     hardnessMin?: number
     hardnessMax?: number
@@ -140,8 +138,7 @@ export interface Gem {
   }
 
   finalApproval?: null | {
-    riMin?: number
-    riMax?: number
+    ri?: number
     sg?: number
     hardnessMin?: number
     hardnessMax?: number

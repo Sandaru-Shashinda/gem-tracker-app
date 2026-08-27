@@ -198,8 +198,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, stage: "test1" | "test2", data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        riMin: data.riMin ? parseFloat(data.riMin) : undefined,
-        riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+        ri: data.ri ? parseFloat(data.ri) : undefined,
         sg: data.sg ? parseFloat(data.sg) : undefined,
         hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
         hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
@@ -251,8 +250,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        riMin: data.riMin ? parseFloat(data.riMin) : undefined,
-        riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+        ri: data.ri ? parseFloat(data.ri) : undefined,
         sg: data.sg ? parseFloat(data.sg) : undefined,
         hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
         hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
@@ -310,8 +308,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
       let update: any = {}
       if (stage === "finalApproval") {
         update = {
-          riMin: data.riMin ? parseFloat(data.riMin) : undefined,
-          riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+          ri: data.ri ? parseFloat(data.ri) : undefined,
           sg: data.sg ? parseFloat(data.sg) : undefined,
           hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
           hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
@@ -351,8 +348,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
         }
       } else {
         update = {
-          riMin: data.riMin ? parseFloat(data.riMin) : undefined,
-          riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+          ri: data.ri ? parseFloat(data.ri) : undefined,
           sg: data.sg ? parseFloat(data.sg) : undefined,
           hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
           hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
