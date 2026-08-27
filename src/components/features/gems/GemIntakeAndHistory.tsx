@@ -506,6 +506,27 @@ export function GemIntakeAndHistory({
                         </p>
                       </div>
                     )}
+                    {/* Heat */}
+                    <div className='bg-rose-50/50 p-2.5 rounded-lg border border-rose-100/50 flex items-center justify-between'>
+                      <p className='text-[9px] font-bold text-rose-600/80 uppercase'>Heat</p>
+                      <div className='flex items-center gap-2'>
+                        <Badge
+                          variant='secondary'
+                          className={`h-4 text-[9px] px-2 border ${
+                            gem.test1.observations?.isHeated
+                              ? "bg-rose-100 text-rose-700 border-rose-200"
+                              : "bg-slate-100 text-slate-600 border-slate-200"
+                          }`}
+                        >
+                          {gem.test1.observations?.isHeated ? "Heated" : "Not Heated"}
+                        </Badge>
+                        {gem.test1.observations?.showHeatInReport && (
+                          <span className='text-[8px] font-bold text-rose-500/80 uppercase'>
+                            In Report
+                          </span>
+                        )}
+                      </div>
+                    </div>
                     {/* Treatment */}
                     {gem.test1.observations?.treatment && (
                       <div className='bg-purple-50/50 p-2.5 rounded-lg border border-purple-100/50'>
@@ -794,6 +815,27 @@ export function GemIntakeAndHistory({
                         </p>
                       </div>
                     )}
+                    {/* Heat */}
+                    <div className='bg-rose-50/50 p-2.5 rounded-lg border border-rose-100/50 flex items-center justify-between'>
+                      <p className='text-[9px] font-bold text-rose-600/80 uppercase'>Heat</p>
+                      <div className='flex items-center gap-2'>
+                        <Badge
+                          variant='secondary'
+                          className={`h-4 text-[9px] px-2 border ${
+                            gem.test2.observations?.isHeated
+                              ? "bg-rose-100 text-rose-700 border-rose-200"
+                              : "bg-slate-100 text-slate-600 border-slate-200"
+                          }`}
+                        >
+                          {gem.test2.observations?.isHeated ? "Heated" : "Not Heated"}
+                        </Badge>
+                        {gem.test2.observations?.showHeatInReport && (
+                          <span className='text-[8px] font-bold text-rose-500/80 uppercase'>
+                            In Report
+                          </span>
+                        )}
+                      </div>
+                    </div>
                     {/* Treatment */}
                     {gem.test2.observations?.treatment && (
                       <div className='bg-purple-50/50 p-2.5 rounded-lg border border-purple-100/50'>
