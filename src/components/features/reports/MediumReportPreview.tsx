@@ -309,7 +309,7 @@ function DetailView({
           flex: "0 0 55%",
           width: "50%",
           height: "100%",
-          padding: "50px",
+          padding: "50px 20px",
           display: "flex",
           flexDirection: "column",
           boxSizing: "border-box",
