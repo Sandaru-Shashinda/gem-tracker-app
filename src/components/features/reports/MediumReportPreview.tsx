@@ -22,22 +22,32 @@ const SCALE_FACTOR = 3
 
 /**
  * The signature asset is 1800x1200 (3:2) and mostly whitespace: its ink measures out to
- * x 0.108-0.915, y 0.288-0.685 of the frame. Rendering it at its natural aspect spends
- * most of the footer on empty margin, so the image is rendered oversized inside a window
- * cropped to the ink band. Keep the window inside those measured bounds.
- *
- * The typed block (the report's configured signatory) is drawn to the same box so the
- * two signature fields line up: its dotted rule sits at the same fraction of the box
- * height as the printed rule inside the cropped image.
+ * x 0.108-0.916, y 0.286-0.686 of the frame, and its printed rule centres on y 0.481.
+ * Rendering it at its natural aspect spends most of the footer on empty margin, so the
+ * image is rendered oversized inside a window cropped to the ink band, leaving only ~1%
+ * of the frame as padding on each side of it.
  */
-const SIG_IMG_W = 262
+const SIG_CROP_X = 0.098
+const SIG_CROP_Y = 0.276
+const SIG_CROP_W = 0.828
+const SIG_CROP_H = 0.42
+const SIG_RULE_Y = 0.481
+
+/**
+ * The box width comes from the footer row's budget (see the row below); its height
+ * follows from the crop window's own aspect, so the ink is never squashed. The typed
+ * block (the report's configured signatory) is drawn to the same box so the two
+ * signature fields line up: its dotted rule sits at the same fraction of the box height
+ * as the printed rule inside the cropped image.
+ */
+const SIG_BOX_W = 237
+const SIG_BOX_H = (SIG_BOX_W * (SIG_CROP_H * 2)) / (SIG_CROP_W * 3)
+const SIG_IMG_W = SIG_BOX_W / SIG_CROP_W
 const SIG_IMG_H = SIG_IMG_W / 1.5
-const SIG_CROP_TOP = SIG_IMG_H * 0.26
-const SIG_CROP_LEFT = SIG_IMG_W * 0.09
-const SIG_BOX_W = SIG_IMG_W * 0.85
-const SIG_BOX_H = SIG_IMG_H * 0.44
+const SIG_CROP_TOP = SIG_IMG_H * SIG_CROP_Y
+const SIG_CROP_LEFT = SIG_IMG_W * SIG_CROP_X
 /* Fraction of the box above the rule: blank on the typed block, ink on the image. */
-const SIG_RULE_OFFSET = 0.49
+const SIG_RULE_OFFSET = (SIG_RULE_Y - SIG_CROP_Y) / SIG_CROP_H
 
 export function MediumReportPreview({
   gem,
@@ -606,20 +616,20 @@ function DetailView({
         {/* Two signature fields at the bottom: consultant gemologist + authorized signature */}
         {/*
           The pair is wider than the panel's 420px content box, so the row stretches and
-          then claws back part of the side padding: 420 + 26 + 16 = 462px, which leaves
-          the block edges 6px inside the panel on the left and 36px from the page edge on
-          the right. Widen SIG_IMG_W further and these two numbers have to grow with it.
+          then claws back the side padding: 237 + 10 + 237 = 484px, which sits flush with
+          the panel's left edge and 20px from the page edge on the right. That spends the
+          32px of left padding outright, so SIG_BOX_W has no more room to grow.
         */}
         <div
           style={{
             marginTop: "auto",
             alignSelf: "stretch",
-            marginLeft: "-26px",
-            marginRight: "-16px",
+            marginLeft: "-32px",
+            marginRight: "-32px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-end",
-            gap: "16px",
+            gap: "10px",
           }}
         >
           <TypedSignature name={signatureName} role={SIGNATORY_ROLE} />
@@ -640,10 +650,8 @@ function DetailView({
               style={{
                 position: "absolute",
                 top: `${-SIG_CROP_TOP}px`,
-                left: `${-SIG_CROP_LEFT}px`,
                 width: `${SIG_IMG_W}px`,
                 height: `${SIG_IMG_H}px`,
-                objectFit: "contain",
               }}
             />
           </div>
@@ -671,23 +679,23 @@ function TypedSignature({ name, role }: { name: string; role: string }) {
     >
       {/* Left blank for the handwritten signature */}
       <div style={{ height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`, flexShrink: 0 }}></div>
-      <div style={{ borderTop: "1.5px dotted #333", width: "70%" }}></div>
+      <div style={{ borderTop: "1.5px dotted #333", width: "80%" }}></div>
       <div
         style={{
-          fontSize: "10px",
+          fontSize: "11px",
           fontWeight: 700,
           color: "#1a1a1a",
-          lineHeight: "12px",
+          lineHeight: "13px",
           whiteSpace: "nowrap",
           marginTop: "2px",
         }}
       >
         {name}
       </div>
-      <div style={{ fontSize: "8px", color: "#8d8b8b", fontWeight: 750, lineHeight: "8px", whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: "9px", color: "#8d8b8b", fontWeight: 750, lineHeight: "11px", whiteSpace: "nowrap" }}>
         {role}
       </div>
-      <div style={{ fontSize: "8px", color: "#8d8b8b", fontWeight: 750, lineHeight: "10px", whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: "9px", color: "#8d8b8b", fontWeight: 750, lineHeight: "11px", whiteSpace: "nowrap" }}>
         Gemological Report Of Ceylon (Pvt) Ltd
       </div>
     </div>
