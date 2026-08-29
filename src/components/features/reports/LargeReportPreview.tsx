@@ -910,7 +910,7 @@ function TypedSignature({ name, role }: { name: string; role: string }) {
           marginTop: "2px",
         }}
       >
-        {name}
+        {name?.trim() || "____________________"}
       </div>
       <div
         style={{
