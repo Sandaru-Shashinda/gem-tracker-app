@@ -1,3 +1,5 @@
+import type { TreatmentValues } from "@/lib/treatments"
+
 export const UserRole = {
   ADMIN: "ADMIN",
   HELPER: "HELPER",
@@ -72,6 +74,8 @@ export interface ObservationData {
   itemDescription?: string
   specialNote?: string
   treatment?: string
+  /** Per-treatment "Yes" | "No" checklist; "" / missing means not assessed. */
+  treatments?: Partial<TreatmentValues>
   colour?: string
   // Colour breakdown printed in the large report's DETAILS block. Tone and
   // saturation are graded Low | Medium | High and print as ticked boxes.

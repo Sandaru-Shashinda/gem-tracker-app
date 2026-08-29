@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
-import { type Gem } from "@/lib/types"
+import { type Gem, type ObservationData } from "@/lib/types"
+import { TREATMENT_SECTIONS, hasAnyTreatment, normalizeTreatments } from "@/lib/treatments"
 
 interface GemFinalAuditProps {
   gem: Gem
@@ -199,12 +200,75 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
               </p>
             </div>
           </div>
+
+          {/* The approved Yes/No checklist, in the same three categories the large
+              report prints. Unanswered treatments show a dash, not a "No". */}
+          <TreatmentAudit treatments={gem.finalApproval.finalObservations?.treatments} />
         </div>
 
         <Button variant='outline' onClick={() => onNavigateToReport(gem._id)}>
           View Certificate
         </Button>
       </Card>
+    </div>
+  )
+}
+
+/**
+ * The approved treatment checklist. Rendered whole rather than as a "detected" summary:
+ * on a certificate a recorded "No" is a finding in its own right, and the reader needs
+ * to see which treatments were never assessed at all.
+ */
+function TreatmentAudit({ treatments }: { treatments?: ObservationData["treatments"] }) {
+  const values = normalizeTreatments(treatments)
+  const assessed = hasAnyTreatment(values)
+
+  return (
+    <div className='p-5 bg-purple-50/60 rounded-2xl border border-purple-100'>
+      <div className='flex items-center justify-between mb-4'>
+        <p className='text-[10px] uppercase font-black text-purple-600 tracking-widest'>
+          Treatment Analysis
+        </p>
+        {!assessed && (
+          <span className='text-[9px] font-bold uppercase text-slate-400'>Not assessed</span>
+        )}
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5'>
+        {TREATMENT_SECTIONS.map((section) => (
+          <div key={section.title} className='space-y-2'>
+            <p className='text-[9px] font-bold text-purple-400 uppercase tracking-wider'>
+              {section.title}
+            </p>
+            <div className='space-y-1'>
+              {section.items.map((item) => {
+                const value = values[item.key]
+                return (
+                  <div
+                    key={item.key}
+                    className='flex items-center justify-between gap-2 bg-white rounded-md border border-purple-100/60 px-2 py-1'
+                  >
+                    <span className='text-[11px] text-slate-700 font-medium leading-tight'>
+                      {item.label}
+                    </span>
+                    <span
+                      className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${
+                        value === "Yes"
+                          ? "bg-purple-600 text-white"
+                          : value === "No"
+                            ? "bg-slate-100 text-slate-600"
+                            : "text-slate-300"
+                      }`}
+                    >
+                      {value || "—"}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

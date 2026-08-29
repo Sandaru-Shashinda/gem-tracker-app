@@ -1,4 +1,28 @@
 import * as z from "zod"
+import { emptyTreatments } from "@/lib/treatments"
+
+/**
+ * The treatment checklist. "" means the treatment has not been assessed, which is
+ * deliberately distinct from "No" — "not tested" and "tested, not present" are
+ * different claims on a certificate. Labels and section grouping live in
+ * lib/treatments.ts; the keys below must stay in step with TREATMENT_KEYS there.
+ */
+const treatmentAnswer = z.enum(["", "Yes", "No"]).default("")
+
+export const treatmentsSchema = z
+  .object({
+    heatTreatment: treatmentAnswer,
+    irradiationTreatment: treatmentAnswer,
+    hpht: treatmentAnswer,
+    diffusionTreatment: treatmentAnswer,
+    dyeing: treatmentAnswer,
+    bleaching: treatmentAnswer,
+    fractureFillingOil: treatmentAnswer,
+    fractureFillingResinGlass: treatmentAnswer,
+    laserDrilling: treatmentAnswer,
+    coating: treatmentAnswer,
+  })
+  .default(emptyTreatments)
 
 export const testSchema = z.object({
   ri: z.string().min(1, "R.I. is required"),
@@ -27,6 +51,7 @@ export const testSchema = z.object({
   itemDescription: z.string().optional(),
   specialNote: z.string().optional(),
   treatment: z.string().optional(),
+  treatments: treatmentsSchema,
   colour: z.string().optional(),
   hue: z.string().optional(),
   tone: z.string().optional(),

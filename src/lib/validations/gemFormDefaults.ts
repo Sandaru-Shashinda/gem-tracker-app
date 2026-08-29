@@ -1,6 +1,12 @@
 import { type TestFormValues } from "@/lib/validations/test"
+import { emptyTreatments } from "@/lib/treatments"
 
-export const FORM_DEFAULTS: TestFormValues = {
+/**
+ * A factory, not a shared constant: `treatments` is a nested object, so handing the
+ * same instance to every form would let one gem's checklist be written into the
+ * defaults and leak into the next gem loaded.
+ */
+export const makeFormDefaults = (): TestFormValues => ({
   ri: "",
   sg: "",
   hardnessMin: "",
@@ -31,9 +37,10 @@ export const FORM_DEFAULTS: TestFormValues = {
   comments: "",
   specialNote: "",
   treatment: "",
+  treatments: emptyTreatments(),
   clarityEnhancement: "",
   isHeated: false,
   showHeatInReport: false,
   isEmerald: false,
   isMixCut: false,
-}
+})

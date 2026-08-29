@@ -1,5 +1,6 @@
 import { type TestFormValues } from "@/lib/validations/test"
 import { type GemStatus, GEM_STATUSES, UserRole } from "@/lib/types"
+import { normalizeTreatments } from "@/lib/treatments"
 
 export type SearchSetters = {
   setSpeciesSearch: (v: string) => void
@@ -50,6 +51,7 @@ export function mapSourceToFormValues(source: any, gemColour = ""): TestFormValu
     comments: obs.comments || "",
     specialNote: obs.specialNote || "",
     treatment: obs.treatment || "",
+    treatments: normalizeTreatments(obs.treatments),
     clarityEnhancement: obs.clarityEnhancement || "",
     isHeated: obs.isHeated ?? source.isHeated ?? false,
     showHeatInReport: obs.showHeatInReport ?? source.showHeatInReport ?? false,

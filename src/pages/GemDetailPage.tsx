@@ -32,7 +32,7 @@ import { ApproverCorrectionBanner } from "@/components/features/gems/ApproverCor
 import { GemFormActions } from "@/components/features/gems/GemFormActions"
 import { getFormFieldsConfig } from "@/components/shared/common/Formfieldsconfig"
 import { addCustomOption } from "@/lib/customDropdownOptions"
-import { FORM_DEFAULTS } from "@/lib/validations/gemFormDefaults"
+import { makeFormDefaults } from "@/lib/validations/gemFormDefaults"
 import {
   type SearchSetters,
   mapSourceToFormValues,
@@ -136,7 +136,7 @@ export function GemDetailPage() {
   // ── Form ────────────────────────────────────────────────────────────────
   const form = useForm<TestFormValues>({
     resolver: zodResolver(testSchema) as any,
-    defaultValues: FORM_DEFAULTS,
+    defaultValues: makeFormDefaults(),
     mode: "onChange",
   })
 
@@ -224,7 +224,7 @@ export function GemDetailPage() {
     // Gems that bypassed testing have no Test 1 / Test 2 data to copy from, so
     // seed the approval form straight from the intake record.
     if (!activeData && gemDetail.skipTesting && isApproval) {
-      const seeded = { ...FORM_DEFAULTS }
+      const seeded = makeFormDefaults()
       seeded.itemDescription = gemDetail.itemDescription || ""
       seeded.colour = gemDetail.color || ""
       reset(seeded)

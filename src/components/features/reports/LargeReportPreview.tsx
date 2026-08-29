@@ -7,9 +7,15 @@ import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
 import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
 import { DEFAULT_SIGNATORY_NAME, SIGNATORY_ROLE } from "@/lib/report-signature"
+import {
+  TREATMENT_ANSWERS,
+  TREATMENT_SECTIONS,
+  normalizeTreatments,
+  type TreatmentAnswer,
+} from "@/lib/treatments"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
-import grcMemoLogo from "@/assets/grc_memo_logo.png"
+import grcMemoLogo from "@/assets/grc_memo_logo_trimmed.png"
 
 // A4 at 96 dpi → 794 × 1123 px  (portrait)
 const A4_W = 794
@@ -243,6 +249,8 @@ function ReportPage({
     gap: "3px",
   }
 
+  const treatments = normalizeTreatments(obs.treatments)
+
   const measurements = obs.messurementX
     ? `${Number(obs.messurementX).toFixed(2)} x ${Number(obs.messurementY).toFixed(2)} x ${Number(obs.messurementZ).toFixed(2)} mm`
     : undefined
@@ -288,19 +296,22 @@ function ReportPage({
           alignItems: "flex-start",
           justifyContent: "space-between",
           gap: "16px",
-          marginBottom: "20px",
           position: "relative",
           zIndex: 2,
         }}
       >
         {/* The logo column is matched to the QR column so the title stays centred. */}
         <div style={{ width: "150px", flexShrink: 0 }}>
-          {/* The asset is a tall 2480x3508 mark, so 130px tall renders ~92px wide —
-              comfortably inside the 150px column that keeps the title centred. */}
-          <img src={grcMemoLogo} alt='GRC Logo' style={{ height: "130px", objectFit: "contain" }} />
+          {/* The asset is trimmed to the mark itself (1828x756), so filling the 150px
+              column renders it ~62px tall — the largest the header band allows. */}
+          <img
+            src={grcMemoLogo}
+            alt='GRC Logo'
+            style={{ width: "120px", height: "auto", objectFit: "contain", display: "block" }}
+          />
         </div>
 
-        <div style={{ flex: 1, textAlign: "center", paddingTop: "8px" }}>
+        <div style={{ flex: 1, textAlign: "end", paddingTop: "8px" }}>
           <h1
             style={{
               fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
@@ -314,7 +325,7 @@ function ReportPage({
           >
             Gemological Report of Ceylon
           </h1>
-          <p style={{ ...COURIER, fontSize: "12px", margin: "6px 0 0", fontWeight: 500 }}>
+          <p style={{ ...COURIER, fontSize: "12px", margin: "0px 0 0", fontWeight: 500 }}>
             GRC Report Number – {gem.gemId || "—"}
           </p>
           <p style={{ ...COURIER, fontSize: "12px", margin: "2px 0 0" }}>
@@ -335,16 +346,9 @@ function ReportPage({
         </div>
       </div>
 
-      {/* ── DIVIDER ── */}
-      <div
-        style={{
-          height: "1px",
-          backgroundColor: "#ddd",
-          marginBottom: "18px",
-          position: "relative",
-          zIndex: 2,
-        }}
-      />
+      {/* Sections are separated by whitespace alone — the 15px keeps the rhythm the
+          rule used to carry (1px line + its 14px margin). */}
+      <div style={{ height: "15px" }} />
 
       {/* ── DETAILS ── */}
       <div style={{ position: "relative", zIndex: 2 }}>
@@ -376,16 +380,7 @@ function ReportPage({
         </div>
       </div>
 
-      {/* ── DIVIDER ── */}
-      <div
-        style={{
-          height: "1px",
-          backgroundColor: "#ddd",
-          margin: "18px 0",
-          position: "relative",
-          zIndex: 2,
-        }}
-      />
+      <div style={{ height: "29px" }} />
 
       {/* ── RESULTS + TREATMENT ── */}
       <div
@@ -411,9 +406,34 @@ function ReportPage({
 
         <div>
           <Title>TREATMENT</Title>
-          <p style={{ ...COURIER, fontSize: "11.5px", fontWeight: 600, margin: "10px 0 0" }}>
-            {obs.treatment || "None."}
-          </p>
+
+
+          {/* The checklist sits directly under the treatment note it qualifies, and is
+              always printed: on a certificate an unticked row is itself a statement.
+              A stone assessed for nothing at all prints an empty grid, which reads as
+              "not examined" rather than as a clean bill. */}
+          <div style={{ marginTop: "9px" }}>
+            {TREATMENT_SECTIONS.map((section, i) => (
+              <div key={section.title} style={{ marginTop: i === 0 ? 0 : "5px" }}>
+                <p
+                  style={{
+                    ...COURIER,
+                    fontSize: "10px",
+                    fontWeight: 900,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.4px",
+                    lineHeight: 1.8,
+                    margin: "0 0 2px",
+                  }}
+                >
+                  {section.title}
+                </p>
+                {section.items.map((item) => (
+                  <TreatmentRow key={item.key} label={item.label} value={treatments[item.key]} />
+                ))}
+              </div>
+            ))}
+          </div>
           {obs.specialNote && (
             <>
               <Title style={{ marginTop: "16px" }}>SPECIAL NOTE</Title>
@@ -441,7 +461,7 @@ function ReportPage({
           gridTemplateColumns: "1fr 1fr",
           gap: "0 40px",
           alignItems: "stretch",
-          marginTop: "22px",
+          marginTop: "20px",
           position: "relative",
           zIndex: 2,
         }}
@@ -474,7 +494,7 @@ function ReportPage({
           justifyContent: "space-between",
           gap: "24px",
           marginTop: "auto",
-          paddingTop: "24px",
+          paddingTop: "16px",
           position: "relative",
           zIndex: 2,
         }}
@@ -600,8 +620,8 @@ function ReportPage({
           fontFamily: "Arial, sans-serif",
           fontSize: "8.5px",
           color: "#888",
-          margin: "20px 100px 0 0",
-          textAlign: "center",
+          margin: "12px 100px 0 0",
+          textAlign: "end",
           position: "relative",
           zIndex: 2,
         }}
@@ -680,13 +700,47 @@ function GradeRow({ label, value }: { label: string; value?: string }) {
   )
 }
 
+/**
+ * One treatment on the report's checklist. An unassessed treatment leaves both boxes
+ * empty, so "no answer" stays visibly different from a certified "No".
+ */
+function TreatmentRow({ label, value }: { label: string; value?: TreatmentAnswer }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
+        color: "#1a1a1a",
+        fontSize: "10px",
+        fontWeight: 600,
+        lineHeight: 1.2,
+      }}
+    >
+      <span>{label}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: "5px", marginLeft: "auto" }}>
+        {TREATMENT_ANSWERS.map((answer) => (
+          <span
+            key={answer}
+            style={{ display: "flex", alignItems: "center", gap: "2px", whiteSpace: "nowrap" }}
+          >
+            {answer}
+            <CheckBox checked={value === answer} size={8} />
+          </span>
+        ))}
+      </span>
+    </div>
+  )
+}
+
 /** The tick is drawn as SVG so it survives export and does not depend on a glyph font. */
-function CheckBox({ checked }: { checked: boolean }) {
+function CheckBox({ checked, size = 11 }: { checked: boolean; size?: number }) {
   return (
     <span
       style={{
-        width: "11px",
-        height: "11px",
+        width: `${size}px`,
+        height: `${size}px`,
         border: "1.2px solid #1a1a1a",
         display: "inline-flex",
         alignItems: "center",
@@ -695,7 +749,12 @@ function CheckBox({ checked }: { checked: boolean }) {
       }}
     >
       {checked && (
-        <svg width='9' height='9' viewBox='0 0 10 10' style={{ display: "block" }}>
+        <svg
+          width={size - 2}
+          height={size - 2}
+          viewBox='0 0 10 10'
+          style={{ display: "block" }}
+        >
           <path
             d='M1.3 5.2 L3.9 7.9 L8.7 1.9'
             fill='none'

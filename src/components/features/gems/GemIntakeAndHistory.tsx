@@ -3,7 +3,8 @@ import { Building2, AlertCircle, Eye, X, Plus, Loader2 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { type Gem, type Customer, type GemReference, UserRole } from "@/lib/types"
+import { type Gem, type Customer, type GemReference, type ObservationData, UserRole } from "@/lib/types"
+import { TREATMENT_SECTIONS, normalizeTreatments } from "@/lib/treatments"
 import { gemsApi } from "@/lib/api/gems"
 import { getImageById, deleteImage } from "@/lib/api/images"
 import { useGem } from "@/hooks/useGemStore"
@@ -557,6 +558,8 @@ export function GemIntakeAndHistory({
                         </p>
                       </div>
                     )}
+                    {/* Treatment checklist */}
+                    <StageTreatments treatments={gem.test1.observations?.treatments} />
                   </div>
                   {gem.test1.correctionRequested && (
                     <div className='mt-2 p-2 bg-red-50 rounded border border-red-100'>
@@ -884,6 +887,8 @@ export function GemIntakeAndHistory({
                         </p>
                       </div>
                     )}
+                    {/* Treatment checklist */}
+                    <StageTreatments treatments={gem.test2.observations?.treatments} />
                   </div>
                   {gem.test2.correctionRequested && (
                     <div className='mt-2 p-2 bg-red-50 rounded border border-red-100'>
@@ -1023,6 +1028,51 @@ export function GemIntakeAndHistory({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  )
+}
+
+/**
+ * A tester's treatment checklist, condensed for the sidebar.
+ *
+ * Only answered treatments are listed — a tester who assessed two treatments should not
+ * push the rest of the stage card off-screen behind eight "not assessed" rows. The full
+ * grid, unanswered rows included, is shown on the approval record and the large report.
+ */
+function StageTreatments({ treatments }: { treatments?: ObservationData["treatments"] }) {
+  const values = normalizeTreatments(treatments)
+  const sections = TREATMENT_SECTIONS.map((section) => ({
+    title: section.title,
+    items: section.items.filter((item) => values[item.key]),
+  })).filter((section) => section.items.length > 0)
+
+  if (sections.length === 0) return null
+
+  return (
+    <div className='bg-purple-50/50 p-2.5 rounded-lg border border-purple-100/50 space-y-2'>
+      <p className='text-[9px] font-bold text-purple-600/80 uppercase'>Treatment Analysis</p>
+      {sections.map((section) => (
+        <div key={section.title} className='space-y-0.5'>
+          <p className='text-[8px] font-bold text-purple-400 uppercase tracking-wider'>
+            {section.title}
+          </p>
+          {section.items.map((item) => (
+            <div key={item.key} className='flex items-center justify-between gap-2'>
+              <span className='text-[10px] text-purple-800 leading-tight'>{item.label}</span>
+              <Badge
+                variant='secondary'
+                className={`h-4 text-[9px] px-1.5 border shrink-0 ${
+                  values[item.key] === "Yes"
+                    ? "bg-purple-100 text-purple-700 border-purple-200"
+                    : "bg-slate-100 text-slate-600 border-slate-200"
+                }`}
+              >
+                {values[item.key]}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   )
 }
