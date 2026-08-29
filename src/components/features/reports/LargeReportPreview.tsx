@@ -311,7 +311,7 @@ function ReportPage({
           />
         </div>
 
-        <div style={{ flex: 1, textAlign: "end", paddingTop: "8px" }}>
+        <div style={{ flex: 1, textAlign: "end" }}>
           <h1
             style={{
               fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
