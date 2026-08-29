@@ -307,7 +307,13 @@ function ReportPage({
           <img
             src={grcMemoLogo}
             alt='GRC Logo'
-            style={{ width: "120px", height: "auto", objectFit: "contain", display: "block" }}
+            style={{
+              width: "120px",
+              height: "auto",
+              objectFit: "contain",
+              display: "block",
+              filter: "brightness(0)",
+            }}
           />
         </div>
 
