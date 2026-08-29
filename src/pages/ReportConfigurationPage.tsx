@@ -8,9 +8,22 @@ import { Button } from "@/components/ui/button"
 import { Label } from "../components/ui/label"
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group"
 import { Checkbox } from "../components/ui/checkbox"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { reportsApi } from "@/lib/api/reports"
-import { type Gem, GEM_STATUSES } from "@/lib/types"
+import { usersApi } from "@/lib/api/users"
+import { type Gem, type User, GEM_STATUSES, UserRole } from "@/lib/types"
+import {
+  SIGNATORY_ROLE,
+  signatoryName,
+  type ReportSignatory,
+} from "@/lib/report-signature"
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
@@ -25,6 +38,7 @@ interface Report {
   reportType?: string
   isClientDataAdd?: boolean
   gemId: string | Gem
+  signedBy?: ReportSignatory | string | null
   reportUrl?: string
   createdAt?: string
   updatedAt?: string
@@ -40,10 +54,19 @@ export function ReportConfigurationPage() {
 
   const [size, setSize] = useState<"small" | "medium" | "large" | "verbal">("medium")
   const [includeLogo, setIncludeLogo] = useState(true)
+  const [testers, setTesters] = useState<User[]>([])
+  const [signedById, setSignedById] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+
+  useEffect(() => {
+    usersApi
+      .getUsers(UserRole.TESTER)
+      .then(setTesters)
+      .catch((error) => console.error("Failed to load testers", error))
+  }, [])
 
   // Fetch report and associated gem
   useEffect(() => {
@@ -61,6 +84,9 @@ export function ReportConfigurationPage() {
         setReport(reportData)
         if (reportData?.reportType) setSize(reportData.reportType as "small" | "medium" | "large" | "verbal")
         if (reportData?.isClientDataAdd !== undefined) setIncludeLogo(reportData.isClientDataAdd)
+        // signedBy arrives populated from the API; older reports have none.
+        const signatory = reportData?.signedBy
+        setSignedById(typeof signatory === "object" ? (signatory?._id ?? "") : (signatory ?? ""))
 
         // Always fetch the full gem document so nested finalApproval data is complete
         const gemId =
@@ -133,6 +159,7 @@ export function ReportConfigurationPage() {
       const updates = {
         reportType: size,
         isClientDataAdd: includeLogo,
+        signedBy: signedById || null,
       }
       if (report) {
         const updatedReport = await reportsApi.updateReport(report._id, updates)
@@ -277,6 +304,9 @@ export function ReportConfigurationPage() {
     window.open(report.reportUrl, "_blank")
   }
 
+  const selectedSignatory = testers.find((t) => t.id === signedById)
+  const signatureName = selectedSignatory?.name || signatoryName(report?.signedBy)
+
   const currentGem = gem || (report && typeof report.gemId === "object" ? report.gemId : null)
 
   if (!currentGem) {
@@ -349,6 +379,29 @@ export function ReportConfigurationPage() {
                   </RadioGroup>
                 </div>
 
+                {/* Only the medium and large layouts print a typed signature field. */}
+                {(size === "medium" || size === "large") && (
+                  <div className='space-y-3'>
+                    <Label htmlFor='signed-by'>{SIGNATORY_ROLE}</Label>
+                    <Select value={signedById || undefined} onValueChange={setSignedById}>
+                      <SelectTrigger id='signed-by' className='w-full h-11'>
+                        <SelectValue placeholder={signatureName} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {testers.map((tester) => (
+                          <SelectItem key={tester.id} value={tester.id}>
+                            {tester.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className='text-xs text-slate-500'>
+                      Printed under the left-hand signature line of the report, which stays blank
+                      for a handwritten signature.
+                    </p>
+                  </div>
+                )}
+
                 <div className='flex items-center space-x-2 border p-4 rounded-lg bg-slate-50'>
                   <Checkbox
                     id='include-logo'
@@ -417,12 +470,14 @@ export function ReportConfigurationPage() {
                       gem={currentGem}
                       includeLogo={includeLogo}
                       reportId={report?._id}
+                      signatureName={signatureName}
                     />
                   ) : size === "medium" ? (
                     <MediumReportPreview
                       gem={currentGem}
                       includeLogo={includeLogo}
                       reportId={report?._id}
+                      signatureName={signatureName}
                     />
                   ) : size === "verbal" ? (
                     <VerbalReportPreview

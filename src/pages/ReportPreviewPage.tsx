@@ -10,6 +10,7 @@ import { VerbalReportPreview } from "@/components/features/reports/VerbalReportP
 import { primeImageCache } from "@/components/features/gems/GemImage"
 import type { Image } from "@/lib/api/images"
 import type { Gem } from "@/lib/types"
+import { signatoryName, type ReportSignatory } from "@/lib/report-signature"
 
 interface ReportData {
   _id: string
@@ -17,6 +18,7 @@ interface ReportData {
   reportType: "small" | "medium" | "large" | "verbal"
   isClientDataAdd?: boolean
   gemId: string | Gem
+  signedBy?: ReportSignatory | string | null
   gemImages?: Array<Partial<Image> & { _id: string }>
 }
 
@@ -125,7 +127,12 @@ export function ReportPreviewPage() {
   const reportType = report?.reportType || "medium"
   const includeLogo = report?.isClientDataAdd ?? true
 
-  const previewProps = { gem, includeLogo, reportId: report?._id || gem._id }
+  const previewProps = {
+    gem,
+    includeLogo,
+    reportId: report?._id || gem._id,
+    signatureName: signatoryName(report?.signedBy),
+  }
 
   return (
     <div className='min-h-screen w-full overflow-x-hidden bg-slate-100/50 py-6 px-3 sm:py-12 sm:px-4'>

@@ -6,6 +6,7 @@ import type { Gem } from "@/lib/types"
 import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
 import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
+import { DEFAULT_SIGNATORY_NAME, SIGNATORY_ROLE } from "@/lib/report-signature"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 
@@ -13,6 +14,8 @@ interface MediumReportPreviewProps {
   gem: Gem
   includeLogo: boolean
   reportId?: string
+  /** Name typed under the left-hand signature rule; the report's configured signatory. */
+  signatureName?: string
 }
 
 const SCALE_FACTOR = 3
@@ -23,9 +26,9 @@ const SCALE_FACTOR = 3
  * most of the footer on empty margin, so the image is rendered oversized inside a window
  * cropped to the ink band. Keep the window inside those measured bounds.
  *
- * The typed block (Kishani Dayananda) is drawn to the same box so the two signature
- * fields line up: its dotted rule sits at the same fraction of the box height as the
- * printed rule inside the cropped image.
+ * The typed block (the report's configured signatory) is drawn to the same box so the
+ * two signature fields line up: its dotted rule sits at the same fraction of the box
+ * height as the printed rule inside the cropped image.
  */
 const SIG_IMG_W = 262
 const SIG_IMG_H = SIG_IMG_W / 1.5
@@ -36,7 +39,11 @@ const SIG_BOX_H = SIG_IMG_H * 0.44
 /* Fraction of the box above the rule: blank on the typed block, ink on the image. */
 const SIG_RULE_OFFSET = 0.49
 
-export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps) {
+export function MediumReportPreview({
+  gem,
+  reportId,
+  signatureName = DEFAULT_SIGNATORY_NAME,
+}: MediumReportPreviewProps) {
   const [downloading, setDownloading] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
 
@@ -145,7 +152,7 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
             transformOrigin: "top left",
           }}
         >
-          <DetailView gem={gem} reportId={reportId} target='screen' />
+          <DetailView gem={gem} reportId={reportId} signatureName={signatureName} target='screen' />
         </div>
       </div>
 
@@ -172,7 +179,7 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
             color: "#1e293b",
           }}
         >
-          <DetailView gem={gem} reportId={reportId} />
+          <DetailView gem={gem} reportId={reportId} signatureName={signatureName} />
         </div>
       </div>
     </div>
@@ -182,10 +189,12 @@ export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps)
 function DetailView({
   gem,
   reportId,
+  signatureName,
   target = "print",
 }: {
   gem: Gem
   reportId?: string
+  signatureName: string
   target?: RenderTarget
 }) {
   const finalData = gem.finalApproval || {}
@@ -219,9 +228,8 @@ function DetailView({
   const displayWeight = gem.weight ? `${Number(gem.weight).toFixed(2)} ${isJewelry ? "g" : "ct"}` : ""
 
   const rowsBlock1 = [
-    { label: "Date", value: formatDate(gem.updatedAt) },
     { label: "GRC Number", value: gem.gemId },
-    { label: "Color", value: gem.color },
+    { label: "Date", value: formatDate(gem.updatedAt) },
     {
       label: "Description",
       value: finalData.itemDescription || obs.itemDescription || gem.itemDescription,
@@ -236,12 +244,14 @@ function DetailView({
         : undefined,
     },
     { label: "Transparency", value: obs.transparency },
-    { label: "Species", value: obs.species },
-    { label: "Variety", value: finalData.finalVariety || obs.variety },
+    { label: "Clarity", value: obs.clarityGrade },
   ]
 
+  /* Results group */
   const rowsBlock2 = [
-    { label: "Clarity", value: obs.clarityGrade },
+    { label: "Color", value: gem.color },
+    { label: "Species", value: obs.species },
+    { label: "Variety", value: finalData.finalVariety || obs.variety },
     { label: "Comments", value: obs.comments },
   ]
 
@@ -326,7 +336,7 @@ function DetailView({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "6px",
+            gap: "3px",
             color: DARK,
             fontSize: "14px",
             fontFamily: "'Nimbus Mono Antique', 'Courier New', Courier, monospace",
@@ -342,12 +352,12 @@ function DetailView({
 
         <div style={{ height: "28px" }}></div>
 
-        {/* Block 2: Clarity & Comments */}
+        {/* Block 2: Results */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "6px",
+            gap: "3px",
             color: DARK,
             fontSize: "14px",
             fontFamily: "'Nimbus Mono Antique', 'Courier New', Courier, monospace",
@@ -357,6 +367,20 @@ function DetailView({
             marginTop: "10px",
           }}
         >
+          <div
+            style={{
+              alignSelf: "flex-start",
+              fontSize: "15px",
+              fontWeight: 700,
+              letterSpacing: "2px",
+              textTransform: "uppercase",
+              color: DARK,
+              paddingBottom: "3px",
+              marginBottom: "4px",
+            }}
+          >
+            Results
+          </div>
           {rowsBlock2.map((row, i) => (
             <TypewriterRow key={`r2-${i}`} label={row.label} value={row.value} />
           ))}
@@ -598,7 +622,7 @@ function DetailView({
             gap: "16px",
           }}
         >
-          <TypedSignature name='Kishani Dayananda' role='Consultant Gemologist' />
+          <TypedSignature name={signatureName} role={SIGNATORY_ROLE} />
 
           {/* Already-signed block, kept as the scanned asset */}
           <div
@@ -660,10 +684,10 @@ function TypedSignature({ name, role }: { name: string; role: string }) {
       >
         {name}
       </div>
-      <div style={{ fontSize: "9px", color: "#8d8b8b", fontWeight: 700, lineHeight: "8px", whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: "8px", color: "#8d8b8b", fontWeight: 750, lineHeight: "8px", whiteSpace: "nowrap" }}>
         {role}
       </div>
-      <div style={{ fontSize: "9px", color: "#8d8b8b", fontWeight: 700, lineHeight: "10px", whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: "8px", color: "#8d8b8b", fontWeight: 750, lineHeight: "10px", whiteSpace: "nowrap" }}>
         Gemological Report Of Ceylon (Pvt) Ltd
       </div>
     </div>

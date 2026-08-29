@@ -73,6 +73,11 @@ export interface ObservationData {
   specialNote?: string
   treatment?: string
   colour?: string
+  // Colour breakdown printed in the large report's DETAILS block. Tone and
+  // saturation are graded Low | Medium | High and print as ticked boxes.
+  hue?: string
+  tone?: string
+  saturation?: string
   colourGrade?: number
   finalGrade?: number
   isHeated?: boolean

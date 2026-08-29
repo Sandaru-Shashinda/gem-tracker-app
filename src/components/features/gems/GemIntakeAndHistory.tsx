@@ -393,6 +393,30 @@ export function GemIntakeAndHistory({
                       </div>
                     </div>
 
+                    {/* Colour Profile - hue / tone / saturation, as printed on the large report */}
+                    <div className='grid grid-cols-3 gap-3'>
+                      <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                        <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>Hue</p>
+                        <p className='font-medium text-[11px] text-slate-700'>
+                          {gem.test1.observations?.hue || "-"}
+                        </p>
+                      </div>
+                      <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                        <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>Tone</p>
+                        <p className='font-medium text-[11px] text-slate-700'>
+                          {gem.test1.observations?.tone || "-"}
+                        </p>
+                      </div>
+                      <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                        <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>
+                          Saturation
+                        </p>
+                        <p className='font-medium text-[11px] text-slate-700'>
+                          {gem.test1.observations?.saturation || "-"}
+                        </p>
+                      </div>
+                    </div>
+
                     {/* Grading */}
                     <div className='bg-indigo-50/30 p-2.5 rounded-lg border border-indigo-50'>
                       <div className='flex justify-between items-center mb-2'>
@@ -693,6 +717,30 @@ export function GemIntakeAndHistory({
                             Spec: {gem.test2.observations?.spectroscopy}
                           </p>
                         )}
+                      </div>
+                    </div>
+
+                    {/* Colour Profile - hue / tone / saturation, as printed on the large report */}
+                    <div className='grid grid-cols-3 gap-3'>
+                      <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                        <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>Hue</p>
+                        <p className='font-medium text-[11px] text-slate-700'>
+                          {gem.test2.observations?.hue || "-"}
+                        </p>
+                      </div>
+                      <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                        <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>Tone</p>
+                        <p className='font-medium text-[11px] text-slate-700'>
+                          {gem.test2.observations?.tone || "-"}
+                        </p>
+                      </div>
+                      <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                        <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>
+                          Saturation
+                        </p>
+                        <p className='font-medium text-[11px] text-slate-700'>
+                          {gem.test2.observations?.saturation || "-"}
+                        </p>
                       </div>
                     </div>
 

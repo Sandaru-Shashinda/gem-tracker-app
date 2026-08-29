@@ -37,6 +37,12 @@ export const CLARITY_EMERALD_OPTIONS = [
   { value: "HI", label: "HI (Highly Included)" },
 ]
 
+export const TONE_SATURATION_OPTIONS = [
+  { value: "Low", label: "Low" },
+  { value: "Medium", label: "Medium" },
+  { value: "High", label: "High" },
+]
+
 export const CLARITY_ENHANCEMENT_OPTIONS = [
   { value: "None", label: "None (No Significant Clarity Enhancement)" },
   { value: "E 1", label: "E 1 (Minor Clarity Enhancement)" },
@@ -521,6 +527,32 @@ export function getFormFieldsConfig({
       name: "finalGrade",
       label: "Final Grade",
       type: "rating",
+      className: "",
+    },
+    // Colour breakdown for the large report. Appended to the end of the array on
+    // purpose: GemAnalysisForm renders these fields by index, so inserting them
+    // higher up would shift every field below them.
+    {
+      name: "hue",
+      label: "Hue",
+      type: "text",
+      placeholder: "e.g. Violetish Blue",
+      className: "",
+    },
+    {
+      name: "tone",
+      label: "Tone",
+      type: "select",
+      placeholder: "Select Tone",
+      options: TONE_SATURATION_OPTIONS,
+      className: "",
+    },
+    {
+      name: "saturation",
+      label: "Saturation",
+      type: "select",
+      placeholder: "Select Saturation",
+      options: TONE_SATURATION_OPTIONS,
       className: "",
     },
   ]

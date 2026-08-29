@@ -86,6 +86,30 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
                 </span>
               </div>
             </div>
+
+            {/* Colour breakdown — printed in the large report's DETAILS block */}
+            <div>
+              <h4 className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 border-b pb-2'>
+                Colour Profile
+              </h4>
+              <div className='grid grid-cols-3 gap-3'>
+                {[
+                  { label: "Hue", value: gem.finalApproval.finalObservations?.hue },
+                  { label: "Tone", value: gem.finalApproval.finalObservations?.tone },
+                  { label: "Saturation", value: gem.finalApproval.finalObservations?.saturation },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className='p-4 bg-slate-50 rounded-xl border border-slate-100'
+                  >
+                    <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>
+                      {item.label}
+                    </p>
+                    <p className='text-base font-black text-slate-800'>{item.value || "N/A"}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className='space-y-8'>

@@ -239,6 +239,19 @@ export function GemAnalysisForm({
               setValue={setValue}
             />
           </div>
+          {/* Hue / tone / saturation — the colour breakdown printed on the large report */}
+          <div className='grid grid-cols-3 gap-4'>
+            {gradingFields.slice(11, 14).map((field) => (
+              <FormField
+                key={field.name}
+                config={field}
+                register={register}
+                errors={errors}
+                control={control}
+                setValue={setValue}
+              />
+            ))}
+          </div>
         </div>
 
         {weightField}
