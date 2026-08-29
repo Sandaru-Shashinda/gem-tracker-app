@@ -17,6 +17,25 @@ interface MediumReportPreviewProps {
 
 const SCALE_FACTOR = 3
 
+/**
+ * The signature asset is 1800x1200 (3:2) and mostly whitespace: its ink measures out to
+ * x 0.108-0.915, y 0.288-0.685 of the frame. Rendering it at its natural aspect spends
+ * most of the footer on empty margin, so the image is rendered oversized inside a window
+ * cropped to the ink band. Keep the window inside those measured bounds.
+ *
+ * The typed block (Kishani Dayananda) is drawn to the same box so the two signature
+ * fields line up: its dotted rule sits at the same fraction of the box height as the
+ * printed rule inside the cropped image.
+ */
+const SIG_IMG_W = 262
+const SIG_IMG_H = SIG_IMG_W / 1.5
+const SIG_CROP_TOP = SIG_IMG_H * 0.26
+const SIG_CROP_LEFT = SIG_IMG_W * 0.09
+const SIG_BOX_W = SIG_IMG_W * 0.85
+const SIG_BOX_H = SIG_IMG_H * 0.44
+/* Fraction of the box above the rule: blank on the typed block, ink on the image. */
+const SIG_RULE_OFFSET = 0.49
+
 export function MediumReportPreview({ gem, reportId }: MediumReportPreviewProps) {
   const [downloading, setDownloading] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
@@ -350,11 +369,22 @@ function DetailView({
           const clarityGrade = (obs.clarityGrade || "").replace(/[\s()]/g, "").toUpperCase()
           const isActive = (key: string) => key.toUpperCase() === clarityGrade
 
+          /**
+           * The selected grade is marked with a heavy border and a light tint rather
+           * than reversed type. The table prints at 9px on a 210mm-wide page, i.e.
+           * about 4.8pt: at that size white-on-black closes up as soon as ink spreads,
+           * and it disappears altogether when a browser's print dialog has background
+           * graphics switched off. Black-on-tint survives both, and the 2px rule still
+           * reads as the marker even if the fill is dropped.
+           */
           const activeTd: React.CSSProperties = {
             ...tdStyle,
-            backgroundColor: "#1a1a2e",
-            color: "#fff",
+            backgroundColor: "#c9cbdd",
+            color: "#000",
             fontWeight: 700,
+            border: "2px solid #111",
+            WebkitPrintColorAdjust: "exact",
+            printColorAdjust: "exact",
           }
 
           const grades = [
@@ -377,7 +407,8 @@ function DetailView({
                 color: "#111",
                 width: "100%",
                 maxWidth: "460px",
-                margin: "auto",
+                margin: "0 11px",
+                marginTop: "15px",
               }}
             >
               <table style={{ width: "90%", borderCollapse: "collapse", textAlign: "center" }}>
@@ -422,13 +453,25 @@ function DetailView({
           )
         })()}
 
-        <div style={{ margin: "auto" }}>
+        {/* Footer: QR verification code centred in the panel, terms line beneath it */}
+        <div
+          style={{
+            marginTop: "auto",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <div style={{ flexShrink: 0, lineHeight: 0 }}>
+            <QRCode value={verificationUrl} size={70} />
+          </div>
           <div
             style={{
               fontSize: "10px",
               color: "#666",
               fontFamily: "Arial, sans-serif",
-              marginTop: "20px",
+              textAlign: "center",
             }}
           >
             For complete terms and updates, visit www.grc.lk
@@ -536,27 +579,46 @@ function DetailView({
           )}
         </div>
 
-        {/* QR Code and Signature at Bottom Right */}
+        {/* Two signature fields at the bottom: consultant gemologist + authorized signature */}
+        {/*
+          The pair is wider than the panel's 420px content box, so the row stretches and
+          then claws back part of the side padding: 420 + 26 + 16 = 462px, which leaves
+          the block edges 6px inside the panel on the left and 36px from the page edge on
+          the right. Widen SIG_IMG_W further and these two numbers have to grow with it.
+        */}
         <div
           style={{
-            marginTop: "100px",
-            // width: "100%",
+            marginTop: "auto",
+            alignSelf: "stretch",
+            marginLeft: "-26px",
+            marginRight: "-16px",
             display: "flex",
-            justifyContent: "flex-start",
+            justifyContent: "space-between",
             alignItems: "flex-end",
             gap: "16px",
           }}
         >
-          <div style={{ flexShrink: 0, marginBottom: "60px" }}>
-            <QRCode value={verificationUrl} size={70} />
-          </div>
+          <TypedSignature name='Kishani Dayananda' role='Consultant Gemologist' />
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+          {/* Already-signed block, kept as the scanned asset */}
+          <div
+            style={{
+              position: "relative",
+              width: `${SIG_BOX_W}px`,
+              height: `${SIG_BOX_H}px`,
+              overflow: "hidden",
+              flexShrink: 0,
+            }}
+          >
             <img
               src={signatureImg}
-              alt='Signature'
+              alt='Authorized Signature'
               style={{
-                height: "200px",
+                position: "absolute",
+                top: `${-SIG_CROP_TOP}px`,
+                left: `${-SIG_CROP_LEFT}px`,
+                width: `${SIG_IMG_W}px`,
+                height: `${SIG_IMG_H}px`,
                 objectFit: "contain",
               }}
             />
@@ -564,5 +626,46 @@ function DetailView({
         </div>
       </div>
     </>
+  )
+}
+
+/**
+ * The unsigned counterpart to the scanned signature asset: same box, same rule position,
+ * so the pair reads as two matching fields with room to sign the left one by hand.
+ */
+function TypedSignature({ name, role }: { name: string; role: string }) {
+  return (
+    <div
+      style={{
+        width: `${SIG_BOX_W}px`,
+        height: `${SIG_BOX_H}px`,
+        display: "flex",
+        flexDirection: "column",
+        flexShrink: 0,
+        fontFamily: "Arial, Helvetica, sans-serif",
+      }}
+    >
+      {/* Left blank for the handwritten signature */}
+      <div style={{ height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`, flexShrink: 0 }}></div>
+      <div style={{ borderTop: "1.5px dotted #333", width: "70%" }}></div>
+      <div
+        style={{
+          fontSize: "10px",
+          fontWeight: 700,
+          color: "#1a1a1a",
+          lineHeight: "12px",
+          whiteSpace: "nowrap",
+          marginTop: "2px",
+        }}
+      >
+        {name}
+      </div>
+      <div style={{ fontSize: "9px", color: "#8d8b8b", fontWeight: 700, lineHeight: "8px", whiteSpace: "nowrap" }}>
+        {role}
+      </div>
+      <div style={{ fontSize: "9px", color: "#8d8b8b", fontWeight: 700, lineHeight: "10px", whiteSpace: "nowrap" }}>
+        Gemological Report Of Ceylon (Pvt) Ltd
+      </div>
+    </div>
   )
 }
