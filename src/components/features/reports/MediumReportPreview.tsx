@@ -495,6 +495,7 @@ function DetailView({
             flexDirection: "column",
             alignItems: "center",
             gap: "8px",
+            marginRight: "70px"
           }}
         >
           <div style={{ flexShrink: 0, lineHeight: 0 }}>
