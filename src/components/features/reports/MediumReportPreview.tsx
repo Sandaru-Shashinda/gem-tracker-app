@@ -27,7 +27,7 @@ const SCALE_FACTOR = 3
  * image is rendered oversized inside a window cropped to the ink band, leaving only ~1%
  * of the frame as padding on each side of it.
  */
-const SIG_CROP_X = 0.098
+// const SIG_CROP_X = 0.098
 const SIG_CROP_Y = 0.276
 const SIG_CROP_W = 0.828
 const SIG_CROP_H = 0.42
@@ -45,7 +45,7 @@ const SIG_BOX_H = (SIG_BOX_W * (SIG_CROP_H * 2)) / (SIG_CROP_W * 3)
 const SIG_IMG_W = SIG_BOX_W / SIG_CROP_W
 const SIG_IMG_H = SIG_IMG_W / 1.5
 const SIG_CROP_TOP = SIG_IMG_H * SIG_CROP_Y
-const SIG_CROP_LEFT = SIG_IMG_W * SIG_CROP_X
+// const SIG_CROP_LEFT = SIG_IMG_W * SIG_CROP_X
 /* Fraction of the box above the rule: blank on the typed block, ink on the image. */
 const SIG_RULE_OFFSET = (SIG_RULE_Y - SIG_CROP_Y) / SIG_CROP_H
 
@@ -650,6 +650,7 @@ function DetailView({
               style={{
                 position: "absolute",
                 top: `${-SIG_CROP_TOP}px`,
+                // left: `${-SIG_CROP_LEFT}px`,
                 width: `${SIG_IMG_W}px`,
                 height: `${SIG_IMG_H}px`,
               }}
