@@ -386,7 +386,7 @@ function ReportPage({
         </div>
       </div>
 
-      <div style={{ height: "29px" }} />
+      <div style={{ height: "29px", marginTop: "25px", }} />
 
       {/* ── RESULTS + TREATMENT ── */}
       <div
@@ -396,6 +396,7 @@ function ReportPage({
           gap: "0 40px",
           position: "relative",
           zIndex: 2,
+          
         }}
       >
         <div>
