@@ -6,6 +6,7 @@ import type { Gem } from "@/lib/types"
 import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
 import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
+import { layoutGemName } from "@/lib/gem-name"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo.png"
@@ -19,6 +20,10 @@ interface SmallReportPreviewProps {
 const CARD_WIDTH = 640
 const CARD_HEIGHT = 403.5
 const DOWNLOAD_SCALE = 3
+/** Right-hand column: gem image, the name under it, the weight, the QR code. */
+const NAME_COL_W = 160
+/** Size the name is set at when it fits the column on one line. */
+const NAME_FONT_SIZE = 18
 
 export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
   const finalData = gem.finalApproval || {}
@@ -104,6 +109,15 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
       setDownloadingPdf(false)
     }
   }
+
+  // Broken and sized once, so the on-screen card and the copy that becomes the PDF
+  // carry the same lines — a name left to wrap on its own splits at the column edge.
+  const gemName = layoutGemName(finalData.finalVariety || obs.variety, {
+    maxWidth: NAME_COL_W,
+    fontSize: NAME_FONT_SIZE,
+    fontFamily: "Arial, Helvetica, sans-serif",
+    fontWeight: 700,
+  })
 
   const rows = [
     { label: "GRC Number", value: gem.gemId },
@@ -257,7 +271,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
       {/* ── RIGHT COLUMN ── */}
       <div
         style={{
-          width: "160px",
+          width: `${NAME_COL_W}px`,
           flexShrink: 0,
           display: "flex",
           flexDirection: "column",
@@ -337,13 +351,19 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
           <p
             style={{
               fontWeight: 700,
-              fontSize: "18px",
+              fontSize: `${gemName.fontSize}px`,
               color: "#1e293b",
-              lineHeight: 1.2,
+              lineHeight: gemName.lines.length > 1 ? 1.15 : 1.2,
               margin: 0,
             }}
           >
-            {finalData.finalVariety || obs.variety || "—"}
+            {gemName.lines.length
+              ? gemName.lines.map((line) => (
+                  <span key={line} style={{ display: "block" }}>
+                    {line}
+                  </span>
+                ))
+              : "—"}
           </p>
 
           <p

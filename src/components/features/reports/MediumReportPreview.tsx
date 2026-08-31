@@ -7,6 +7,7 @@ import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
 import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
 import { DEFAULT_SIGNATORY_NAME, SIGNATORY_ROLE } from "@/lib/report-signature"
+import { layoutGemName } from "@/lib/gem-name"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 
@@ -19,6 +20,11 @@ interface MediumReportPreviewProps {
 }
 
 const SCALE_FACTOR = 3
+
+/** Right panel is 45% of the 1120px canvas, less its 32px/52px side padding. */
+const NAME_COL_W = 1120 * 0.45 - 32 - 52
+/** Size the name is set at when it fits the panel on one line. */
+const NAME_FONT_SIZE = 30
 
 /**
  * The signature asset is 1800x1200 (3:2) and mostly whitespace: its ink measures out to
@@ -236,6 +242,17 @@ function DetailView({
     (finalData.finalVariety || obs.variety || "").toLowerCase().includes("bracelet")
 
   const displayWeight = gem.weight ? `${Number(gem.weight).toFixed(2)} ${isJewelry ? "g" : "ct"}` : ""
+
+  // Broken and sized once, so the panel never splits a name at its own edge — the colour
+  // and species stay on one line and a long name steps down instead of running over.
+  const gemName = layoutGemName(finalData.finalVariety || obs.variety || "BLUE SAPPHIRE", {
+    maxWidth: NAME_COL_W,
+    fontSize: NAME_FONT_SIZE,
+    fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
+    fontWeight: 900,
+    letterSpacing: 0.5,
+    uppercase: true,
+  })
 
   const rowsBlock1 = [
     { label: "GRC Number", value: gem.gemId },
@@ -587,16 +604,21 @@ function DetailView({
 
           <h2
             style={{
-              fontSize: "30px",
+              fontSize: `${gemName.fontSize}px`,
               fontWeight: 900,
               margin: 0,
+              lineHeight: gemName.lines.length > 1 ? 1.15 : undefined,
               textTransform: "uppercase",
               color: "#111",
               letterSpacing: "0.5px",
               fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
             }}
           >
-            {finalData.finalVariety || obs.variety || "BLUE SAPPHIRE"}
+            {gemName.lines.map((line) => (
+              <span key={line} style={{ display: "block" }}>
+                {line}
+              </span>
+            ))}
           </h2>
 
           {gem.weight && (

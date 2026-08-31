@@ -6,6 +6,7 @@ import type { Gem } from "@/lib/types"
 import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
 import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
+import { layoutGemName } from "@/lib/gem-name"
 import { DEFAULT_SIGNATORY_NAME, SIGNATORY_ROLE } from "@/lib/report-signature"
 import {
   TREATMENT_ANSWERS,
@@ -204,6 +205,8 @@ const SIG_RULE_OFFSET = 0.49
 
 /* 268 + 24 gap + the signature pair (2 × 182.75 + 24) fills the 682px content width. */
 const NAME_COL_W = 268
+/** Size the name is set at when it fits the column on one line, which it does up to ~18 characters. */
+const NAME_FONT_SIZE = 22
 
 function ReportPage({
   gem,
@@ -239,6 +242,16 @@ function ReportPage({
     fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
     color: "#1a1a1a",
   }
+
+  // The column fits "Star Pink Sapphire" on one line by design; anything longer breaks
+  // before the colour and species rather than wrapping into the signatures beside it.
+  const gemName = layoutGemName(finalData.finalVariety || obs.variety, {
+    maxWidth: NAME_COL_W,
+    fontSize: NAME_FONT_SIZE,
+    fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
+    fontWeight: 900,
+    letterSpacing: 0.5,
+  })
 
   const columnStyle: React.CSSProperties = {
     ...COURIER,
@@ -568,14 +581,21 @@ function ReportPage({
           <p
             style={{
               ...COURIER,
-              fontSize: "22px",
+              fontSize: `${gemName.fontSize}px`,
               fontWeight: 900,
+              lineHeight: gemName.lines.length > 1 ? 1.15 : undefined,
               color: "#C5A259",
               letterSpacing: "0.5px",
               margin: "6px 0 0",
             }}
           >
-            {finalData.finalVariety || obs.variety || "—"}
+            {gemName.lines.length
+              ? gemName.lines.map((line) => (
+                  <span key={line} style={{ display: "block" }}>
+                    {line}
+                  </span>
+                ))
+              : "—"}
           </p>
           {gem.weight && (
             <p
