@@ -1,4 +1,9 @@
-import { Controller, type Control } from "react-hook-form"
+import {
+  Controller,
+  useWatch,
+  type Control,
+  type UseFormSetValue,
+} from "react-hook-form"
 import { FlaskConical } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { type TestFormValues } from "@/lib/validations/test"
@@ -7,10 +12,14 @@ import {
   TREATMENT_SECTIONS,
   type TreatmentAnswer,
   type TreatmentKey,
+  type TreatmentSection,
+  type TreatmentValues,
 } from "@/lib/treatments"
 
 interface TreatmentChecklistProps {
   control: Control<TestFormValues>
+  /** Writes a whole section at once — the "all Yes"/"all No" shortcuts. */
+  setValue: UseFormSetValue<TestFormValues>
   /** Read-only mode: the viewer may look at this stage but not write to it. */
   disabled?: boolean
 }
@@ -23,7 +32,27 @@ interface TreatmentChecklistProps {
  * large report distinguishes the three states, so the form has to be able to produce
  * all three.
  */
-export function TreatmentChecklist({ control, disabled }: TreatmentChecklistProps) {
+export function TreatmentChecklist({ control, setValue, disabled }: TreatmentChecklistProps) {
+  // The shortcuts read the section's current answers, both to light up the active
+  // button and to decide whether a click sets the section or clears it.
+  const treatments = useWatch({ control, name: "treatments" }) as
+    | Partial<TreatmentValues>
+    | undefined
+
+  const sectionReads = (section: TreatmentSection, answer: TreatmentAnswer) =>
+    section.items.every((item) => treatments?.[item.key] === answer)
+
+  const setSection = (section: TreatmentSection, answer: TreatmentAnswer) => {
+    // Same idiom as a single row: pressing the answer the whole section already reads
+    // clears it back to "not assessed".
+    const next = sectionReads(section, answer) ? "" : answer
+    section.items.forEach((item) =>
+      setValue(`treatments.${item.key}` as `treatments.${TreatmentKey}`, next, {
+        shouldDirty: true,
+      }),
+    )
+  }
+
   return (
     <div className='bg-purple-50/20 p-4 rounded-xl border border-purple-100/50 shadow-sm space-y-4'>
       <h4 className='text-[11px] font-black uppercase text-purple-600 tracking-widest border-b border-purple-100 pb-2 flex items-center gap-2'>
@@ -33,9 +62,36 @@ export function TreatmentChecklist({ control, disabled }: TreatmentChecklistProp
       <div className='grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5'>
         {TREATMENT_SECTIONS.map((section) => (
           <div key={section.title} className='space-y-2'>
-            <p className='text-[9px] font-bold text-purple-400 uppercase tracking-wider'>
-              {section.title}
-            </p>
+            <div className='flex items-center justify-between gap-2'>
+              <p className='text-[9px] font-bold text-purple-400 uppercase tracking-wider'>
+                {section.title}
+              </p>
+              <div className='flex items-center gap-1 shrink-0'>
+                {TREATMENT_ANSWERS.map((answer) => {
+                  const active = sectionReads(section, answer)
+                  return (
+                    <button
+                      key={answer}
+                      type='button'
+                      disabled={disabled}
+                      onClick={() => setSection(section, answer)}
+                      title={`Set every ${section.title} treatment to ${answer}`}
+                      className={`rounded-full border px-1.5 py-px text-[9px] font-bold uppercase tracking-wider transition-colors ${
+                        active
+                          ? "border-purple-300 bg-purple-100 text-purple-700"
+                          : "border-slate-200 bg-white/70 text-slate-400"
+                      } ${
+                        disabled
+                          ? "cursor-not-allowed opacity-60"
+                          : "cursor-pointer hover:border-purple-200 hover:text-purple-600"
+                      }`}
+                    >
+                      All {answer}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             <div className='space-y-1'>
               {section.items.map((item) => (
                 <TreatmentRow

@@ -180,7 +180,7 @@ export function GemAnalysisForm({ form, fields, disabled }: GemAnalysisFormProps
           {field(fields.isHeated)}
           {field(fields.showHeatInReport)}
         </div>
-        <TreatmentChecklist control={control} disabled={disabled} />
+        <TreatmentChecklist control={control} setValue={setValue} disabled={disabled} />
       </Section>
 
       {/* The lab's closing assessment of the stone. */}
