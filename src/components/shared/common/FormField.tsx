@@ -6,7 +6,17 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Star } from "lucide-react"
 import { type TestFormValues } from "@/lib/validations/test"
 
-export type FieldType = "text" | "number" | "textarea" | "select" | "custom-search" | "combobox" | "rating" | "checkbox"
+export type FieldType =
+  | "text"
+  | "number"
+  | "textarea"
+  | "select"
+  | "custom-search"
+  | "combobox"
+  | "rating"
+  | "checkbox"
+  /** A short scale shown as tick-boxes: still one answer, just not behind a dropdown. */
+  | "choice"
 
 export interface SelectOption {
   value: string
@@ -19,6 +29,8 @@ export interface FieldConfig {
   type: FieldType
   placeholder?: string
   step?: string
+  /** Number fields only: round to this many decimals on blur, so 5.3 is stored as "5.30". */
+  decimals?: number
   options?: SelectOption[]
   className?: string
   rows?: number
@@ -43,19 +55,33 @@ export interface FieldConfig {
 
 interface FormFieldProps {
   config: FieldConfig
+  /** Read-only mode: the viewer may look at this stage but not write to it. */
+  disabled?: boolean
   register: UseFormRegister<TestFormValues>
   errors: FieldErrors<TestFormValues>
   control?: Control<TestFormValues>
-  setValue?: (name: keyof TestFormValues, value: any) => void
+  setValue?: (
+    name: keyof TestFormValues,
+    value: any,
+    options?: { shouldValidate?: boolean; shouldDirty?: boolean },
+  ) => void
 }
 
-export function FormField({ config, register, errors, control, setValue }: FormFieldProps) {
+export function FormField({
+  config,
+  register,
+  errors,
+  control,
+  setValue,
+  disabled,
+}: FormFieldProps) {
   const {
     name,
     label,
     type,
     placeholder,
     step,
+    decimals,
     options,
     className,
     rows,
@@ -82,15 +108,32 @@ export function FormField({ config, register, errors, control, setValue }: FormF
     <div className={`space-y-1.5 ${type === "custom-search" || type === "combobox" ? "relative" : ""} ${className || ""}`}>
       {type !== "checkbox" && <label className='text-xs font-bold text-slate-500 uppercase'>{label}</label>}
 
-      {type === "text" && <Input placeholder={placeholder} {...register(name)} />}
+      {type === "text" && <Input placeholder={placeholder} disabled={disabled} {...register(name)} />}
 
       {type === "number" && (
-        <Input type='number' step={step} placeholder={placeholder} {...register(name)} />
+        <Input
+          type='number'
+          step={step}
+          placeholder={placeholder}
+          disabled={disabled}
+          {...register(name, {
+            // Normalising on blur rather than on every keystroke: formatting mid-typing
+            // would fight the caret as soon as someone types the first digit of "5.30".
+            onBlur: (e) => {
+              if (decimals === undefined) return
+              const raw = (e.target as HTMLInputElement).value
+              if (raw === "") return
+              const n = Number(raw)
+              if (Number.isFinite(n)) setValue?.(name, n.toFixed(decimals))
+            },
+          })}
+        />
       )}
 
       {type === "textarea" && (
         <Textarea
           placeholder={placeholder}
+          disabled={disabled}
           {...register(name)}
           className={`min-h-[${rows || 60}px]`}
         />
@@ -128,6 +171,7 @@ export function FormField({ config, register, errors, control, setValue }: FormF
               <div className='relative'>
                 <select
                   value={currentValue}
+                  disabled={disabled}
                   onChange={(e) => field.onChange(e.target.value)}
                   onBlur={field.onBlur}
                   className={`
@@ -172,10 +216,11 @@ export function FormField({ config, register, errors, control, setValue }: FormF
         <>
           <Input
             placeholder={placeholder}
+            disabled={disabled}
             value={searchValue}
             onChange={(e) => {
               onSearchChange?.(e.target.value)
-              setValue(name, e.target.value)
+              setValue(name, e.target.value, { shouldValidate: true, shouldDirty: true })
             }}
             onFocus={onFocus}
           />
@@ -201,10 +246,11 @@ export function FormField({ config, register, errors, control, setValue }: FormF
         <>
           <Input
             placeholder={placeholder}
+            disabled={disabled}
             value={comboboxSearch ?? ""}
             onChange={(e) => {
               onComboboxSearchChange?.(e.target.value)
-              setValue(name, e.target.value)
+              setValue(name, e.target.value, { shouldValidate: true, shouldDirty: true })
             }}
             onFocus={onComboboxFocus}
           />
@@ -222,7 +268,7 @@ export function FormField({ config, register, errors, control, setValue }: FormF
                         type='button'
                         className='w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-blue-700 transition-colors border-b last:border-0 border-slate-100'
                         onClick={() => {
-                          setValue(name, opt.value)
+                          setValue(name, opt.value, { shouldValidate: true, shouldDirty: true })
                           onComboboxSearchChange?.(opt.label)
                           onComboboxClose?.()
                         }}
@@ -251,6 +297,56 @@ export function FormField({ config, register, errors, control, setValue }: FormF
         </>
       )}
 
+      {/*
+        A single-answer scale drawn as tick-boxes rather than a dropdown, so the whole
+        scale is readable at a glance and matches how the large report prints it. The
+        stored value is still one option — ticking a box replaces the current answer
+        rather than adding to it.
+      */}
+      {type === "choice" && control && (
+        <Controller
+          name={name}
+          control={control}
+          render={({ field }) => {
+            const current = (field.value as string) || ""
+            const known = options || []
+            // A value saved under an older scale — an emerald "SI", a pre-rename "Exc" —
+            // has no box of its own, so give it one instead of showing an empty row.
+            const shown =
+              current && !known.some((opt) => opt.value === current)
+                ? [...known, { value: current, label: current }]
+                : known
+            return (
+              <div className='flex flex-wrap items-center gap-x-5 gap-y-2 pt-1'>
+                {shown.map((opt) => {
+                  const checked = opt.value === current
+                  // Unticking the current answer clears it back to ungraded, which is a
+                  // real state here: "not assessed" is not the same as "Low".
+                  const toggle = () => {
+                    if (!disabled) field.onChange(checked ? "" : opt.value)
+                  }
+                  return (
+                    <div key={opt.value} className='flex items-center gap-2'>
+                      <Checkbox checked={checked} disabled={disabled} onCheckedChange={toggle} />
+                      <label
+                        className={`text-sm font-medium leading-none ${
+                          disabled
+                            ? "cursor-not-allowed text-slate-400"
+                            : "cursor-pointer text-slate-700"
+                        }`}
+                        onClick={toggle}
+                      >
+                        {opt.label}
+                      </label>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          }}
+        />
+      )}
+
       {type === "rating" && control && (
         <Controller
           name={name}
@@ -260,12 +356,18 @@ export function FormField({ config, register, errors, control, setValue }: FormF
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`w-6 h-6 cursor-pointer transition-colors ${
+                  className={`w-6 h-6 transition-colors ${
+                    disabled ? "cursor-not-allowed" : "cursor-pointer"
+                  } ${
                     star <= ((field.value as number) || 0)
                       ? "fill-yellow-400 text-yellow-400"
-                      : "text-slate-200 hover:text-slate-300"
+                      : disabled
+                        ? "text-slate-200"
+                        : "text-slate-200 hover:text-slate-300"
                   }`}
-                  onClick={() => field.onChange(star)}
+                  onClick={() => {
+                    if (!disabled) field.onChange(star)
+                  }}
                 />
               ))}
             </div>
@@ -281,9 +383,17 @@ export function FormField({ config, register, errors, control, setValue }: FormF
             <div className='flex items-center gap-2 pt-1'>
               <Checkbox
                 checked={field.value as boolean}
+                disabled={disabled}
                 onCheckedChange={field.onChange}
               />
-              <label className='text-sm text-slate-700 font-medium leading-none cursor-pointer' onClick={() => field.onChange(!field.value)}>
+              <label
+                className={`text-sm font-medium leading-none ${
+                  disabled ? "cursor-not-allowed text-slate-400" : "cursor-pointer text-slate-700"
+                }`}
+                onClick={() => {
+                  if (!disabled) field.onChange(!field.value)
+                }}
+              >
                 {placeholder || label}
               </label>
             </div>

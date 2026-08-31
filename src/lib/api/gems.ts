@@ -1,5 +1,5 @@
 import type { Gem } from "../types"
-import { API_BASE_URL, fetchWithAuth } from "./config"
+import { API_BASE_URL, fetchWithAuth, describeFailure } from "./config"
 
 export const gemsApi = {
   getGems: async (
@@ -64,7 +64,7 @@ export const gemsApi = {
       body: JSON.stringify(payload),
     })
 
-    if (!response.ok) throw new Error("Failed to update gem")
+    if (!response.ok) throw new Error(await describeFailure(response, "Failed to update gem"))
     const data = await response.json()
 
     // Stage write endpoints return { gem, test1/test2/finalApproval } — merge into Gem shape

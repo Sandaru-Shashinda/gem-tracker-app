@@ -243,7 +243,7 @@ function ReportPage({
   const columnStyle: React.CSSProperties = {
     ...COURIER,
     fontSize: "11.5px",
-    fontWeight: 600,
+    fontWeight: 400,
     display: "flex",
     flexDirection: "column",
     gap: "3px",
@@ -721,7 +721,7 @@ function TreatmentRow({ label, value }: { label: string; value?: TreatmentAnswer
         fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
         color: "#1a1a1a",
         fontSize: "10px",
-        fontWeight: 600,
+        fontWeight: 400,
         lineHeight: 1.2,
       }}
     >
@@ -802,7 +802,10 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
  * switched off. The 2px rule still reads as the marker even if the fill is dropped.
  */
 function ClarityChart({ grade }: { grade?: string }) {
-  const normalized = (grade || "").replace(/[\s()]/g, "").toUpperCase()
+  const raw = (grade || "").replace(/[\s()]/g, "").toUpperCase()
+  // The top grade was recorded as "Exc" before the scale was renamed to FL (Flawless).
+  // Records still hold that value, so it has to keep marking the same cell.
+  const normalized = raw === "EXC" ? "FL" : raw
 
   const tdStyle: React.CSSProperties = {
     border: "1px solid #111",
@@ -826,7 +829,7 @@ function ClarityChart({ grade }: { grade?: string }) {
   }
 
   const grades = [
-    { key: "EXC", label: "Exc" },
+    { key: "FL", label: "FL" },
     { key: "LC1", label: "LC 1" },
     { key: "LC2", label: "LC 2" },
     { key: "EC1", label: "EC 1" },
@@ -842,7 +845,7 @@ function ClarityChart({ grade }: { grade?: string }) {
       <tbody>
         <tr>
           <td rowSpan={2} style={tdStyle}>
-            Excellent
+            Flawless
           </td>
           <td colSpan={2} style={tdStyle}>
             Loupe Clean

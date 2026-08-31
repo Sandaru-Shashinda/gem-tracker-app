@@ -11,6 +11,8 @@ import {
 
 interface TreatmentChecklistProps {
   control: Control<TestFormValues>
+  /** Read-only mode: the viewer may look at this stage but not write to it. */
+  disabled?: boolean
 }
 
 /**
@@ -21,7 +23,7 @@ interface TreatmentChecklistProps {
  * large report distinguishes the three states, so the form has to be able to produce
  * all three.
  */
-export function TreatmentChecklist({ control }: TreatmentChecklistProps) {
+export function TreatmentChecklist({ control, disabled }: TreatmentChecklistProps) {
   return (
     <div className='bg-purple-50/20 p-4 rounded-xl border border-purple-100/50 shadow-sm space-y-4'>
       <h4 className='text-[11px] font-black uppercase text-purple-600 tracking-widest border-b border-purple-100 pb-2 flex items-center gap-2'>
@@ -36,7 +38,13 @@ export function TreatmentChecklist({ control }: TreatmentChecklistProps) {
             </p>
             <div className='space-y-1'>
               {section.items.map((item) => (
-                <TreatmentRow key={item.key} name={item.key} label={item.label} control={control} />
+                <TreatmentRow
+                  key={item.key}
+                  name={item.key}
+                  label={item.label}
+                  control={control}
+                  disabled={disabled}
+                />
               ))}
             </div>
           </div>
@@ -50,10 +58,12 @@ function TreatmentRow({
   name,
   label,
   control,
+  disabled,
 }: {
   name: TreatmentKey
   label: string
   control: Control<TestFormValues>
+  disabled?: boolean
 }) {
   return (
     <Controller
@@ -68,12 +78,15 @@ function TreatmentRow({
               {TREATMENT_ANSWERS.map((answer) => (
                 <label
                   key={answer}
-                  className='flex items-center gap-1 cursor-pointer select-none'
+                  className={`flex items-center gap-1 select-none ${
+                    disabled ? "cursor-not-allowed" : "cursor-pointer"
+                  }`}
                   title={`${label}: ${answer}`}
                 >
                   <Checkbox
                     className='h-3.5 w-3.5'
                     checked={value === answer}
+                    disabled={disabled}
                     // Ticking the already-ticked box clears the answer back to
                     // "not assessed" rather than leaving it stuck.
                     onCheckedChange={() => field.onChange(value === answer ? "" : answer)}

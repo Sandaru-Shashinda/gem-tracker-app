@@ -25,10 +25,15 @@ export const treatmentsSchema = z
   .default(emptyTreatments)
 
 export const testSchema = z.object({
-  ri: z.string().min(1, "R.I. is required"),
+  // R.I. is a range: a doubly refractive stone gives two readings (birefringence), so
+  // both are recorded. riMax is left blank for a singly refractive stone, and every
+  // reader treats an absent riMax as "the same reading", not as missing data.
+  riMin: z.string().min(1, "R.I. is required"),
+  riMax: z.string().optional(),
   sg: z.string().optional(),
-  hardnessMin: z.string().optional(),
-  hardnessMax: z.string().optional(),
+  // Hardness is a single reading — what the lab measured, not the species' published
+  // range. That range lives on GemReference and is what this value is scored against.
+  hardness: z.string().optional(),
   cuttingShape: z.string().optional(),
   cuttingStyle: z.string().optional(),
   messurementX: z.string().optional(),

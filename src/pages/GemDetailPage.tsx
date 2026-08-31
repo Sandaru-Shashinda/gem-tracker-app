@@ -29,6 +29,7 @@ import { GemWorkflowStatus } from "@/components/features/gems/GemWorkflowStatus"
 import { GemAnalysisForm } from "@/components/features/gems/GemAnalysisForm"
 import { GemWeightEditor } from "@/components/features/gems/GemWeightEditor"
 import { ApproverCorrectionBanner } from "@/components/features/gems/ApproverCorrectionBanner"
+import { StageAccessBanner } from "@/components/features/gems/StageAccessBanner"
 import { GemFormActions } from "@/components/features/gems/GemFormActions"
 import { getFormFieldsConfig } from "@/components/shared/common/Formfieldsconfig"
 import { addCustomOption } from "@/lib/customDropdownOptions"
@@ -38,6 +39,7 @@ import {
   mapSourceToFormValues,
   syncSearchStates,
   resolveSubmitStatus,
+  resolveActiveStage,
 } from "@/lib/gemFormUtils"
 
 export function GemDetailPage() {
@@ -95,6 +97,22 @@ export function GemDetailPage() {
   // const canApprove = isAdmin
   const approverCorrectionActive = gemDetail?.finalApproval?.approverCorrectionRequested === true
 
+  // The one answer to "which stage does this user write to". The form is shown to every
+  // non-helper so they can read a gem's analysis, but only the owner of a stage can save
+  // to it — without this, submitting silently did nothing and Save Draft aimed a tester
+  // at the admin-only approval endpoint.
+  const activeStage = resolveActiveStage({
+    isAdmin,
+    isTester,
+    isT1,
+    isT2,
+    isAssignedT1,
+    isAssignedT2,
+    isEditingT1AfterSubmit,
+    isEditingT2AfterSubmit,
+  })
+  const canWrite = activeStage !== null
+
   // ── Search state ────────────────────────────────────────────────────────
   const [speciesSearch, setSpeciesSearch] = useState("")
   const [showSpeciesList, setShowSpeciesList] = useState(false)
@@ -118,6 +136,9 @@ export function GemDetailPage() {
   // Re-fetching the gem after a weight save would reset the analysis form and lose
   // whatever is being typed, so the saved value is patched in locally instead.
   const [savedWeight, setSavedWeight] = useState<number | null>(null)
+  // Submitting and drafting used to fail silently or throw only to the console, which is
+  // why a full, valid form could look like it was doing nothing at all.
+  const [formError, setFormError] = useState<string | null>(null)
 
   const makeOptionAdder =
     (field: "cuttingShape" | "crownStyle" | "pavilionStyle" | "colour") => (value: string) => {
@@ -148,10 +169,10 @@ export function GemDetailPage() {
     formState: { isSubmitting, isValid },
   } = form
 
-  const watchedRi = watch("ri")
+  const watchedRiMin = watch("riMin")
+  const watchedRiMax = watch("riMax")
   const watchedSg = watch("sg")
-  const watchedHardnessMin = watch("hardnessMin")
-  const watchedHardnessMax = watch("hardnessMax")
+  const watchedHardness = watch("hardness")
   const watchedSpecies = watch("species")
   const watchedVariety = watch("selectedVariety")
   const watchedColour = watch("colour")
@@ -165,7 +186,7 @@ export function GemDetailPage() {
     setColourSearch,
   }
 
-  const { scientificFields, identificationFields, gradingFields, textFields } = getFormFieldsConfig(
+  const fields = getFormFieldsConfig(
     {
       speciesSearch,
       setSpeciesSearch,
@@ -211,16 +232,14 @@ export function GemDetailPage() {
   useEffect(() => {
     console.log(gemDetail)
     if (!gemDetail) return
-    let activeData: any = null
-    if (isAdmin) {
-      activeData = isT1 ? gemDetail.test1 : isT2 ? gemDetail.test2 : gemDetail.finalApproval
-    } else if (isTester) {
-      if (isAssignedT2 && (isT2 || isEditingT2AfterSubmit)) {
-        activeData = gemDetail.test2
-      } else if (isAssignedT1 && (isT1 || isEditingT1AfterSubmit)) {
-        activeData = gemDetail.test1
-      }
-    }
+    const activeData: any =
+      activeStage === "test1"
+        ? gemDetail.test1
+        : activeStage === "test2"
+          ? gemDetail.test2
+          : activeStage === "finalApproval"
+            ? gemDetail.finalApproval
+            : null
     // Gems that bypassed testing have no Test 1 / Test 2 data to copy from, so
     // seed the approval form straight from the intake record.
     if (!activeData && gemDetail.skipTesting && isApproval) {
@@ -239,19 +258,7 @@ export function GemDetailPage() {
 
     reset(values)
     syncSearchStates(values, searchSetters)
-  }, [
-    gemDetail,
-    isT1,
-    isT2,
-    isApproval,
-    isAdmin,
-    isTester,
-    isAssignedT1,
-    isAssignedT2,
-    isEditingT1AfterSubmit,
-    isEditingT2AfterSubmit,
-    reset,
-  ])
+  }, [gemDetail, activeStage, isApproval, reset])
 
   useEffect(() => {
     if (!gem?.customerId) return
@@ -270,19 +277,27 @@ export function GemDetailPage() {
 
   // Auto-suggestion based on scientific measurements.
   useEffect(() => {
-    if (!watchedRi && !watchedSg && !watchedHardnessMin && !watchedHardnessMax) {
+    if (!watchedRiMin && !watchedRiMax && !watchedSg && !watchedHardness) {
       setSuggestions([])
       return
     }
     referencesApi
-      .searchReferences(watchedRi, watchedSg, watchedHardnessMin, watchedHardnessMax)
+      .searchReferences(watchedRiMin, watchedRiMax, watchedSg, watchedHardness)
       .then(setSuggestions)
       .catch((err) => console.error("Failed to get suggestions:", err))
-  }, [watchedRi, watchedSg, watchedHardnessMin, watchedHardnessMax])
+  }, [watchedRiMin, watchedRiMax, watchedSg, watchedHardness])
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
   const onSubmit: SubmitHandler<TestFormValues> = async (data) => {
+    setFormError(null)
+    if (!canWrite) {
+      setFormError(
+        "This gem is not assigned to you at its current stage, so there is nothing to submit. " +
+          "Ask an admin to assign it to you or to move it to your stage.",
+      )
+      return
+    }
     try {
       if (isAdmin) {
         const status = resolveSubmitStatus(user?.role, isT1, isT2)
@@ -299,23 +314,33 @@ export function GemDetailPage() {
       }
     } catch (error) {
       console.error("Failed to submit:", error)
+      setFormError(error instanceof Error ? error.message : "Failed to submit the analysis.")
     }
   }
 
   const handleDraft = async () => {
+    setFormError(null)
+    if (!activeStage) {
+      setFormError("This gem is not assigned to you at its current stage, so there is no draft to save.")
+      return
+    }
     try {
       setIsActionLoading(true)
       const data = watch()
-      const stage = isApproval ? "finalApproval" : isT1 ? "test1" : "test2"
-      const status = isApproval
-        ? GEM_STATUSES.DRAFT_APPROVAL
-        : isT1
-          ? GEM_STATUSES.DRAFT_TEST_1
-          : GEM_STATUSES.DRAFT_TEST_2
-      await handleSaveDraft(gem!._id, stage, data, status)
+      // The draft goes to the stage this user owns. Deriving it from the gem's status
+      // instead sent a tester's draft to the admin-only approval endpoint, and could
+      // write Test 1's work into the Test 2 record.
+      const status =
+        activeStage === "finalApproval"
+          ? GEM_STATUSES.DRAFT_APPROVAL
+          : activeStage === "test1"
+            ? GEM_STATUSES.DRAFT_TEST_1
+            : GEM_STATUSES.DRAFT_TEST_2
+      await handleSaveDraft(gem!._id, activeStage, data, status)
       setDetailVersion((v) => v + 1)
     } catch (error) {
       console.error("Failed to save draft:", error)
+      setFormError(error instanceof Error ? error.message : "Failed to save the draft.")
     } finally {
       setIsActionLoading(false)
     }
@@ -415,12 +440,12 @@ export function GemDetailPage() {
   const color = watchedColour || intakeGem.color
 
   const weightEditor = (
-    <GemWeightEditor
-      gemId={gem._id}
-      weight={weight}
-      onSaved={setSavedWeight}
-    />
+    <GemWeightEditor gemId={gem._id} weight={weight} onSaved={setSavedWeight} disabled={!canWrite} />
   )
+
+  // Distinguishes "someone else has this stage" from "this gem is not at your stage",
+  // which is the difference between waiting on a colleague and waiting on the workflow.
+  const assignedElsewhere = isTester && ((isT1 && !isAssignedT1) || (isT2 && !isAssignedT2))
 
   const showDraftButton =
     !isEditingT1AfterSubmit &&
@@ -445,7 +470,7 @@ export function GemDetailPage() {
             user={user}
             customer={customer}
             suggestions={suggestions}
-            watchedHardness={watchedHardnessMin as string}
+            watchedHardness={watchedHardness as string}
             onReset={reset}
             onWatch={watch}
             onSetSpeciesSearch={setSpeciesSearch}
@@ -467,6 +492,10 @@ export function GemDetailPage() {
             )}
 
             {/* {(canTest || (canApprove && isApproval)) && !isHelper ? ( */}
+            {!canWrite && !isHelper && (
+              <StageAccessBanner assignedElsewhere={assignedElsewhere} />
+            )}
+
             {!isHelper ? (
               <Card className='p-6'>
                 <form
@@ -478,17 +507,17 @@ export function GemDetailPage() {
                 >
                   <GemAnalysisForm
                     form={form}
-                    scientificFields={scientificFields}
-                    identificationFields={identificationFields}
-                    gradingFields={gradingFields}
-                    textFields={textFields}
+                    fields={fields}
                     weightField={weightEditor}
+                    disabled={!canWrite}
                   />
                   <GemFormActions
                     isSubmitting={isSubmitting}
                     isActionLoading={isActionLoading}
                     isValid={isValid}
                     showDraft={showDraftButton}
+                    canWrite={canWrite}
+                    error={formError}
                     onDraft={handleDraft}
                   />
                 </form>

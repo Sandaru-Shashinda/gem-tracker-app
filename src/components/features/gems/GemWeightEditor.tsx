@@ -9,6 +9,8 @@ interface GemWeightEditorProps {
   gemId: string
   weight?: number | null
   onSaved: (weight: number) => void
+  /** Read-only mode: the viewer may look at this gem but not write to it. */
+  disabled?: boolean
 }
 
 const toDraft = (weight?: number | null) => (weight != null ? String(weight) : "")
@@ -17,7 +19,7 @@ const toDraft = (weight?: number | null) => (weight != null ? String(weight) : "
  * Weight belongs to the gem itself, not to a test stage, so it is saved on its own
  * rather than with the surrounding analysis form.
  */
-export function GemWeightEditor({ gemId, weight, onSaved }: GemWeightEditorProps) {
+export function GemWeightEditor({ gemId, weight, onSaved, disabled }: GemWeightEditorProps) {
   const { refreshGems } = useGem()
   const [draft, setDraft] = useState(toDraft(weight))
   const [error, setError] = useState<string | null>(null)
@@ -73,7 +75,7 @@ export function GemWeightEditor({ gemId, weight, onSaved }: GemWeightEditorProps
             min='0'
             placeholder='14.36'
             value={draft}
-            disabled={isSaving}
+            disabled={isSaving || disabled}
             onChange={(e) => {
               setDraft(e.target.value)
               setError(null)
@@ -82,7 +84,7 @@ export function GemWeightEditor({ gemId, weight, onSaved }: GemWeightEditorProps
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault()
-                save()
+                if (!disabled) save()
               }
             }}
             className='pr-9'
@@ -97,7 +99,7 @@ export function GemWeightEditor({ gemId, weight, onSaved }: GemWeightEditorProps
             size='sm'
             variant='outline'
             onClick={save}
-            disabled={isSaving || !isDirty}
+            disabled={isSaving || !isDirty || disabled}
           >
             {isSaving ? <Loader2 size={14} className='animate-spin' /> : "Save"}
           </Button>

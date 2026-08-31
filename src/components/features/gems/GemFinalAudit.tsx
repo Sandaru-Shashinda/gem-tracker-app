@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 
 import { type Gem, type ObservationData } from "@/lib/types"
 import { TREATMENT_SECTIONS, hasAnyTreatment, normalizeTreatments } from "@/lib/treatments"
+import { formatRi, formatHardness } from "@/lib/gemFormUtils"
 
 interface GemFinalAuditProps {
   gem: Gem
@@ -45,7 +46,7 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
                 <div className='p-4 bg-slate-50 rounded-xl border border-slate-100'>
                   <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>R.I.</p>
                   <p className='text-base font-black text-slate-800'>
-                    {gem.finalApproval.ri ?? "N/A"}
+                    {formatRi(gem.finalApproval)}
                   </p>
                 </div>
                 <div className='p-4 bg-slate-50 rounded-xl border border-slate-100'>
@@ -57,11 +58,7 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
                 <div className='p-4 bg-slate-50 rounded-xl border border-slate-100'>
                   <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>Hardness</p>
                   <p className='text-base font-black text-slate-800'>
-                    {gem.finalApproval.hardnessMin && gem.finalApproval.hardnessMax
-                      ? gem.finalApproval.hardnessMin === gem.finalApproval.hardnessMax
-                        ? gem.finalApproval.hardnessMin
-                        : `${gem.finalApproval.hardnessMin} - ${gem.finalApproval.hardnessMax}`
-                      : gem.finalApproval.hardnessMin || gem.finalApproval.hardnessMax || "N/A"}
+                    {formatHardness(gem.finalApproval)}
                   </p>
                 </div>
               </div>

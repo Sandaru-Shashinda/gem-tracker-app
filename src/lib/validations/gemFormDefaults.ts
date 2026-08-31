@@ -7,10 +7,10 @@ import { emptyTreatments } from "@/lib/treatments"
  * defaults and leak into the next gem loaded.
  */
 export const makeFormDefaults = (): TestFormValues => ({
-  ri: "",
+  riMin: "",
+  riMax: "",
   sg: "",
-  hardnessMin: "",
-  hardnessMax: "",
+  hardness: "",
   species: "",
   selectedVariety: "",
   itemDescription: "",

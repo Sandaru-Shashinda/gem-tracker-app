@@ -198,10 +198,10 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, stage: "test1" | "test2", data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        ri: data.ri ? parseFloat(data.ri) : undefined,
+        riMin: data.riMin ? parseFloat(data.riMin) : undefined,
+        riMax: data.riMax ? parseFloat(data.riMax) : undefined,
         sg: data.sg ? parseFloat(data.sg) : undefined,
-        hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
-        hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
+        hardness: data.hardness ? parseFloat(data.hardness) : undefined,
         selectedVariety: data.selectedVariety,
         // Colour is stored on the gem, not on this stage.
         color: data.colour,
@@ -254,10 +254,10 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        ri: data.ri ? parseFloat(data.ri) : undefined,
+        riMin: data.riMin ? parseFloat(data.riMin) : undefined,
+        riMax: data.riMax ? parseFloat(data.riMax) : undefined,
         sg: data.sg ? parseFloat(data.sg) : undefined,
-        hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
-        hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
+        hardness: data.hardness ? parseFloat(data.hardness) : undefined,
         finalVariety: data.selectedVariety,
         // Colour is stored on the gem, not on this stage.
         color: data.colour,
@@ -316,10 +316,10 @@ export function GemProvider({ children }: { children: ReactNode }) {
       let update: any = {}
       if (stage === "finalApproval") {
         update = {
-          ri: data.ri ? parseFloat(data.ri) : undefined,
+          riMin: data.riMin ? parseFloat(data.riMin) : undefined,
+          riMax: data.riMax ? parseFloat(data.riMax) : undefined,
           sg: data.sg ? parseFloat(data.sg) : undefined,
-          hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
-          hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
+          hardness: data.hardness ? parseFloat(data.hardness) : undefined,
           finalVariety: data.selectedVariety,
           // Colour is stored on the gem, not on this stage.
           color: data.colour,
@@ -360,10 +360,10 @@ export function GemProvider({ children }: { children: ReactNode }) {
         }
       } else {
         update = {
-          ri: data.ri ? parseFloat(data.ri) : undefined,
+          riMin: data.riMin ? parseFloat(data.riMin) : undefined,
+          riMax: data.riMax ? parseFloat(data.riMax) : undefined,
           sg: data.sg ? parseFloat(data.sg) : undefined,
-          hardnessMin: data.hardnessMin ? parseFloat(data.hardnessMin) : undefined,
-          hardnessMax: data.hardnessMax ? parseFloat(data.hardnessMax) : undefined,
+          hardness: data.hardness ? parseFloat(data.hardness) : undefined,
           selectedVariety: data.selectedVariety,
           // Colour is stored on the gem, not on this stage.
           color: data.colour,

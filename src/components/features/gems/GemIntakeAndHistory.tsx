@@ -8,6 +8,7 @@ import { TREATMENT_SECTIONS, normalizeTreatments } from "@/lib/treatments"
 import { gemsApi } from "@/lib/api/gems"
 import { getImageById, deleteImage } from "@/lib/api/images"
 import { useGem } from "@/hooks/useGemStore"
+import { formatRi, formatHardness, hasRi } from "@/lib/gemFormUtils"
 import {
   Dialog,
   DialogContent,
@@ -269,10 +270,10 @@ export function GemIntakeAndHistory({
       )}
 
       {/* Historical Blocks */}
-      {(gem.test1?.ri || gem.test2?.ri) &&
+      {(hasRi(gem.test1) || hasRi(gem.test2)) &&
         user?.role === UserRole.ADMIN && (
           <div className='space-y-4'>
-            {gem.test1?.ri ? (
+            {hasRi(gem.test1) ? (
               <Card className='p-4 border-l-4 border-l-blue-500 shadow-sm'>
                 <div className='flex justify-between items-center mb-2'>
                   <span className='text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded'>
@@ -302,14 +303,9 @@ export function GemIntakeAndHistory({
                 <div className='text-xs space-y-1'>
                   <p>
                     RI:{" "}
-                    <strong>{gem.test1.ri}</strong>{" "}
+                    <strong>{formatRi(gem.test1)}</strong>{" "}
                     | SG: <strong>{gem.test1.sg}</strong> | Hardness:{" "}
-                    <strong>
-                      {gem.test1.hardnessMin}
-                      {gem.test1.hardnessMax && gem.test1.hardnessMax !== gem.test1.hardnessMin
-                        ? ` - ${gem.test1.hardnessMax}`
-                        : ""}
-                    </strong>
+                    <strong>{formatHardness(gem.test1)}</strong>
                   </p>
                   <div className='mt-3 space-y-3'>
                     {/* Identification */}
@@ -591,7 +587,7 @@ export function GemIntakeAndHistory({
                                   {new Date(h.timestamp).toLocaleString()}
                                 </span>
                               </div>
-                              RI: {h.ri} | SG: {h.sg} |
+                              RI: {formatRi(h)} | SG: {h.sg} |
                               Var: {h.selectedVariety}
                             </div>
                           ))}
@@ -601,7 +597,7 @@ export function GemIntakeAndHistory({
                 </div>
               </Card>
             ) : null}
-            {gem.test2?.ri ? (
+            {hasRi(gem.test2) ? (
               <Card className='p-4 border-l-4 border-l-purple-500 shadow-sm'>
                 <div className='flex justify-between items-center mb-2'>
                   <span className='text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded'>
@@ -631,14 +627,9 @@ export function GemIntakeAndHistory({
                 <div className='text-xs space-y-1'>
                   <p>
                     RI:{" "}
-                    <strong>{gem.test2.ri}</strong>{" "}
+                    <strong>{formatRi(gem.test2)}</strong>{" "}
                     | SG: <strong>{gem.test2.sg}</strong> | Hardness:{" "}
-                    <strong>
-                      {gem.test2.hardnessMin}
-                      {gem.test2.hardnessMax && gem.test2.hardnessMax !== gem.test2.hardnessMin
-                        ? ` - ${gem.test2.hardnessMax}`
-                        : ""}
-                    </strong>
+                    <strong>{formatHardness(gem.test2)}</strong>
                   </p>
                   <div className='mt-3 space-y-3'>
                     {/* Identification */}
@@ -920,7 +911,7 @@ export function GemIntakeAndHistory({
                                   {new Date(h.timestamp).toLocaleString()}
                                 </span>
                               </div>
-                              RI: {h.ri} | SG: {h.sg} |
+                              RI: {formatRi(h)} | SG: {h.sg} |
                               Var: {h.selectedVariety}
                             </div>
                           ))}

@@ -18,7 +18,7 @@ export const SIMPLE_GRADE_OPTIONS = [
 ]
 
 export const CLARITY_OTHER_OPTIONS = [
-  { value: "Exc", label: "Exc (Excellent)" },
+  { value: "FL", label: "FL (Flawless)" },
   { value: "LC 1", label: "LC 1" },
   { value: "LC 2", label: "LC 2" },
   { value: "EC 1", label: "EC 1" },
@@ -30,11 +30,17 @@ export const CLARITY_OTHER_OPTIONS = [
 ]
 
 export const CLARITY_EMERALD_OPTIONS = [
+  { value: "FL", label: "FL (Flawless)" },
   { value: "LC", label: "LC (Loop Clean)" },
   { value: "EC", label: "EC (Eye Clean)" },
-  { value: "SI", label: "SI (Slightly Included)" },
   { value: "MI", label: "MI (Moderately Included)" },
   { value: "HI", label: "HI (Highly Included)" },
+]
+
+export const TRANSPARENCY_OPTIONS = [
+  { value: "Transparent", label: "Transparent" },
+  { value: "Translucent", label: "Translucent" },
+  { value: "Opaque", label: "Opaque" },
 ]
 
 export const TONE_SATURATION_OPTIONS = [
@@ -141,7 +147,11 @@ interface FormFieldsConfigParams {
   showVarietyList: boolean
   setShowVarietyList: (value: boolean) => void
   filteredVarieties: any[]
-  setValue: (name: any, value: any) => void
+  setValue: (
+    name: any,
+    value: any,
+    options?: { shouldValidate?: boolean; shouldDirty?: boolean },
+  ) => void
   watchedSpecies?: string
   watchedVariety?: string
   // Combobox states for Crown Style
@@ -252,197 +262,25 @@ export function getFormFieldsConfig({
 
   const allColourOptions = mergeCustom(colorOptions, customOpts.colour as typeof colorOptions)
 
-  const scientificFields: FieldConfig[] = [
-    {
-      name: "ri",
-      label: "R.I.",
-      type: "number",
-      step: "0.001",
-      placeholder: "e.g. 1.62",
-      className: "",
-    },
-    {
-      name: "sg",
-      label: "S.G.",
-      type: "number",
-      step: "0.01",
-      placeholder: "e.g. 2.66",
-      className: "",
-    },
-    {
-      name: "hardnessMin",
-      label: "Min Hardness",
-      type: "number",
-      step: "0.01",
-      placeholder: "e.g. 7.0",
-      className: "",
-    },
-    {
-      name: "hardnessMax",
-      label: "Max Hardness",
-      type: "number",
-      step: "0.01",
-      placeholder: "e.g. 7.5",
-      className: "",
-    },
-    {
-      name: "cuttingShape",
-      label: "Cutting Shape",
-      type: "combobox",
-      placeholder: "e.g. Round",
-      comboboxOptions: allCuttingShapeOptions,
-      comboboxSearch: cuttingShapeSearch,
-      onComboboxSearchChange: (value) => {
-        setCuttingShapeSearch(value)
-        setShowCuttingShapeList(true)
-      },
-      onComboboxFocus: () => setShowCuttingShapeList(true),
-      showComboboxList: showCuttingShapeList,
-      onComboboxClose: () => setShowCuttingShapeList(false),
-      onAddCustomOption: onAddCuttingShapeOption,
-      className: "",
-    },
-    {
-      name: "isMixCut",
-      label: "Is Mix Cut",
-      type: "checkbox",
-      className: "",
-    },
-    {
-      name: "crownStyle",
-      label: "Crown Style",
-      type: "combobox",
-      placeholder: "e.g. Brilliant cut",
-      comboboxOptions: allCrownStyleOptions,
-      comboboxSearch: crownStyleSearch,
-      onComboboxSearchChange: (value) => {
-        setCrownStyleSearch(value)
-        setShowCrownStyleList(true)
-      },
-      onComboboxFocus: () => setShowCrownStyleList(true),
-      showComboboxList: showCrownStyleList,
-      onComboboxClose: () => setShowCrownStyleList(false),
-      onAddCustomOption: onAddCrownStyleOption,
-      className: "",
-    },
-    {
-      name: "pavilionStyle",
-      label: "Pavilion Style",
-      type: "combobox",
-      placeholder: "e.g. Step cut",
-      comboboxOptions: allPavilionStyleOptions,
-      comboboxSearch: pavilionStyleSearch,
-      onComboboxSearchChange: (value) => {
-        setPavilionStyleSearch(value)
-        setShowPavilionStyleList(true)
-      },
-      onComboboxFocus: () => setShowPavilionStyleList(true),
-      showComboboxList: showPavilionStyleList,
-      onComboboxClose: () => setShowPavilionStyleList(false),
-      onAddCustomOption: onAddPavilionStyleOption,
-      className: "",
-    },
-    {
-      name: "transparency",
-      label: "Transparency",
-      type: "text",
-      placeholder: "e.g. Transparent",
-      className: "",
-    },
-    {
-      name: "messurementX",
-      label: "Measurement X (Length)",
-      type: "number",
-      step: "0.01",
-      placeholder: "L",
-      className: "",
-    },
-    {
-      name: "messurementY",
-      label: "Measurement Y (Width)",
-      type: "number",
-      step: "0.01",
-      placeholder: "W",
-      className: "",
-    },
-    {
-      name: "messurementZ",
-      label: "Measurement Z (Height)",
-      type: "number",
-      step: "0.01",
-      placeholder: "H",
-      className: "",
-    },
-  ]
-
-  const identificationFields: FieldConfig[] = [
-    {
-      name: "species",
-      label: "Species",
-      type: "custom-search",
-      placeholder: "Type to search species...",
-      searchValue: speciesSearch,
-      onSearchChange: (value) => {
-        setSpeciesSearch(value)
-        setShowSpeciesList(true)
-      },
-      onFocus: () => setShowSpeciesList(true),
-      filteredItems: filteredSpecies,
-      showList: showSpeciesList,
-      onItemSelect: (species) => {
-        setValue("species", species)
-        setSpeciesSearch(species)
-        setShowSpeciesList(false)
-      },
-      onCloseList: () => setShowSpeciesList(false),
-      renderItem: (species) => species,
-    },
-    {
-      name: "selectedVariety",
-      label: "Variety",
-      type: "custom-search",
-      placeholder: "Type to search variety...",
-      searchValue: varietySearch,
-      onSearchChange: (value) => {
-        setVarietySearch(value)
-        setShowVarietyList(true)
-      },
-      onFocus: () => setShowVarietyList(true),
-      filteredItems: filteredVarieties,
-      showList: showVarietyList,
-      onItemSelect: (reference) => {
-        setValue("selectedVariety", reference.variety)
-        setVarietySearch(reference.variety)
-        setShowVarietyList(false)
-      },
-      onCloseList: () => setShowVarietyList(false),
-      renderItem: (reference) => reference.variety,
-    },
-    {
-      name: "isEmerald",
-      label: "Is Emerald",
-      type: "checkbox",
-      className: "",
-    },
-    {
-      name: "spectroscopy",
-      label: "Spectroscopy",
+  // Every field the analysis form renders, keyed by name and declared in the order it
+  // appears on screen. This used to be four arrays that GemAnalysisForm indexed into,
+  // so moving any field silently shifted every field below it. Keying by name makes the
+  // layout in GemAnalysisForm the single place the order is expressed.
+  const fields = {
+    // 1. Item Description
+    itemDescription: {
+      name: "itemDescription",
+      label: "Item Description",
       type: "textarea",
-      placeholder: "Spectroscopy details",
-      className: "",
-      rows: 3,
+      placeholder: "Detailed item description...",
+      rows: 4,
     },
-    {
-      name: "origin",
-      label: "Origin",
-      type: "text",
-      placeholder: "Colombia",
-      className: "",
-    },
-  ]
 
-  const gradingFields: FieldConfig[] = [
-    {
+    // 2. Weight is not part of this form — it is saved straight to the gem by
+    //    GemWeightEditor, which GemAnalysisForm renders in this slot.
+
+    // 3. Colour
+    colour: {
       name: "colour",
       label: "Colour",
       type: "combobox",
@@ -459,27 +297,111 @@ export function getFormFieldsConfig({
       onAddCustomOption: onAddColourOption,
       className: "",
     },
-    {
+    hue: {
+      name: "hue",
+      label: "Hue",
+      type: "text",
+      placeholder: "e.g. Violetish Blue",
+      className: "",
+    },
+    // Tick-boxes rather than dropdowns: three steps is short enough to show in full,
+    // and it mirrors the ticked row the large report prints.
+    tone: {
+      name: "tone",
+      label: "Tone",
+      type: "choice",
+      options: TONE_SATURATION_OPTIONS,
+      className: "",
+    },
+    saturation: {
+      name: "saturation",
+      label: "Saturation",
+      type: "choice",
+      options: TONE_SATURATION_OPTIONS,
+      className: "",
+    },
+    colourGrade: {
       name: "colourGrade",
       label: "Colour Grade",
       type: "rating",
       className: "",
     },
-    {
+
+    // 4. Shape
+    cuttingShape: {
+      name: "cuttingShape",
+      label: "Shape",
+      type: "combobox",
+      placeholder: "e.g. Round",
+      comboboxOptions: allCuttingShapeOptions,
+      comboboxSearch: cuttingShapeSearch,
+      onComboboxSearchChange: (value) => {
+        setCuttingShapeSearch(value)
+        setShowCuttingShapeList(true)
+      },
+      onComboboxFocus: () => setShowCuttingShapeList(true),
+      showComboboxList: showCuttingShapeList,
+      onComboboxClose: () => setShowCuttingShapeList(false),
+      onAddCustomOption: onAddCuttingShapeOption,
+      className: "",
+    },
+    grade: {
       name: "grade",
-      label: "Grade",
+      label: "Shape Grade",
       type: "select",
       placeholder: "Select Grade",
       options: GRADE_OPTIONS,
       className: "",
     },
-    {
+
+    // 5. Cutting Style
+    crownStyle: {
+      name: "crownStyle",
+      label: "Crown Style",
+      type: "combobox",
+      placeholder: "e.g. Brilliant cut",
+      comboboxOptions: allCrownStyleOptions,
+      comboboxSearch: crownStyleSearch,
+      onComboboxSearchChange: (value) => {
+        setCrownStyleSearch(value)
+        setShowCrownStyleList(true)
+      },
+      onComboboxFocus: () => setShowCrownStyleList(true),
+      showComboboxList: showCrownStyleList,
+      onComboboxClose: () => setShowCrownStyleList(false),
+      onAddCustomOption: onAddCrownStyleOption,
+      className: "",
+    },
+    pavilionStyle: {
+      name: "pavilionStyle",
+      label: "Pavilion Style",
+      type: "combobox",
+      placeholder: "e.g. Step cut",
+      comboboxOptions: allPavilionStyleOptions,
+      comboboxSearch: pavilionStyleSearch,
+      onComboboxSearchChange: (value) => {
+        setPavilionStyleSearch(value)
+        setShowPavilionStyleList(true)
+      },
+      onComboboxFocus: () => setShowPavilionStyleList(true),
+      showComboboxList: showPavilionStyleList,
+      onComboboxClose: () => setShowPavilionStyleList(false),
+      onAddCustomOption: onAddPavilionStyleOption,
+      className: "",
+    },
+    cuttingGrade: {
       name: "cuttingGrade",
-      label: "Cutting",
+      label: "Cutting Grade",
       type: "rating",
       className: "",
     },
-    {
+    isMixCut: {
+      name: "isMixCut",
+      label: "Is Mix Cut",
+      type: "checkbox",
+      className: "",
+    },
+    polishingGrade: {
       name: "polishingGrade",
       label: "Polishing",
       type: "select",
@@ -487,7 +409,7 @@ export function getFormFieldsConfig({
       options: SIMPLE_GRADE_OPTIONS,
       className: "",
     },
-    {
+    proportionGrade: {
       name: "proportionGrade",
       label: "Proportion",
       type: "select",
@@ -495,103 +417,222 @@ export function getFormFieldsConfig({
       options: SIMPLE_GRADE_OPTIONS,
       className: "",
     },
-    {
+
+    // 6. Dimensions (mm) — length, width, height, always to 2 decimals.
+    messurementX: {
+      name: "messurementX",
+      label: "Length (mm)",
+      type: "number",
+      step: "0.01",
+      decimals: 2,
+      placeholder: "0.00",
+      className: "",
+    },
+    messurementY: {
+      name: "messurementY",
+      label: "Width (mm)",
+      type: "number",
+      step: "0.01",
+      decimals: 2,
+      placeholder: "0.00",
+      className: "",
+    },
+    messurementZ: {
+      name: "messurementZ",
+      label: "Height (mm)",
+      type: "number",
+      step: "0.01",
+      decimals: 2,
+      placeholder: "0.00",
+      className: "",
+    },
+
+    // 7. R.I. — a range, because a doubly refractive stone gives two readings.
+    riMin: {
+      name: "riMin",
+      label: "R.I. Min",
+      type: "number",
+      step: "0.001",
+      placeholder: "e.g. 1.762",
+      className: "",
+    },
+    riMax: {
+      name: "riMax",
+      label: "R.I. Max",
+      type: "number",
+      step: "0.001",
+      placeholder: "e.g. 1.770",
+      className: "",
+    },
+
+    // 8. S.G. — one reading, and never a required field.
+    sg: {
+      name: "sg",
+      label: "S.G.",
+      type: "number",
+      step: "0.01",
+      placeholder: "e.g. 2.66",
+      className: "",
+    },
+
+    // 9. Hardness — one reading.
+    hardness: {
+      name: "hardness",
+      label: "Hardness",
+      type: "number",
+      step: "0.01",
+      placeholder: "e.g. 7.5",
+      className: "",
+    },
+
+    // 10. Spectrum
+    spectroscopy: {
+      name: "spectroscopy",
+      label: "Spectrum",
+      type: "textarea",
+      placeholder: "Spectrum details",
+      className: "",
+      rows: 3,
+    },
+
+    // 11. Inclusions — camera capture and per-GRC photos are future development, so
+    //     there is no field for it yet.
+
+    // 12. Transparency
+    transparency: {
+      name: "transparency",
+      label: "Transparency",
+      type: "choice",
+      options: TRANSPARENCY_OPTIONS,
+      className: "",
+    },
+
+    // 13. Clarity
+    clarityGrade: {
       name: "clarityGrade",
-      label: "Clarity Grade",
-      type: "select",
-      placeholder: "Select Clarity",
+      label: "Clarity",
+      type: "choice",
       options: clarityOptions,
       className: "",
     },
-    {
+    clarityEnhancement: {
       name: "clarityEnhancement",
       label: "Clarity Enhancement",
-      type: "select",
-      placeholder: "Select Enhancement",
+      type: "choice",
       options: CLARITY_ENHANCEMENT_OPTIONS,
       className: "",
     },
-    {
-      name: "isHeated",
-      label: "Is Heated",
+    isEmerald: {
+      name: "isEmerald",
+      label: "Is Emerald",
       type: "checkbox",
       className: "",
     },
-    {
-      name: "showHeatInReport",
-      label: "Show Heat In Report",
-      type: "checkbox",
-      className: "",
-    },
-    {
-      name: "finalGrade",
-      label: "Final Grade",
-      type: "rating",
-      className: "",
-    },
-    // Colour breakdown for the large report. Appended to the end of the array on
-    // purpose: GemAnalysisForm renders these fields by index, so inserting them
-    // higher up would shift every field below them.
-    {
-      name: "hue",
-      label: "Hue",
-      type: "text",
-      placeholder: "e.g. Violetish Blue",
-      className: "",
-    },
-    {
-      name: "tone",
-      label: "Tone",
-      type: "select",
-      placeholder: "Select Tone",
-      options: TONE_SATURATION_OPTIONS,
-      className: "",
-    },
-    {
-      name: "saturation",
-      label: "Saturation",
-      type: "select",
-      placeholder: "Select Saturation",
-      options: TONE_SATURATION_OPTIONS,
-      className: "",
-    },
-  ]
 
-  const textFields: FieldConfig[] = [
-    {
+    // 14. Species
+    species: {
+      name: "species",
+      label: "Species",
+      type: "custom-search",
+      placeholder: "Type to search species...",
+      searchValue: speciesSearch,
+      onSearchChange: (value) => {
+        setSpeciesSearch(value)
+        setShowSpeciesList(true)
+      },
+      onFocus: () => setShowSpeciesList(true),
+      filteredItems: filteredSpecies,
+      showList: showSpeciesList,
+      onItemSelect: (species) => {
+        setValue("species", species, { shouldValidate: true, shouldDirty: true })
+        setSpeciesSearch(species)
+        setShowSpeciesList(false)
+      },
+      onCloseList: () => setShowSpeciesList(false),
+      renderItem: (species) => species,
+    },
+
+    // 15. Variety
+    selectedVariety: {
+      name: "selectedVariety",
+      label: "Variety",
+      type: "custom-search",
+      placeholder: "Type to search variety...",
+      searchValue: varietySearch,
+      onSearchChange: (value) => {
+        setVarietySearch(value)
+        setShowVarietyList(true)
+      },
+      onFocus: () => setShowVarietyList(true),
+      filteredItems: filteredVarieties,
+      showList: showVarietyList,
+      onItemSelect: (reference) => {
+        setValue("selectedVariety", reference.variety, { shouldValidate: true, shouldDirty: true })
+        setVarietySearch(reference.variety)
+        setShowVarietyList(false)
+      },
+      onCloseList: () => setShowVarietyList(false),
+      renderItem: (reference) => reference.variety,
+    },
+
+    // 16. Geographic Origin
+    origin: {
+      name: "origin",
+      label: "Geographic Origin",
+      type: "text",
+      placeholder: "Colombia",
+      className: "",
+    },
+
+    // 17. Comments
+    comments: {
       name: "comments",
       label: "Comments",
       type: "textarea",
       placeholder: "Laboratory comments...",
       rows: 4,
     },
-    {
-      name: "itemDescription",
-      label: "Item Description",
-      type: "textarea",
-      placeholder: "Detailed item description...",
-      rows: 4,
-    },
-    {
+    specialNote: {
       name: "specialNote",
       label: "Special Note",
       type: "textarea",
       placeholder: "Special internal notes...",
       rows: 4,
     },
-    {
+
+    // 18. Treatments — this note qualifies the per-treatment checklist that
+    //     TreatmentChecklist renders directly beneath it.
+    treatment: {
       name: "treatment",
       label: "Treatment",
       type: "textarea",
       placeholder: "Treatment details...",
       rows: 4,
     },
-  ]
+    isHeated: {
+      name: "isHeated",
+      label: "Is Heated",
+      type: "checkbox",
+      className: "",
+    },
+    showHeatInReport: {
+      name: "showHeatInReport",
+      label: "Show Heat In Report",
+      type: "checkbox",
+      className: "",
+    },
 
-  return {
-    scientificFields,
-    identificationFields,
-    gradingFields,
-    textFields,
-  }
+    // Closing out: the lab overall assessment of the stone.
+    finalGrade: {
+      name: "finalGrade",
+      label: "Final Grade",
+      type: "rating",
+      className: "",
+    },
+  } satisfies Record<string, FieldConfig>
+
+  return fields
 }
+
+/** The shape GemAnalysisForm renders: one entry per field, addressed by name. */
+export type GemFormFields = ReturnType<typeof getFormFieldsConfig>

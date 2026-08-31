@@ -3,17 +3,17 @@ import { API_BASE_URL, fetchWithAuth } from "./config"
 
 export const referencesApi = {
   searchReferences: async (
-    ri?: string,
+    riMin?: string,
+    riMax?: string,
     sg?: string,
-    hardnessMin?: string,
-    hardnessMax?: string,
+    hardness?: string,
   ): Promise<GemReference[]> => {
     let url = `${API_BASE_URL}/references/search`
     const params = new URLSearchParams()
-    if (ri) params.append("ri", ri)
+    if (riMin) params.append("riMin", riMin)
+    if (riMax) params.append("riMax", riMax)
     if (sg) params.append("sg", sg)
-    if (hardnessMin) params.append("hardnessMin", hardnessMin)
-    if (hardnessMax) params.append("hardnessMax", hardnessMax)
+    if (hardness) params.append("hardness", hardness)
     if (params.toString()) url += `?${params.toString()}`
 
     const response = await fetchWithAuth(url)

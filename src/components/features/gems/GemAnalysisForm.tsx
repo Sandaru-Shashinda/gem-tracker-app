@@ -1,27 +1,74 @@
 import { type ReactNode } from "react"
-import { Microscope, Search } from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { FormField, type FieldConfig } from "@/components/shared/common/FormField"
 import { TreatmentChecklist } from "@/components/features/gems/TreatmentChecklist"
+import { type GemFormFields } from "@/components/shared/common/Formfieldsconfig"
 import { type TestFormValues } from "@/lib/validations/test"
 
 interface GemAnalysisFormProps {
   form: UseFormReturn<TestFormValues>
-  scientificFields: FieldConfig[]
-  identificationFields: FieldConfig[]
-  gradingFields: FieldConfig[]
-  textFields: FieldConfig[]
-  /** Rendered after Color & Grade — the gem's weight is saved outside this form. */
+  /** Every field config, addressed by name — see getFormFieldsConfig. */
+  fields: GemFormFields
+  /** Rendered in the Weight slot; the gem's weight is saved outside this form. */
   weightField?: ReactNode
+  /**
+   * Read-only mode. The form still renders in full so anyone can read a gem's analysis;
+   * only the stage's owner can change it. See resolveActiveStage.
+   */
+  disabled?: boolean
 }
 
+const TONES = {
+  slate: "border-slate-200/70 bg-slate-50/40",
+  blue: "border-blue-100/70 bg-blue-50/30",
+  amber: "border-amber-100/70 bg-amber-50/20",
+} as const
+
+const HEADINGS = {
+  slate: "text-slate-500",
+  blue: "text-blue-600",
+  amber: "text-amber-600",
+} as const
+
+const RULES = {
+  slate: "border-slate-200/70",
+  blue: "border-blue-100",
+  amber: "border-amber-100",
+} as const
+
+function Section({
+  title,
+  tone = "slate",
+  children,
+}: {
+  title: string
+  tone?: keyof typeof TONES
+  children: ReactNode
+}) {
+  return (
+    <section className={`space-y-4 rounded-xl border p-4 shadow-sm ${TONES[tone]}`}>
+      <h4
+        className={`border-b pb-2 text-[11px] font-black uppercase tracking-widest ${RULES[tone]} ${HEADINGS[tone]}`}
+      >
+        {title}
+      </h4>
+      {children}
+    </section>
+  )
+}
+
+/**
+ * The analysis form, laid out in the order the lab fills it in: description and weight,
+ * then colour, then the cut, then the measured properties, then identification, and
+ * finally the written findings. Sections read top to bottom in that one order — this
+ * component is the only place that order is expressed, and the field configs it draws
+ * from are keyed by name so a section can be moved without disturbing any other.
+ */
 export function GemAnalysisForm({
   form,
-  scientificFields,
-  identificationFields,
-  gradingFields,
-  textFields,
+  fields,
   weightField,
+  disabled,
 }: GemAnalysisFormProps) {
   const {
     register,
@@ -30,299 +77,121 @@ export function GemAnalysisForm({
     formState: { errors },
   } = form
 
+  // A plain function, not a component: returning the element keeps FormField in the same
+  // position in the tree across renders, so text inputs don't lose focus mid-keystroke.
+  const field = (config: FieldConfig) => (
+    <FormField
+      key={config.name}
+      config={config}
+      register={register}
+      errors={errors}
+      control={control}
+      setValue={setValue}
+      disabled={disabled}
+    />
+  )
+
   return (
-    <div className='space-y-8'>
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-        {/* Left Column: Metrics & Cut */}
-        <div className='space-y-6'>
-          <h3 className='font-bold text-slate-900 flex items-center gap-2 border-b pb-2 uppercase text-xs tracking-widest'>
-            <Microscope size={16} className='text-blue-600' /> Technical Data
-          </h3>
+    // The fieldset is a second line of defence: every control is disabled explicitly
+    // above, and this catches anything added later that forgets to honour the prop.
+    // `min-w-0` because a fieldset otherwise refuses to shrink below its content.
+    <fieldset disabled={disabled} className='min-w-0 space-y-6'>
+      {/* 1–2. Item description and weight */}
+      <Section title='Item & Weight'>
+        {field(fields.itemDescription)}
+        {weightField}
+      </Section>
 
-          {/* RI, SG, Hardness Group */}
-          <div className='bg-slate-50/30 p-3 rounded-lg border border-slate-100/50 space-y-2'>
-            <div className='grid grid-cols-2 gap-3'>
-              <FormField
-                config={scientificFields[0]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-              <FormField
-                config={scientificFields[1]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-            </div>
-            {/* Min/Max Hardness side by side */}
-            <div className='grid grid-cols-2 gap-3'>
-              <FormField
-                config={scientificFields[2]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-              <FormField
-                config={scientificFields[3]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-            </div>
-          </div>
-
-          {/* CUT & STYLE SECTION (Grouped as requested) */}
-          <div className='bg-blue-50/30 p-4 rounded-xl border border-blue-100/50 space-y-4 shadow-sm'>
-            <div className='flex items-center justify-between border-b border-blue-100/50 pb-2'>
-              <h4 className='text-[11px] font-black uppercase text-blue-600 tracking-widest'>
-                Cut & Style Details
-              </h4>
-              <div className='flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-blue-100 shadow-sm'>
-                <span className='text-[9px] font-bold text-blue-400 uppercase'>Cut Grade:</span>
-                <FormField
-                  config={gradingFields[3]}
-                  register={register}
-                  errors={errors}
-                  control={control}
-                  setValue={setValue}
-                />
-              </div>
-            </div>
-
-            <div className='grid grid-cols-1 gap-4'>
-              <FormField
-                config={scientificFields[4]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-              <FormField
-                config={scientificFields[5]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-              <div className='grid grid-cols-2 gap-4'>
-                <FormField
-                  config={scientificFields[6]}
-                  register={register}
-                  errors={errors}
-                  control={control}
-                  setValue={setValue}
-                />
-                <FormField
-                  config={scientificFields[7]}
-                  register={register}
-                  errors={errors}
-                  control={control}
-                  setValue={setValue}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Transparency & Measurements */}
-          <div className='space-y-4'>
-            <FormField
-              config={scientificFields[8]}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-            <div className='grid grid-cols-3 gap-4'>
-              {scientificFields.slice(9, 12).map((field) => (
-                <FormField
-                  key={field.name}
-                  config={field}
-                  register={register}
-                  errors={errors}
-                  control={control}
-                  setValue={setValue}
-                />
-              ))}
-            </div>
-          </div>
+      {/* 3. Colour, and the breakdown printed on the large report */}
+      <Section title='Colour' tone='amber'>
+        {field(fields.colour)}
+        {field(fields.hue)}
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          {field(fields.tone)}
+          {field(fields.saturation)}
         </div>
+        {field(fields.colourGrade)}
+      </Section>
 
-        {/* Right Column: Identification & Finish */}
-        <div className='space-y-6'>
-          <h3 className='font-bold text-slate-900 flex items-center gap-2 border-b pb-2 uppercase text-xs tracking-widest'>
-            <Search size={16} className='text-amber-600' /> Laboratory Grading
-          </h3>
-
-          {/* Identification Block */}
-          <div className='grid grid-cols-2 gap-4'>
-            <FormField
-              config={identificationFields[0]}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-            <FormField
-              config={identificationFields[1]}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-          </div>
-          <FormField
-            config={identificationFields[2]}
-            register={register}
-            errors={errors}
-            control={control}
-            setValue={setValue}
-          />
-          <FormField
-            config={identificationFields[4]}
-            register={register}
-            errors={errors}
-            control={control}
-            setValue={setValue}
-          />
-          <FormField
-            config={identificationFields[3]}
-            register={register}
-            errors={errors}
-            control={control}
-            setValue={setValue}
-          />
-
-          {/* FINISH SECTION (Separate as requested) */}
-          <div className='bg-amber-50/20 p-4 rounded-xl border border-amber-100/50 shadow-sm space-y-4'>
-            <h4 className='text-[11px] font-black uppercase text-amber-600 tracking-widest border-b border-amber-100 pb-2'>
-              Finish & Polish
-            </h4>
-            <div className='grid grid-cols-2 gap-4'>
-              <FormField
-                config={gradingFields[4]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-              <FormField
-                config={gradingFields[5]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-            </div>
-          </div>
-
-          {/* Color & Clarity */}
-          <div className='bg-amber-50/20 p-4 rounded-xl border border-amber-100/50 shadow-sm space-y-4'>
-            <h4 className='text-[11px] font-black uppercase text-amber-600 tracking-widest border-b border-amber-100 pb-2'>
-              Color & Grade
-            </h4>
-            <div className='grid grid-cols-2 gap-4'>
-              <FormField
-                config={gradingFields[0]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-              <FormField
-                config={gradingFields[1]}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-            </div>
-            {/* Hue / tone / saturation — the colour breakdown printed on the large report */}
-            <div className='grid grid-cols-3 gap-4'>
-              {gradingFields.slice(11, 14).map((field) => (
-                <FormField
-                  key={field.name}
-                  config={field}
-                  register={register}
-                  errors={errors}
-                  control={control}
-                  setValue={setValue}
-                />
-              ))}
-            </div>
-          </div>
-
-          {weightField}
-
-          <div className='grid grid-cols-2 gap-4 pt-4'>
-            <FormField
-              config={gradingFields[6]}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-            <FormField
-              config={gradingFields[7]}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-          </div>
-
-          {/* Heat */}
-          <div className='flex items-center gap-6 p-4 rounded-xl border border-slate-100/50 bg-slate-50/30'>
-            <FormField
-              config={gradingFields[8]}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-            <FormField
-              config={gradingFields[9]}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-          </div>
-
-          {/* Overall Lab Assessment */}
-          <div className='p-4 rounded-xl shadow-lg'>
-            <FormField
-              config={gradingFields[10]}
-              register={register}
-              errors={errors}
-              control={control}
-              setValue={setValue}
-            />
-          </div>
-
-          {/* Text Fields */}
-          <div className='space-y-4'>
-            {textFields.map((field) => (
-              <FormField
-                key={field.name}
-                config={field}
-                register={register}
-                errors={errors}
-                control={control}
-                setValue={setValue}
-              />
-            ))}
-          </div>
+      {/* 4–5. Shape, then cutting style */}
+      <Section title='Shape & Cutting Style' tone='blue'>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          {field(fields.cuttingShape)}
+          {field(fields.grade)}
         </div>
-      </div>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          {field(fields.crownStyle)}
+          {field(fields.pavilionStyle)}
+        </div>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+          {field(fields.cuttingGrade)}
+          {field(fields.polishingGrade)}
+          {field(fields.proportionGrade)}
+        </div>
+        {field(fields.isMixCut)}
+      </Section>
 
-      {/* Treatment checklist — full width, so the three categories sit side by side.
-          Placed under the Treatment note it qualifies. */}
-      <TreatmentChecklist control={control} />
-    </div>
+      {/* 6. Dimensions, always to 2 decimals */}
+      <Section title='Dimensions (mm)' tone='blue'>
+        <div className='grid grid-cols-3 gap-4'>
+          {field(fields.messurementX)}
+          {field(fields.messurementY)}
+          {field(fields.messurementZ)}
+        </div>
+      </Section>
+
+      {/* 7–9. R.I. as a range, then the two single readings */}
+      <Section title='Optical & Physical Properties' tone='blue'>
+        <div className='grid grid-cols-2 gap-4'>
+          {field(fields.riMin)}
+          {field(fields.riMax)}
+        </div>
+        <div className='grid grid-cols-2 gap-4'>
+          {field(fields.sg)}
+          {field(fields.hardness)}
+        </div>
+      </Section>
+
+      {/* 10. Spectrum. 11 (Inclusions) is future development — camera capture and
+          per-GRC photos land here when they are built. */}
+      <Section title='Spectrum'>{field(fields.spectroscopy)}</Section>
+
+      {/* 12–13. Transparency and clarity */}
+      <Section title='Transparency & Clarity' tone='amber'>
+        {field(fields.transparency)}
+        {field(fields.clarityGrade)}
+        {field(fields.clarityEnhancement)}
+        {field(fields.isEmerald)}
+      </Section>
+
+      {/* 14–16. Identification */}
+      <Section title='Identification'>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          {field(fields.species)}
+          {field(fields.selectedVariety)}
+        </div>
+        {field(fields.origin)}
+      </Section>
+
+      {/* 17. Comments */}
+      <Section title='Comments'>
+        {field(fields.comments)}
+        {field(fields.specialNote)}
+      </Section>
+
+      {/* 18. Treatments — the written note, the heat flags it summarises, and the
+          full checklist those three qualify. */}
+      <Section title='Treatments' tone='amber'>
+        {field(fields.treatment)}
+        <div className='flex flex-wrap items-center gap-6'>
+          {field(fields.isHeated)}
+          {field(fields.showHeatInReport)}
+        </div>
+        <TreatmentChecklist control={control} disabled={disabled} />
+      </Section>
+
+      {/* The lab's closing assessment of the stone. */}
+      <Section title='Overall Assessment'>{field(fields.finalGrade)}</Section>
+    </fieldset>
   )
 }

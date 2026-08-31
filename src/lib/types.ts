@@ -117,10 +117,12 @@ export interface Gem {
   }
 
   test1?: null | {
+    riMin?: number
+    riMax?: number
+    /** Written before R.I. became a range again; read as a fallback for both ends. */
     ri?: number
     sg?: number
-    hardnessMin?: number
-    hardnessMax?: number
+    hardness?: number
     observations?: ObservationData
     selectedVariety?: string
     notes?: string
@@ -132,10 +134,12 @@ export interface Gem {
   }
 
   test2?: null | {
+    riMin?: number
+    riMax?: number
+    /** Written before R.I. became a range again; read as a fallback for both ends. */
     ri?: number
     sg?: number
-    hardnessMin?: number
-    hardnessMax?: number
+    hardness?: number
     observations?: ObservationData
     selectedVariety?: string
     notes?: string
@@ -147,10 +151,12 @@ export interface Gem {
   }
 
   finalApproval?: null | {
+    riMin?: number
+    riMax?: number
+    /** Written before R.I. became a range again; read as a fallback for both ends. */
     ri?: number
     sg?: number
-    hardnessMin?: number
-    hardnessMax?: number
+    hardness?: number
     finalObservations?: ObservationData
     finalVariety?: string
     itemDescription?: string
