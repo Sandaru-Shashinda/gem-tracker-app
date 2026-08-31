@@ -175,7 +175,6 @@ export function GemDetailPage() {
   const watchedHardness = watch("hardness")
   const watchedSpecies = watch("species")
   const watchedVariety = watch("selectedVariety")
-  const watchedColour = watch("colour")
 
   const searchSetters: SearchSetters = {
     setSpeciesSearch,
@@ -246,6 +245,7 @@ export function GemDetailPage() {
       const seeded = makeFormDefaults()
       seeded.itemDescription = gemDetail.itemDescription || ""
       seeded.colour = gemDetail.color || ""
+      seeded.weight = gemDetail.weight == null ? "" : String(gemDetail.weight)
       reset(seeded)
       syncSearchStates(seeded, searchSetters)
       return
@@ -253,7 +253,14 @@ export function GemDetailPage() {
 
     if (!activeData) return
 
-    const values = mapSourceToFormValues(activeData, gemDetail.color)
+    // Only the approval is seeded from the gem's latest colour and weight. Testers get
+    // no seed, so neither tester's reading pre-fills the other's form.
+    const values = mapSourceToFormValues(
+      activeData,
+      activeStage === "finalApproval"
+        ? { colour: gemDetail.color, weight: gemDetail.weight }
+        : {},
+    )
     if (!values.itemDescription) values.itemDescription = gemDetail.itemDescription || ""
 
     reset(values)
@@ -402,8 +409,14 @@ export function GemDetailPage() {
     )
   }
 
+  // "Copy from Tester 1 / Tester 2" at the approval stage: the tester's own colour and
+  // weight come across with the rest of their findings, falling back to the gem's latest
+  // for records written before the split.
   const copyValues = (source: any) => {
-    const values = mapSourceToFormValues(source, gemDetail?.color)
+    const values = mapSourceToFormValues(source, {
+      colour: gemDetail?.color,
+      weight: gemDetail?.weight,
+    })
     reset(values)
     syncSearchStates(values, searchSetters)
   }
@@ -437,10 +450,10 @@ export function GemDetailPage() {
   const weight = savedWeight ?? intakeGem.weight
   // Colour belongs to the gem, and the analysis form is where it gets entered, so the
   // intake panel shows whatever the form holds rather than a second, stale value.
-  const color = watchedColour || intakeGem.color
+  const color = intakeGem.color
 
   const weightEditor = (
-    <GemWeightEditor gemId={gem._id} weight={weight} onSaved={setSavedWeight} disabled={!canWrite} />
+    <GemWeightEditor gemId={gem._id} weight={weight} onSaved={setSavedWeight} disabled={isDone} />
   )
 
   // Distinguishes "someone else has this stage" from "this gem is not at your stage",
@@ -505,12 +518,7 @@ export function GemDetailPage() {
                   }}
                   className='space-y-8'
                 >
-                  <GemAnalysisForm
-                    form={form}
-                    fields={fields}
-                    weightField={weightEditor}
-                    disabled={!canWrite}
-                  />
+                  <GemAnalysisForm form={form} fields={fields} disabled={!canWrite} />
                   <GemFormActions
                     isSubmitting={isSubmitting}
                     isActionLoading={isActionLoading}

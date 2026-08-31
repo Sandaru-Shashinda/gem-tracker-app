@@ -9,8 +9,6 @@ interface GemAnalysisFormProps {
   form: UseFormReturn<TestFormValues>
   /** Every field config, addressed by name — see getFormFieldsConfig. */
   fields: GemFormFields
-  /** Rendered in the Weight slot; the gem's weight is saved outside this form. */
-  weightField?: ReactNode
   /**
    * Read-only mode. The form still renders in full so anyone can read a gem's analysis;
    * only the stage's owner can change it. See resolveActiveStage.
@@ -64,12 +62,7 @@ function Section({
  * component is the only place that order is expressed, and the field configs it draws
  * from are keyed by name so a section can be moved without disturbing any other.
  */
-export function GemAnalysisForm({
-  form,
-  fields,
-  weightField,
-  disabled,
-}: GemAnalysisFormProps) {
+export function GemAnalysisForm({ form, fields, disabled }: GemAnalysisFormProps) {
   const {
     register,
     control,
@@ -99,7 +92,7 @@ export function GemAnalysisForm({
       {/* 1–2. Item description and weight */}
       <Section title='Item & Weight'>
         {field(fields.itemDescription)}
-        {weightField}
+        {field(fields.weight)}
       </Section>
 
       {/* 3. Colour, and the breakdown printed on the large report */}

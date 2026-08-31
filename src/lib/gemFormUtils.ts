@@ -38,6 +38,12 @@ export function formatHardness(stage?: StageReadings | null, fallback = "N/A"): 
   return value === undefined || value === null ? fallback : String(value)
 }
 
+/** A stage's own weight, formatted for display. Blank when that stage never recorded one. */
+export function formatStageWeight(stage?: { weight?: number | null } | null, fallback = "—") {
+  const value = stage?.weight
+  return value === undefined || value === null ? fallback : `${Number(value).toFixed(2)} ct`
+}
+
 /** Narrows to a stage that actually holds an R.I. reading, in either field shape. */
 export function hasRi<T extends StageReadings>(stage: T | null | undefined): stage is T {
   const value = stage?.riMin ?? stage?.ri
@@ -51,19 +57,26 @@ const toFixedString = (value: unknown, decimals = 2): string => {
   return Number.isFinite(n) ? n.toFixed(decimals) : String(value)
 }
 
+/** Values to fall back on when the stage itself holds none — see `seed` below. */
+export type StageSeed = { colour?: string; weight?: number | null }
+
 /**
  * Maps raw gem stage data (test1 / test2 / finalApproval) into form values.
  *
- * Colour is the one field that does not come from the stage — it is stored on the gem,
- * so the caller passes it in. Stage data written before that change is still read as a
- * fallback, since those records physically hold the old value.
+ * `seed` supplies colour and weight when the stage has not recorded its own. Only the
+ * approval passes it, carrying the gem's latest pair: the approver starts from what the
+ * last tester found and edits from there. Testers are deliberately given no seed, so one
+ * tester's reading never pre-fills the other's form — an independent second opinion is
+ * the point of having two of them.
  *
  * R.I. and hardness both changed shape, so both read their legacy fields as a fallback:
  * records written while R.I. was a single value fill both ends of the range from it, and
  * records written while hardness was a min/max pair collapse to the min they recorded.
+ * Colour does the same with the pre-split `observations.colour`.
  */
-export function mapSourceToFormValues(source: any, gemColour = ""): TestFormValues {
+export function mapSourceToFormValues(source: any, seed: StageSeed = {}): TestFormValues {
   const obs = source.observations || source.finalObservations || {}
+  const weight = source.weight ?? seed.weight
   return {
     riMin: (source.riMin ?? source.ri)?.toString() || "",
     riMax: (source.riMax ?? source.ri)?.toString() || "",
@@ -72,7 +85,8 @@ export function mapSourceToFormValues(source: any, gemColour = ""): TestFormValu
     species: obs.species || "",
     selectedVariety: source.selectedVariety || source.finalVariety || obs.variety || "",
     itemDescription: obs.itemDescription || source.itemDescription || "",
-    colour: gemColour || obs.colour || "",
+    colour: source.colour || obs.colour || seed.colour || "",
+    weight: weight === null || weight === undefined ? "" : String(weight),
     hue: obs.hue || "",
     tone: obs.tone || "",
     saturation: obs.saturation || "",

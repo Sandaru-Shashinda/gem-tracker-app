@@ -276,8 +276,18 @@ export function getFormFieldsConfig({
       rows: 4,
     },
 
-    // 2. Weight is not part of this form — it is saved straight to the gem by
-    //    GemWeightEditor, which GemAnalysisForm renders in this slot.
+    // 2. Weight, as this stage's owner weighed it. Helpers still set the gem's intake
+    //    weight through GemWeightEditor; from Test 1 onward it is stage data and is
+    //    saved with the rest of the analysis. Kept at 3 decimals — the balance reads
+    //    that far, and the reports round to 2 themselves.
+    weight: {
+      name: "weight",
+      label: "Weight (ct)",
+      type: "number",
+      step: "0.001",
+      placeholder: "e.g. 14.360",
+      className: "",
+    },
 
     // 3. Colour
     colour: {

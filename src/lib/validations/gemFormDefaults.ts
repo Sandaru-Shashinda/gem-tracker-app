@@ -15,6 +15,7 @@ export const makeFormDefaults = (): TestFormValues => ({
   selectedVariety: "",
   itemDescription: "",
   colour: "",
+  weight: "",
   hue: "",
   tone: "",
   saturation: "",

@@ -123,6 +123,9 @@ export interface Gem {
     ri?: number
     sg?: number
     hardness?: number
+    /** Recorded by this stage's own owner; the gem carries the most recent of them. */
+    colour?: string
+    weight?: number
     observations?: ObservationData
     selectedVariety?: string
     notes?: string
@@ -140,6 +143,9 @@ export interface Gem {
     ri?: number
     sg?: number
     hardness?: number
+    /** Recorded by this stage's own owner; the gem carries the most recent of them. */
+    colour?: string
+    weight?: number
     observations?: ObservationData
     selectedVariety?: string
     notes?: string
@@ -157,6 +163,9 @@ export interface Gem {
     ri?: number
     sg?: number
     hardness?: number
+    /** Recorded by this stage's own owner; the gem carries the most recent of them. */
+    colour?: string
+    weight?: number
     finalObservations?: ObservationData
     finalVariety?: string
     itemDescription?: string

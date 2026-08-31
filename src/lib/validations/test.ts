@@ -57,7 +57,10 @@ export const testSchema = z.object({
   specialNote: z.string().optional(),
   treatment: z.string().optional(),
   treatments: treatmentsSchema,
+  // Colour and weight are recorded per stage: each tester observes the stone for
+  // themselves, and the approval carries the pair that ends up on the certificate.
   colour: z.string().optional(),
+  weight: z.string().optional(),
   hue: z.string().optional(),
   tone: z.string().optional(),
   saturation: z.string().optional(),

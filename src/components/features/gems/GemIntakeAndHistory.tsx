@@ -8,7 +8,7 @@ import { TREATMENT_SECTIONS, normalizeTreatments } from "@/lib/treatments"
 import { gemsApi } from "@/lib/api/gems"
 import { getImageById, deleteImage } from "@/lib/api/images"
 import { useGem } from "@/hooks/useGemStore"
-import { formatRi, formatHardness, hasRi } from "@/lib/gemFormUtils"
+import { formatRi, formatHardness, hasRi, formatStageWeight } from "@/lib/gemFormUtils"
 import {
   Dialog,
   DialogContent,
@@ -306,6 +306,10 @@ export function GemIntakeAndHistory({
                     <strong>{formatRi(gem.test1)}</strong>{" "}
                     | SG: <strong>{gem.test1.sg}</strong> | Hardness:{" "}
                     <strong>{formatHardness(gem.test1)}</strong>
+                  </p>
+                  <p>
+                    Colour: <strong>{gem.test1.colour || "—"}</strong> | Weight:{" "}
+                    <strong>{formatStageWeight(gem.test1)}</strong>
                   </p>
                   <div className='mt-3 space-y-3'>
                     {/* Identification */}
@@ -630,6 +634,10 @@ export function GemIntakeAndHistory({
                     <strong>{formatRi(gem.test2)}</strong>{" "}
                     | SG: <strong>{gem.test2.sg}</strong> | Hardness:{" "}
                     <strong>{formatHardness(gem.test2)}</strong>
+                  </p>
+                  <p>
+                    Colour: <strong>{gem.test2.colour || "—"}</strong> | Weight:{" "}
+                    <strong>{formatStageWeight(gem.test2)}</strong>
                   </p>
                   <div className='mt-3 space-y-3'>
                     {/* Identification */}

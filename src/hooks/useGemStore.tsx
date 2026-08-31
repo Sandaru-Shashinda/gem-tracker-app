@@ -203,8 +203,10 @@ export function GemProvider({ children }: { children: ReactNode }) {
         sg: data.sg ? parseFloat(data.sg) : undefined,
         hardness: data.hardness ? parseFloat(data.hardness) : undefined,
         selectedVariety: data.selectedVariety,
-        // Colour is stored on the gem, not on this stage.
-        color: data.colour,
+        // This tester's own colour and weight. The API also carries them up to the gem
+        // as its latest values, which is what the approval stage is seeded from.
+        colour: data.colour,
+        weight: data.weight ? parseFloat(data.weight) : undefined,
         observations: {
           cuttingShape: data.cuttingShape,
           crownStyle: data.crownStyle,
@@ -259,8 +261,10 @@ export function GemProvider({ children }: { children: ReactNode }) {
         sg: data.sg ? parseFloat(data.sg) : undefined,
         hardness: data.hardness ? parseFloat(data.hardness) : undefined,
         finalVariety: data.selectedVariety,
-        // Colour is stored on the gem, not on this stage.
-        color: data.colour,
+        // The pair that goes on the certificate: seeded from the gem's latest, then
+        // whatever the approver settled on.
+        colour: data.colour,
+        weight: data.weight ? parseFloat(data.weight) : undefined,
         itemDescription: data.itemDescription || data.comments,
         finalObservations: {
           cuttingShape: data.cuttingShape,
@@ -321,8 +325,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
           sg: data.sg ? parseFloat(data.sg) : undefined,
           hardness: data.hardness ? parseFloat(data.hardness) : undefined,
           finalVariety: data.selectedVariety,
-          // Colour is stored on the gem, not on this stage.
-          color: data.colour,
+          colour: data.colour,
+          weight: data.weight ? parseFloat(data.weight) : undefined,
           itemDescription: data.itemDescription || data.comments,
           finalObservations: {
             cuttingShape: data.cuttingShape,
@@ -365,8 +369,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
           sg: data.sg ? parseFloat(data.sg) : undefined,
           hardness: data.hardness ? parseFloat(data.hardness) : undefined,
           selectedVariety: data.selectedVariety,
-          // Colour is stored on the gem, not on this stage.
-          color: data.colour,
+          colour: data.colour,
+          weight: data.weight ? parseFloat(data.weight) : undefined,
           observations: {
             cuttingShape: data.cuttingShape,
             crownStyle: data.crownStyle,
