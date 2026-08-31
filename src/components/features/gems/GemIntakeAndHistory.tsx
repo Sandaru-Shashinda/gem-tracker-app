@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Building2, AlertCircle, Eye, X, Plus, Loader2 } from "lucide-react"
+import { Building2, AlertCircle, Eye, X, Plus, Loader2, Columns2 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/useToast"
 
 interface GemIntakeAndHistoryProps {
   gem: Gem
@@ -46,6 +47,7 @@ interface GemIntakeAndHistoryProps {
 }
 
 import { GemImage } from "./GemImage"
+import { TesterComparisonDialog } from "./TesterComparisonDialog"
 import { ScientificSuggestions } from "./ScientificSuggestions"
 
 export function GemIntakeAndHistory({
@@ -63,7 +65,9 @@ export function GemIntakeAndHistory({
   onHandleRequestCorrection,
   isApproval,
 }: GemIntakeAndHistoryProps) {
+  const toast = useToast()
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false)
+  const [isComparisonOpen, setIsComparisonOpen] = useState(false)
   const [correctionStage, setCorrectionStage] = useState<"test1" | "test2" | null>(null)
   const [correctionNote, setCorrectionNote] = useState("")
 
@@ -71,6 +75,17 @@ export function GemIntakeAndHistory({
     setCorrectionStage(stage)
     setCorrectionNote("")
     setIsCorrectionModalOpen(true)
+  }
+
+  // Copying is otherwise silent — nothing visibly moves except fields further down the
+  // page — so the approver gets the same confirmation here as in the comparison dialog.
+  const copyFromStage = (stage: Gem["test1"], label: string) => {
+    onCopyValues(stage)
+    toast({
+      title: `${label}'s findings copied`,
+      description:
+        "The approval form now holds these readings. Review them before submitting the final report.",
+    })
   }
 
   const submitCorrection = () => {
@@ -273,6 +288,25 @@ export function GemIntakeAndHistory({
       {(hasRi(gem.test1) || hasRi(gem.test2)) &&
         user?.role === UserRole.ADMIN && (
           <div className='space-y-4'>
+            {/* The two stage cards below stack vertically, so comparing them means
+                scrolling between them and holding values in your head. This opens both
+                in one aligned two-column read with the disagreements flagged — what the
+                approver needs in front of them before signing off. */}
+            {hasRi(gem.test1) && hasRi(gem.test2) && (
+              <Button
+                type='button'
+                variant='outline'
+                className={`w-full justify-center gap-2 ${
+                  isApproval
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                    : 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+                onClick={() => setIsComparisonOpen(true)}
+              >
+                <Columns2 className='h-4 w-4' />
+                Compare Testers Side by Side
+              </Button>
+            )}
             {hasRi(gem.test1) ? (
               <Card className='p-4 border-l-4 border-l-blue-500 shadow-sm'>
                 <div className='flex justify-between items-center mb-2'>
@@ -284,7 +318,7 @@ export function GemIntakeAndHistory({
                       variant='ghost'
                       size='sm'
                       className='h-6 text-[10px]'
-                      onClick={() => onCopyValues(gem.test1)}
+                      onClick={() => copyFromStage(gem.test1, "Tester 1")}
                     >
                       Copy Data
                     </Button>
@@ -612,7 +646,7 @@ export function GemIntakeAndHistory({
                       variant='ghost'
                       size='sm'
                       className='h-6 text-[10px]'
-                      onClick={() => onCopyValues(gem.test2)}
+                      onClick={() => copyFromStage(gem.test2, "Tester 2")}
                     >
                       Copy Data
                     </Button>
@@ -931,6 +965,15 @@ export function GemIntakeAndHistory({
             ) : null}
           </div>
         )}
+
+      {/* Side-by-side read of both testers' submissions. Copying into the approval form
+          is only offered while there is a form to copy into. */}
+      <TesterComparisonDialog
+        open={isComparisonOpen}
+        onOpenChange={setIsComparisonOpen}
+        gem={gem}
+        onCopyValues={isApproval ? onCopyValues : undefined}
+      />
 
       {/* Correction Request Modal */}
       <Dialog open={isCorrectionModalOpen} onOpenChange={setIsCorrectionModalOpen}>
