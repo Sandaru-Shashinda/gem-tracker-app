@@ -10,7 +10,7 @@
  * existed, or whose signatory has since been removed — so those certificates keep
  * printing the name they always printed.
  */
-export const DEFAULT_SIGNATORY_NAME = "Kishani Dayananda"
+export const DEFAULT_SIGNATORY_NAME = "Kishari Dayananda"
 
 /** The job title under the name. Fixed: it is the certificate's title, not a user role. */
 export const SIGNATORY_ROLE = "Consultant Gemologist"
