@@ -77,8 +77,11 @@ export interface ObservationData {
   /** Per-treatment "Yes" | "No" checklist; "" / missing means not assessed. */
   treatments?: Partial<TreatmentValues>
   colour?: string
-  // Colour breakdown printed in the large report's DETAILS block. Tone and
-  // saturation are graded Low | Medium | High and print as ticked boxes.
+  // Colour breakdown printed in the large report's DETAILS block. Base colour is
+  // the plain colour name the stone is filed under, hue the full description
+  // written on top of it. Tone and saturation are graded Low | Medium | High and
+  // print as ticked boxes.
+  baseColour?: string
   hue?: string
   tone?: string
   saturation?: string

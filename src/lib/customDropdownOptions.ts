@@ -1,6 +1,11 @@
 const STORAGE_KEY = "gem_tracker_custom_options"
 
-export type CustomDropdownField = "cuttingShape" | "crownStyle" | "pavilionStyle" | "colour"
+export type CustomDropdownField =
+  | "cuttingShape"
+  | "crownStyle"
+  | "pavilionStyle"
+  | "colour"
+  | "baseColour"
 
 interface StoredOption {
   value: string
@@ -12,10 +17,11 @@ interface AllCustomOptions {
   crownStyle: StoredOption[]
   pavilionStyle: StoredOption[]
   colour: StoredOption[]
+  baseColour: StoredOption[]
 }
 
 function empty(): AllCustomOptions {
-  return { cuttingShape: [], crownStyle: [], pavilionStyle: [], colour: [] }
+  return { cuttingShape: [], crownStyle: [], pavilionStyle: [], colour: [], baseColour: [] }
 }
 
 export function getCustomOptions(): AllCustomOptions {

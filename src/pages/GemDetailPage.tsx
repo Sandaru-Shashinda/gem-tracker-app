@@ -32,7 +32,7 @@ import { ApproverCorrectionBanner } from "@/components/features/gems/ApproverCor
 import { StageAccessBanner } from "@/components/features/gems/StageAccessBanner"
 import { GemFormActions } from "@/components/features/gems/GemFormActions"
 import { getFormFieldsConfig } from "@/components/shared/common/Formfieldsconfig"
-import { addCustomOption } from "@/lib/customDropdownOptions"
+import { addCustomOption, type CustomDropdownField } from "@/lib/customDropdownOptions"
 import { makeFormDefaults } from "@/lib/validations/gemFormDefaults"
 import {
   type SearchSetters,
@@ -126,6 +126,8 @@ export function GemDetailPage() {
   const [showCuttingShapeList, setShowCuttingShapeList] = useState(false)
   const [colourSearch, setColourSearch] = useState("")
   const [showColourList, setShowColourList] = useState(false)
+  const [baseColourSearch, setBaseColourSearch] = useState("")
+  const [showBaseColourList, setShowBaseColourList] = useState(false)
 
   // ── Other state ─────────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<GemReference[]>([])
@@ -141,7 +143,7 @@ export function GemDetailPage() {
   const [formError, setFormError] = useState<string | null>(null)
 
   const makeOptionAdder =
-    (field: "cuttingShape" | "crownStyle" | "pavilionStyle" | "colour") => (value: string) => {
+    (field: CustomDropdownField) => (value: string) => {
       addCustomOption(field, value)
       setCustomOptTick((t) => t + 1)
     }
@@ -183,6 +185,7 @@ export function GemDetailPage() {
     setPavilionStyleSearch,
     setCuttingShapeSearch,
     setColourSearch,
+    setBaseColourSearch,
   }
 
   const fields = getFormFieldsConfig(
@@ -216,10 +219,15 @@ export function GemDetailPage() {
       setColourSearch,
       showColourList,
       setShowColourList,
+      baseColourSearch,
+      setBaseColourSearch,
+      showBaseColourList,
+      setShowBaseColourList,
       onAddCuttingShapeOption: makeOptionAdder("cuttingShape"),
       onAddCrownStyleOption: makeOptionAdder("crownStyle"),
       onAddPavilionStyleOption: makeOptionAdder("pavilionStyle"),
       onAddColourOption: makeOptionAdder("colour"),
+      onAddBaseColourOption: makeOptionAdder("baseColour"),
     },
   )
 

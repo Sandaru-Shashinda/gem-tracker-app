@@ -428,8 +428,17 @@ export function GemIntakeAndHistory({
                       </div>
                     </div>
 
-                    {/* Colour Profile - hue / tone / saturation, as printed on the large report */}
-                    <div className='grid grid-cols-3 gap-3'>
+                    {/* Colour Profile - base colour / hue / tone / saturation, as printed
+                        on the large report */}
+                    <div className='grid grid-cols-2 gap-3'>
+                      <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                        <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>
+                          Base Colour
+                        </p>
+                        <p className='font-medium text-[11px] text-slate-700'>
+                          {gem.test1.observations?.baseColour || "-"}
+                        </p>
+                      </div>
                       <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
                         <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>Hue</p>
                         <p className='font-medium text-[11px] text-slate-700'>
@@ -756,8 +765,17 @@ export function GemIntakeAndHistory({
                       </div>
                     </div>
 
-                    {/* Colour Profile - hue / tone / saturation, as printed on the large report */}
-                    <div className='grid grid-cols-3 gap-3'>
+                    {/* Colour Profile - base colour / hue / tone / saturation, as printed
+                        on the large report */}
+                    <div className='grid grid-cols-2 gap-3'>
+                      <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
+                        <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>
+                          Base Colour
+                        </p>
+                        <p className='font-medium text-[11px] text-slate-700'>
+                          {gem.test2.observations?.baseColour || "-"}
+                        </p>
+                      </div>
                       <div className='bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
                         <p className='text-[9px] font-bold text-slate-400 uppercase mb-1'>Hue</p>
                         <p className='font-medium text-[11px] text-slate-700'>

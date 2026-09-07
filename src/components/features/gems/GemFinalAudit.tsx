@@ -90,8 +90,12 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
               <h4 className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 border-b pb-2'>
                 Colour Profile
               </h4>
-              <div className='grid grid-cols-3 gap-3'>
+              <div className='grid grid-cols-2 gap-3'>
                 {[
+                  {
+                    label: "Base Colour",
+                    value: gem.finalApproval.finalObservations?.baseColour,
+                  },
                   { label: "Hue", value: gem.finalApproval.finalObservations?.hue },
                   { label: "Tone", value: gem.finalApproval.finalObservations?.tone },
                   { label: "Saturation", value: gem.finalApproval.finalObservations?.saturation },
