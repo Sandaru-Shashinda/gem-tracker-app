@@ -7,6 +7,7 @@ import { useRealSizeGemImage } from "../gems/RealSizeGemImage"
 import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
 import { layoutGemName } from "@/lib/gem-name"
+import { textWidth, wrapText } from "@/lib/text-layout"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo.png"
@@ -24,6 +25,29 @@ const DOWNLOAD_SCALE = 3
 const NAME_COL_W = 160
 /** Size the name is set at when it fits the column on one line. */
 const NAME_FONT_SIZE = 18
+/** The card's own gutters, and what they leave for the data column. */
+const CARD_PAD_L = 40
+const CARD_PAD_R = 30
+const COL_GAP = 65
+const DATA_COL_W = CARD_WIDTH - CARD_PAD_L - CARD_PAD_R - COL_GAP - NAME_COL_W
+/** The data rows' type. The line box is what the dotted leader is drawn against. */
+const ROW_FONT_FAMILY = "Arial, Helvetica, sans-serif"
+const ROW_FONT_SIZE = 14
+const ROW_LINE_HEIGHT = 1.3
+const ROW_LINE_BOX = ROW_FONT_SIZE * ROW_LINE_HEIGHT
+/** A row's gutters: the label, the dotted leader at its narrowest, then the value. */
+const LABEL_GAP = 4
+const LEADER_MIN_W = 20
+const VALUE_GAP = 6
+/**
+ * Comments is the one field the lab writes prose into, and so the one that needs more
+ * than a line. It is set a little smaller than the data rows and capped at three lines:
+ * the card is a fixed-size print artefact, and every line the comment takes is a line
+ * taken off the signature below it.
+ */
+const COMMENT_FONT_SIZE = 12
+const COMMENT_LINE_HEIGHT = 1.4
+const COMMENT_MAX_LINES = 3
 
 export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
   const finalData = gem.finalApproval || {}
@@ -119,6 +143,20 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
     fontWeight: 700,
   })
 
+  // The comment's first line shares the row with its label and the dotted leader; the
+  // rest have the whole column. Cut to fit, since the card's height is fixed.
+  const commentLines = wrapText(obs.comments, {
+    width: DATA_COL_W,
+    firstLineWidth:
+      DATA_COL_W -
+      textWidth("Comments:", `${ROW_FONT_SIZE}px ${ROW_FONT_FAMILY}`) -
+      LABEL_GAP -
+      LEADER_MIN_W -
+      VALUE_GAP,
+    maxLines: COMMENT_MAX_LINES,
+    font: `${COMMENT_FONT_SIZE}px ${ROW_FONT_FAMILY}`,
+  })
+
   const rows = [
     { label: "GRC Number", value: gem.gemId },
     { label: "Date", value: new Date(gem.updatedAt).toLocaleDateString("en-GB") },
@@ -138,7 +176,6 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
     },
     { label: "Species", value: obs.species },
     { label: "Variety", value: obs.variety },
-    { label: "Comments", value: obs.comments, style: { marginTop: "10px" } },
   ]
 
   /**
@@ -160,7 +197,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
         overflow: "hidden",
         display: "flex",
         border: "1px solid #e2e8f0",
-        padding: "30px 30px 24px 40px",
+        padding: `30px ${CARD_PAD_R}px 24px ${CARD_PAD_L}px`,
         boxSizing: "border-box",
         position: "relative",
         boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)",
@@ -191,7 +228,7 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          marginRight: "65px",
+          marginRight: `${COL_GAP}px`,
           position: "relative",
           minWidth: 0,
         }}
@@ -214,19 +251,21 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
             display: "flex",
             flexDirection: "column",
             gap: 2,
-            fontSize: "14px",
+            fontSize: `${ROW_FONT_SIZE}px`,
             marginTop: "-65px",
             padding: "10px 0",
-            fontFamily: "Arial, Helvetica, sans-serif",
+            fontFamily: ROW_FONT_FAMILY,
             color: "#1a1a1a",
-            lineHeight: 1.3,
+            lineHeight: ROW_LINE_HEIGHT,
             flex: 1,
             zIndex: 2,
           }}
         >
           {rows.map((row, i) => (
-            <div key={i} style={{ display: "flex", ...row.style }}>
-              <span style={{ whiteSpace: "nowrap", paddingRight: "4px", minWidth: "10px" }}>
+            <div key={i} style={{ display: "flex" }}>
+              <span
+                style={{ whiteSpace: "nowrap", paddingRight: `${LABEL_GAP}px`, minWidth: "10px" }}
+              >
                 {row.label}:
               </span>
               <span
@@ -235,13 +274,13 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
                   borderBottom: "2px dotted #a3a3a3",
                   position: "relative",
                   top: "-4px",
-                  minWidth: "20px",
+                  minWidth: `${LEADER_MIN_W}px`,
                 }}
               />
               <span
                 style={{
                   whiteSpace: "nowrap",
-                  paddingLeft: "6px",
+                  paddingLeft: `${VALUE_GAP}px`,
                   maxWidth: "220px",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -251,6 +290,53 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
               </span>
             </div>
           ))}
+
+          {/* Comments. Its first line shares the label's row, like every other value;
+              the rest run the full width of the column underneath. The lines are
+              measured and cut here rather than left to the browser, so the card, the
+              PNG and the PDF all carry the same ones. */}
+          <div style={{ marginTop: "8px" }}>
+            <div style={{ display: "flex" }}>
+              <span
+                style={{ whiteSpace: "nowrap", paddingRight: `${LABEL_GAP}px`, minWidth: "10px" }}
+              >
+                Comments:
+              </span>
+              <span
+                style={{
+                  flex: 1,
+                  borderBottom: "2px dotted #a3a3a3",
+                  position: "relative",
+                  top: "-4px",
+                  minWidth: `${LEADER_MIN_W}px`,
+                }}
+              />
+              <span
+                style={{
+                  whiteSpace: "pre",
+                  paddingLeft: `${VALUE_GAP}px`,
+                  fontSize: `${COMMENT_FONT_SIZE}px`,
+                  // Set on the row's own line box, so the smaller type still sits on the
+                  // same baseline as the label beside it.
+                  lineHeight: `${ROW_LINE_BOX}px`,
+                }}
+              >
+                {commentLines[0] ?? "-"}
+              </span>
+            </div>
+            {commentLines.slice(1).map((line, i) => (
+              <div
+                key={i}
+                style={{
+                  whiteSpace: "pre",
+                  fontSize: `${COMMENT_FONT_SIZE}px`,
+                  lineHeight: COMMENT_LINE_HEIGHT,
+                }}
+              >
+                {line}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Signature */}

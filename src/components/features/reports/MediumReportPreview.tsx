@@ -8,6 +8,7 @@ import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
 import { DEFAULT_SIGNATORY_NAME, SIGNATORY_ROLE } from "@/lib/report-signature"
 import { layoutGemName } from "@/lib/gem-name"
+import { textWidth, wrapText } from "@/lib/text-layout"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 
@@ -25,6 +26,20 @@ const SCALE_FACTOR = 3
 const NAME_COL_W = 1120 * 0.45 - 32 - 52
 /** Size the name is set at when it fits the panel on one line. */
 const NAME_FONT_SIZE = 30
+/** The data blocks' measure, and the type they are set in. */
+const ROW_BLOCK_W = 480
+const ROW_FONT_SIZE = 14
+const ROW_FONT_FAMILY = "'Nimbus Mono Antique', 'Courier New', Courier, monospace"
+/** A row's gap either side of its dotted leader, and the leader at its narrowest. */
+const ROW_GAP = 10
+const LEADER_MIN_W = 20
+/**
+ * Comments is the one field the lab writes prose into, and the only one long enough to
+ * need more than a line. It stops at three: the card's height is fixed, and the lines
+ * past that would push the footer off the page.
+ */
+const COMMENT_MAX_LINES = 3
+const COMMENT_LINE_HEIGHT = 1.25
 
 /**
  * The signature asset is 1800x1200 (3:2) and mostly whitespace: its ink measures out to
@@ -254,6 +269,20 @@ function DetailView({
     uppercase: true,
   })
 
+  // The comment's first line shares its row with the label and the dotted leader; the
+  // rest have the block's full measure. Cut to fit, since the card's height is fixed —
+  // left on one line, a long comment ran straight out of the panel and across the page.
+  const commentLines = wrapText(obs.comments, {
+    width: ROW_BLOCK_W,
+    firstLineWidth:
+      ROW_BLOCK_W -
+      textWidth("Comments:", `${ROW_FONT_SIZE}px ${ROW_FONT_FAMILY}`) -
+      ROW_GAP * 2 -
+      LEADER_MIN_W,
+    maxLines: COMMENT_MAX_LINES,
+    font: `${ROW_FONT_SIZE}px ${ROW_FONT_FAMILY}`,
+  })
+
   const rowsBlock1 = [
     { label: "GRC Number", value: gem.gemId },
     { label: "Date", value: formatDate(gem.updatedAt) },
@@ -279,11 +308,10 @@ function DetailView({
     { label: "Color", value: gem.color },
     { label: "Species", value: obs.species },
     { label: "Variety", value: finalData.finalVariety || obs.variety },
-    { label: "Comments", value: obs.comments },
   ]
 
   const TypewriterRow = ({ label, value }: { label: string; value?: string | number }) => (
-    <div style={{ display: "flex", alignItems: "baseline", width: "100%", gap: "10px" }}>
+    <div style={{ display: "flex", alignItems: "baseline", width: "100%", gap: `${ROW_GAP}px` }}>
       <span style={{ flexShrink: 0 }}>{label}:</span>
       <div
         style={{
@@ -365,11 +393,11 @@ function DetailView({
             flexDirection: "column",
             gap: "3px",
             color: DARK,
-            fontSize: "14px",
-            fontFamily: "'Nimbus Mono Antique', 'Courier New', Courier, monospace",
+            fontSize: `${ROW_FONT_SIZE}px`,
+            fontFamily: ROW_FONT_FAMILY,
             fontWeight: 400,
             width: "100%",
-            maxWidth: "480px",
+            maxWidth: `${ROW_BLOCK_W}px`,
           }}
         >
           {rowsBlock1.map((row, i) => (
@@ -386,11 +414,11 @@ function DetailView({
             flexDirection: "column",
             gap: "3px",
             color: DARK,
-            fontSize: "14px",
-            fontFamily: "'Nimbus Mono Antique', 'Courier New', Courier, monospace",
+            fontSize: `${ROW_FONT_SIZE}px`,
+            fontFamily: ROW_FONT_FAMILY,
             fontWeight: 400,
             width: "100%",
-            maxWidth: "480px",
+            maxWidth: `${ROW_BLOCK_W}px`,
             marginTop: "10px",
           }}
         >
@@ -411,6 +439,37 @@ function DetailView({
           {rowsBlock2.map((row, i) => (
             <TypewriterRow key={`r2-${i}`} label={row.label} value={row.value} />
           ))}
+
+          {/* Comments. Its first line shares the label's row like any other value; the
+              rest run the block's full measure underneath, and the lines are measured
+              and cut here so the panel, the PNG and the PDF all carry the same ones. */}
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                width: "100%",
+                gap: `${ROW_GAP}px`,
+              }}
+            >
+              <span style={{ flexShrink: 0 }}>Comments:</span>
+              <div
+                style={{
+                  flexGrow: 1,
+                  borderBottom: "2px dotted #a3a3a3",
+                  margin: "0",
+                  position: "relative",
+                  minWidth: `${LEADER_MIN_W}px`,
+                }}
+              />
+              <span style={{ flexShrink: 0, whiteSpace: "pre" }}>{commentLines[0] ?? "-"}</span>
+            </div>
+            {commentLines.slice(1).map((line, i) => (
+              <div key={i} style={{ whiteSpace: "pre", lineHeight: COMMENT_LINE_HEIGHT }}>
+                {line}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{ height: "20px" }}></div>

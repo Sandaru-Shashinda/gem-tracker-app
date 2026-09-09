@@ -13,6 +13,7 @@
  * too wide for the column the type steps down until it fits — but only so far, since past
  * a point a shrunken headline reads as a mistake rather than as a fit.
  */
+import { textWidth } from "./text-layout"
 
 export interface GemNameColumn {
   /** Usable width of the column, in the report's own pixels. */
@@ -39,21 +40,6 @@ const SAFETY = 0.98
 /** How far the type may step down before the fit itself starts to look like a mistake. */
 const MIN_SCALE = 0.75
 const STEP = 0.5
-
-let cachedCtx: CanvasRenderingContext2D | null | undefined
-
-function textWidth(text: string, font: string, letterSpacing: number): number {
-  if (cachedCtx === undefined) cachedCtx = document.createElement("canvas").getContext("2d")
-  const tracking = letterSpacing * Math.max(text.length - 1, 0)
-  if (!cachedCtx) {
-    // No 2d context to measure with: fall back to a rough average advance. It errs wide,
-    // so a borderline name gets broken rather than left to overflow the column.
-    const size = Number(font.match(/(\d+(?:\.\d+)?)px/)?.[1] ?? 16)
-    return text.length * size * 0.6 + tracking
-  }
-  cachedCtx.font = font
-  return cachedCtx.measureText(text).width + tracking
-}
 
 export function layoutGemName(
   name: string | undefined | null,
