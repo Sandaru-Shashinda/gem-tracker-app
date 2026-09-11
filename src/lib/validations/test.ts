@@ -21,6 +21,7 @@ export const treatmentsSchema = z
     fractureFillingResinGlass: treatmentAnswer,
     laserDrilling: treatmentAnswer,
     coating: treatmentAnswer,
+    assembledStone: treatmentAnswer,
   })
   .default(emptyTreatments)
 
@@ -61,7 +62,6 @@ export const testSchema = z.object({
   // themselves, and the approval carries the pair that ends up on the certificate.
   colour: z.string().optional(),
   weight: z.string().optional(),
-  baseColour: z.string().optional(),
   hue: z.string().optional(),
   tone: z.string().optional(),
   saturation: z.string().optional(),

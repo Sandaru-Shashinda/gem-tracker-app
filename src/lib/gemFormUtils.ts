@@ -9,7 +9,6 @@ export type SearchSetters = {
   setPavilionStyleSearch: (v: string) => void
   setCuttingShapeSearch: (v: string) => void
   setColourSearch: (v: string) => void
-  setBaseColourSearch: (v: string) => void
 }
 
 /** The scientific readings on a stage, in either the current or a legacy field shape. */
@@ -88,7 +87,6 @@ export function mapSourceToFormValues(source: any, seed: StageSeed = {}): TestFo
     itemDescription: obs.itemDescription || source.itemDescription || "",
     colour: source.colour || obs.colour || seed.colour || "",
     weight: weight === null || weight === undefined ? "" : String(weight),
-    baseColour: obs.baseColour || "",
     hue: obs.hue || "",
     tone: obs.tone || "",
     saturation: obs.saturation || "",
@@ -128,7 +126,6 @@ export function syncSearchStates(values: TestFormValues, setters: SearchSetters)
   setters.setPavilionStyleSearch(values.pavilionStyle || "")
   setters.setCuttingShapeSearch(values.cuttingShape || "")
   setters.setColourSearch(values.colour || "")
-  setters.setBaseColourSearch(values.baseColour || "")
 }
 
 /** The three stages a gem's analysis can be written to. */

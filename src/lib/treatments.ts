@@ -47,7 +47,10 @@ export const TREATMENT_SECTIONS = [
   },
   {
     title: "Surface Modifications",
-    items: [{ key: "coating", label: "Coating" }],
+    items: [
+      { key: "coating", label: "Coating" },
+      { key: "assembledStone", label: "Assembled Stone" },
+    ],
   },
 ] as const satisfies readonly { title: string; items: readonly { key: string; label: string }[] }[]
 

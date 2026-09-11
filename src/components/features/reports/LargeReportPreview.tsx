@@ -392,7 +392,6 @@ function ReportPage({
 
           {/* Right: colour breakdown */}
           <div style={{ ...columnStyle, flex: 1 }}>
-            <TypewriterRow label='Base Colour' value={obs.baseColour} />
             <TypewriterRow label='Hue' value={obs.hue} />
             <GradeRow label='Tone' value={obs.tone} />
             <GradeRow label='Saturation' value={obs.saturation} />

@@ -126,7 +126,6 @@ function buildSections(t1?: StageRecord | null, t2?: StageRecord | null): Sectio
     {
       title: "Colour",
       rows: [
-        row("Base Colour", (_s, o) => o?.baseColour),
         row("Colour", (s, o) => s?.colour || o?.colour),
         row("Hue", (_s, o) => o?.hue),
         row("Tone", (_s, o) => o?.tone),

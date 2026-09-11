@@ -5,7 +5,6 @@ export type CustomDropdownField =
   | "crownStyle"
   | "pavilionStyle"
   | "colour"
-  | "baseColour"
 
 interface StoredOption {
   value: string
@@ -17,11 +16,10 @@ interface AllCustomOptions {
   crownStyle: StoredOption[]
   pavilionStyle: StoredOption[]
   colour: StoredOption[]
-  baseColour: StoredOption[]
 }
 
 function empty(): AllCustomOptions {
-  return { cuttingShape: [], crownStyle: [], pavilionStyle: [], colour: [], baseColour: [] }
+  return { cuttingShape: [], crownStyle: [], pavilionStyle: [], colour: [] }
 }
 
 export function getCustomOptions(): AllCustomOptions {

@@ -126,8 +126,6 @@ export function GemDetailPage() {
   const [showCuttingShapeList, setShowCuttingShapeList] = useState(false)
   const [colourSearch, setColourSearch] = useState("")
   const [showColourList, setShowColourList] = useState(false)
-  const [baseColourSearch, setBaseColourSearch] = useState("")
-  const [showBaseColourList, setShowBaseColourList] = useState(false)
 
   // ── Other state ─────────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<GemReference[]>([])
@@ -185,7 +183,6 @@ export function GemDetailPage() {
     setPavilionStyleSearch,
     setCuttingShapeSearch,
     setColourSearch,
-    setBaseColourSearch,
   }
 
   const fields = getFormFieldsConfig(
@@ -219,15 +216,10 @@ export function GemDetailPage() {
       setColourSearch,
       showColourList,
       setShowColourList,
-      baseColourSearch,
-      setBaseColourSearch,
-      showBaseColourList,
-      setShowBaseColourList,
       onAddCuttingShapeOption: makeOptionAdder("cuttingShape"),
       onAddCrownStyleOption: makeOptionAdder("crownStyle"),
       onAddPavilionStyleOption: makeOptionAdder("pavilionStyle"),
       onAddColourOption: makeOptionAdder("colour"),
-      onAddBaseColourOption: makeOptionAdder("baseColour"),
     },
   )
 

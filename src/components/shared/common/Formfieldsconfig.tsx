@@ -54,6 +54,7 @@ export const CLARITY_ENHANCEMENT_OPTIONS = [
   { value: "E 1", label: "E 1 (Minor Clarity Enhancement)" },
   { value: "E 2", label: "E 2 (Moderate Clarity Enhancement)" },
   { value: "E 3", label: "E 3 (Significant Clarity Enhancement)" },
+  { value: "HPNT", label: "HPNT (High Pressure No Temperature)" },
 ]
 
 export const CUTTING_STYLE_OPTIONS = [
@@ -127,27 +128,6 @@ const SAPPHIRE_COLORS = [
   { value: "Dark blue", label: "Dark blue" },
 ]
 
-// The plain colour name a stone is filed under. The lists above describe *how* the
-// colour presents ("Vivid", "Deep red"), which on their own leaves an "Intense" or a
-// "Light" saying nothing about what colour it actually is — this is the other half.
-// Free typing is still allowed, and anything typed in is remembered like the rest.
-export const BASE_COLOUR_OPTIONS = [
-  { value: "Red", label: "Red" },
-  { value: "Orange", label: "Orange" },
-  { value: "Yellow", label: "Yellow" },
-  { value: "Green", label: "Green" },
-  { value: "Blue", label: "Blue" },
-  { value: "Violet", label: "Violet" },
-  { value: "Purple", label: "Purple" },
-  { value: "Pink", label: "Pink" },
-  { value: "Brown", label: "Brown" },
-  { value: "Black", label: "Black" },
-  { value: "White", label: "White" },
-  { value: "Grey", label: "Grey" },
-  { value: "Colourless", label: "Colourless" },
-  { value: "Multicolour", label: "Multicolour" },
-]
-
 const OTHER_COLORS = [
   { value: "Light", label: "Light" },
   { value: "Intense", label: "Intense" },
@@ -195,17 +175,11 @@ interface FormFieldsConfigParams {
   setColourSearch: (value: string) => void
   showColourList: boolean
   setShowColourList: (value: boolean) => void
-  // Combobox states for Base Colour
-  baseColourSearch: string
-  setBaseColourSearch: (value: string) => void
-  showBaseColourList: boolean
-  setShowBaseColourList: (value: boolean) => void
   // Custom option callbacks
   onAddCuttingShapeOption?: (value: string) => void
   onAddCrownStyleOption?: (value: string) => void
   onAddPavilionStyleOption?: (value: string) => void
   onAddColourOption?: (value: string) => void
-  onAddBaseColourOption?: (value: string) => void
 }
 
 export function getFormFieldsConfig({
@@ -238,15 +212,10 @@ export function getFormFieldsConfig({
   setColourSearch,
   showColourList,
   setShowColourList,
-  baseColourSearch,
-  setBaseColourSearch,
-  showBaseColourList,
-  setShowBaseColourList,
   onAddCuttingShapeOption,
   onAddCrownStyleOption,
   onAddPavilionStyleOption,
   onAddColourOption,
-  onAddBaseColourOption,
 }: FormFieldsConfigParams) {
   const customOpts = getCustomOptions()
 
@@ -293,12 +262,6 @@ export function getFormFieldsConfig({
   }
 
   const allColourOptions = mergeCustom(colorOptions, customOpts.colour as typeof colorOptions)
-  // Base colour is the same list for every species — it names the colour rather than
-  // describing how the species presents it, so nothing above narrows it.
-  const allBaseColourOptions = mergeCustom(
-    BASE_COLOUR_OPTIONS,
-    customOpts.baseColour as typeof BASE_COLOUR_OPTIONS,
-  )
 
   // Every field the analysis form renders, keyed by name and declared in the order it
   // appears on screen. This used to be four arrays that GemAnalysisForm indexed into,
@@ -327,24 +290,7 @@ export function getFormFieldsConfig({
       className: "",
     },
 
-    // 3. Colour — the base colour first, then the description written on top of it.
-    baseColour: {
-      name: "baseColour",
-      label: "Base Colour",
-      type: "combobox",
-      placeholder: "Select or type base colour...",
-      comboboxOptions: allBaseColourOptions,
-      comboboxSearch: baseColourSearch,
-      onComboboxSearchChange: (value) => {
-        setBaseColourSearch(value)
-        setShowBaseColourList(true)
-      },
-      onComboboxFocus: () => setShowBaseColourList(true),
-      showComboboxList: showBaseColourList,
-      onComboboxClose: () => setShowBaseColourList(false),
-      onAddCustomOption: onAddBaseColourOption,
-      className: "",
-    },
+    // 3. Colour
     colour: {
       name: "colour",
       label: "Colour",

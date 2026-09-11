@@ -97,10 +97,7 @@ export function GemAnalysisForm({ form, fields, disabled }: GemAnalysisFormProps
 
       {/* 3. Colour, and the breakdown printed on the large report */}
       <Section title='Colour' tone='amber'>
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-          {field(fields.baseColour)}
-          {field(fields.colour)}
-        </div>
+        {field(fields.colour)}
         {field(fields.hue)}
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
           {field(fields.tone)}
