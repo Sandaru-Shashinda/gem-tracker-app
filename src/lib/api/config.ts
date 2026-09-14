@@ -42,3 +42,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 
   return response
 }
+
+/**
+ * Where the public site lives, for "view on the website" links. Overridable so a
+ * staging deployment does not link staff at production.
+ */
+export const PUBLIC_SITE_URL = (
+  import.meta.env.VITE_PUBLIC_SITE_URL || "https://grc.lk"
+).replace(/\/$/, "")

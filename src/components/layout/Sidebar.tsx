@@ -10,6 +10,8 @@ import {
   Users,
   Building2,
   FileText,
+  Inbox,
+  Newspaper,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -78,6 +80,7 @@ export function Sidebar() {
       <nav className='flex-1 p-3 space-y-2 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-700'>
         <NavButton icon={LayoutDashboard} label='Dashboard' to='/dashboard' collapsed={collapsed} />
         <NavButton icon={ClipboardCheck} label='My Queue' to='/queue' collapsed={collapsed} />
+        <NavButton icon={Newspaper} label='Posts' to='/posts' collapsed={collapsed} />
         {(user.role === UserRole.ADMIN || user.role === UserRole.HELPER) && (
           <>
             <NavButton icon={Plus} label='Intake Gem' to='/intake' collapsed={collapsed} />
@@ -96,6 +99,7 @@ export function Sidebar() {
             </div>
             <NavButton icon={Activity} label='Tester Stats' to='/stats' collapsed={collapsed} />
             <NavButton icon={Users} label='Users' to='/users' collapsed={collapsed} />
+            <NavButton icon={Inbox} label='Messages' to='/messages' collapsed={collapsed} />
           </>
         )}
       </nav>

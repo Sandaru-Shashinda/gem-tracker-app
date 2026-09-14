@@ -189,3 +189,67 @@ export interface GemReference {
   hardnessMax: number
   matchScore?: number
 }
+
+export const CONTACT_STATUSES = {
+  NEW: "NEW",
+  READ: "READ",
+  ARCHIVED: "ARCHIVED",
+} as const
+
+export type ContactStatus = (typeof CONTACT_STATUSES)[keyof typeof CONTACT_STATUSES]
+
+/** A message sent from the public "Send Us a Message" form on grc.lk. */
+export interface ContactMessage {
+  _id: string
+  name: string
+  phone: string
+  email: string
+  message: string
+  status: ContactStatus
+  source?: string
+  /** Populated by the API once someone on the GRC side picks the message up. */
+  handledBy?: { _id: string; name?: string; email?: string } | null
+  handledAt?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export const POST_STATUSES = {
+  DRAFT: "DRAFT",
+  PUBLISHED: "PUBLISHED",
+  ARCHIVED: "ARCHIVED",
+} as const
+
+export type PostStatus = (typeof POST_STATUSES)[keyof typeof POST_STATUSES]
+
+/** Slugs match the categories linked from the grc.lk navigation. */
+export const POST_CATEGORIES = {
+  BLOG: "blog",
+  GRC_NEWS: "grc-news",
+  UNCATEGORIZED: "uncategorized",
+} as const
+
+export type PostCategory = (typeof POST_CATEGORIES)[keyof typeof POST_CATEGORIES]
+
+export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
+  [POST_CATEGORIES.BLOG]: "Blog",
+  [POST_CATEGORIES.GRC_NEWS]: "GRC News",
+  [POST_CATEGORIES.UNCATEGORIZED]: "Uncategorized",
+}
+
+/** An article written by laboratory staff for the Post section of grc.lk. */
+export interface Post {
+  _id: string
+  title: string
+  slug: string
+  excerpt: string
+  body: string
+  category: PostCategory
+  status: PostStatus
+  coverImage?: string
+  author?: { _id: string; name?: string; email?: string; role?: UserRole } | null
+  publishedBy?: { _id: string; name?: string } | null
+  publishedAt?: string
+  createdAt: string
+  updatedAt?: string
+}

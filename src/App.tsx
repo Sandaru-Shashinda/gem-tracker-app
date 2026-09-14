@@ -13,6 +13,8 @@ import { ReportPreviewPage } from "./pages/ReportPreviewPage"
 import { ReportsPage } from "./pages/ReportsPage"
 import { ReportConfigurationPage } from "./pages/ReportConfigurationPage"
 import { SpectrometerPage } from "./pages/SpectrometerPage"
+import { MessagesPage } from "./pages/MessagesPage"
+import { PostsPage } from "./pages/PostsPage"
 
 export default function App() {
   const { user } = useGem()
@@ -28,6 +30,8 @@ export default function App() {
         {/* Protected Routes */}
         <Route path='/dashboard' element={user ? <DashboardPage /> : <Navigate to='/' replace />} />
         <Route path='/queue' element={user ? <QueuePage /> : <Navigate to='/' replace />} />
+        {/* Any signed-in user may write a blog; publishing is gated in the API. */}
+        <Route path='/posts' element={user ? <PostsPage /> : <Navigate to='/' replace />} />
         <Route path='/gems/:id' element={user ? <GemDetailPage /> : <Navigate to='/' replace />} />
         <Route
           path='/intake'
@@ -56,6 +60,12 @@ export default function App() {
         <Route
           path='/users'
           element={user?.role === UserRole.ADMIN ? <UsersPage /> : <Navigate to='/dashboard' replace />}
+        />
+        <Route
+          path='/messages'
+          element={
+            user?.role === UserRole.ADMIN ? <MessagesPage /> : <Navigate to='/dashboard' replace />
+          }
         />
         <Route
           path='/customers'
