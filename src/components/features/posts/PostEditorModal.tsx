@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { RichTextEditor } from "@/components/ui/rich-text-editor"
 import {
   Select,
   SelectContent,
@@ -252,19 +253,21 @@ export function PostEditorModal({
           </div>
 
           <div className='space-y-2'>
-            <Label htmlFor='post-body'>Content</Label>
-            <Textarea
-              id='post-body'
+            {/* The editing surface is a contenteditable div rather than a form
+                control, so the label is attached by aria-labelledby instead. */}
+            <Label id='post-body-label'>Content</Label>
+            <RichTextEditor
               value={values.body}
-              rows={12}
               disabled={isLocked}
-              onChange={(e) => update("body", e.target.value)}
-              placeholder={"Write the article here.\n\nLeave a blank line between paragraphs."}
+              onChange={(html) => update("body", html)}
+              placeholder='Write the article here.'
               aria-invalid={!!errors.body}
+              aria-labelledby='post-body-label'
             />
             {errors.body && <p className='text-xs text-red-600'>{errors.body}</p>}
             <p className='text-[10px] text-slate-400'>
-              Plain text. Blank lines become paragraphs on grc.lk.
+              Formatting is kept on grc.lk. Headings, lists and links only — anything
+              else is stripped when the post is saved.
             </p>
           </div>
         </div>

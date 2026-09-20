@@ -121,3 +121,93 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Rich text editor (posts)
+
+   Tailwind's preflight flattens headings, lists and quotes, which is right for
+   the application's chrome but wrong inside the editor: an author needs to see
+   a heading as a heading. These rules restore that shape for the editing
+   surface only, roughly matching how grc.lk will print the same article.
+   --------------------------------------------------------------------------- */
+.tiptap-body {
+  min-height: 220px;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+
+.tiptap-body > * + * {
+  margin-top: 0.75em;
+}
+
+.tiptap-body h2 {
+  font-size: 1.25rem;
+  font-weight: 650;
+  line-height: 1.3;
+  margin-top: 1.4em;
+}
+
+.tiptap-body h3 {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  line-height: 1.35;
+  margin-top: 1.2em;
+}
+
+.tiptap-body ul,
+.tiptap-body ol {
+  padding-left: 1.4em;
+}
+
+.tiptap-body ul {
+  list-style: disc;
+}
+
+.tiptap-body ol {
+  list-style: decimal;
+}
+
+.tiptap-body li + li {
+  margin-top: 0.25em;
+}
+
+.tiptap-body li > p {
+  margin: 0;
+}
+
+.tiptap-body blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 0.9em;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.tiptap-body a {
+  color: var(--color-blue-600, #2563eb);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tiptap-body code {
+  background: var(--muted);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+}
+
+.tiptap-body hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.4em 0;
+}
+
+/* Tiptap's Placeholder extension marks the empty node and carries the text on
+   it, so the prompt shows on a blank document and goes the moment one is typed
+   into. */
+.tiptap-body p.is-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-slate-400, #94a3b8);
+}
