@@ -20,6 +20,7 @@ export const treatmentsSchema = z
     fractureFillingOil: treatmentAnswer,
     fractureFillingResinGlass: treatmentAnswer,
     laserDrilling: treatmentAnswer,
+    hpnt: treatmentAnswer,
     coating: treatmentAnswer,
     assembledStone: treatmentAnswer,
   })

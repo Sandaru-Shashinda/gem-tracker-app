@@ -43,6 +43,7 @@ export const TREATMENT_SECTIONS = [
       { key: "fractureFillingOil", label: "Fracture Filling with Oil" },
       { key: "fractureFillingResinGlass", label: "Fracture Filling with Resin/ Glass" },
       { key: "laserDrilling", label: "Laser Drilling" },
+      { key: "hpnt", label: "HPNT" },
     ],
   },
   {
