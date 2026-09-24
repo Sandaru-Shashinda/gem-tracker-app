@@ -45,6 +45,9 @@ import {
   type PendingCrop,
 } from "@/lib/gem-crop"
 
+/** Sentinel for the "No second tester" row; never leaves this file as a real value. */
+const NO_SECOND_TESTER = "__none__"
+
 export function IntakePage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
@@ -91,6 +94,9 @@ export function IntakePage() {
   })
 
   const skipTesting = watch("skipTesting")
+  // Radix Select has no empty-valued item, so "nobody" needs a stand-in value of its own.
+  // It is mapped back to "" on the way into the form, which is what the API reads.
+  const secondTesterId = watch("testerId2")
 
   // Track initialization to prevent duplicate calls (especially in Strict Mode)
   // IMPORTANT: Use a unique sentinel (not undefined) so the initial check doesn't
@@ -672,19 +678,27 @@ export function IntakePage() {
                         <div className='space-y-3'>
                           <label className='text-[11px] font-black uppercase text-purple-600 tracking-wider flex items-center gap-2'>
                             Tester 2 (Secondary Analysis)
+                            <span className='rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold tracking-normal text-slate-500 normal-case'>
+                              Optional
+                            </span>
                           </label>
                           <Controller
                             name='testerId2'
                             control={control}
                             render={({ field }) => (
                               <Select
-                                onValueChange={field.onChange}
-                                value={field.value || undefined}
+                                onValueChange={(value) =>
+                                  field.onChange(value === NO_SECOND_TESTER ? "" : value)
+                                }
+                                value={field.value || NO_SECOND_TESTER}
                               >
                                 <SelectTrigger className='w-full bg-purple-50/50 border-purple-100 h-12 focus:bg-white transition-colors'>
                                   <SelectValue placeholder='Assign Tester 2...' />
                                 </SelectTrigger>
                                 <SelectContent>
+                                  <SelectItem value={NO_SECOND_TESTER}>
+                                    No second tester
+                                  </SelectItem>
                                   {testers.map((tester) => (
                                     <SelectItem key={tester.id} value={tester.id}>
                                       {tester.name}
@@ -694,6 +708,11 @@ export function IntakePage() {
                               </Select>
                             )}
                           />
+                          <p className='text-xs leading-relaxed text-slate-500'>
+                            {secondTesterId
+                              ? "The stone is read twice: Tester 1, then Tester 2, then approval."
+                              : "Leave unassigned for a single reading — Tester 1 submits and the gem goes straight to Final Approval."}
+                          </p>
                           {errors.testerId2 && (
                             <p className='text-xs text-red-500 font-medium'>
                               {errors.testerId2.message}

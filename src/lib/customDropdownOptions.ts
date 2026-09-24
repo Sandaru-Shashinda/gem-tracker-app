@@ -1,25 +1,34 @@
 const STORAGE_KEY = "gem_tracker_custom_options"
 
+/**
+ * The free-text fields that remember what gets typed into them. Species and variety are
+ * also backed by the lab-wide list the API returns; this store is what makes a name
+ * typed a moment ago suggestable before it has been saved and fetched back.
+ */
 export type CustomDropdownField =
   | "cuttingShape"
   | "crownStyle"
   | "pavilionStyle"
   | "colour"
+  | "species"
+  | "variety"
 
 interface StoredOption {
   value: string
   label: string
 }
 
-interface AllCustomOptions {
-  cuttingShape: StoredOption[]
-  crownStyle: StoredOption[]
-  pavilionStyle: StoredOption[]
-  colour: StoredOption[]
-}
+type AllCustomOptions = Record<CustomDropdownField, StoredOption[]>
 
 function empty(): AllCustomOptions {
-  return { cuttingShape: [], crownStyle: [], pavilionStyle: [], colour: [] }
+  return {
+    cuttingShape: [],
+    crownStyle: [],
+    pavilionStyle: [],
+    colour: [],
+    species: [],
+    variety: [],
+  }
 }
 
 export function getCustomOptions(): AllCustomOptions {
@@ -30,6 +39,11 @@ export function getCustomOptions(): AllCustomOptions {
   } catch {
     return empty()
   }
+}
+
+/** Just the values for one field, which is all any dropdown actually needs. */
+export function getCustomValues(field: CustomDropdownField): string[] {
+  return getCustomOptions()[field].map((o) => o.value)
 }
 
 export function addCustomOption(field: CustomDropdownField, value: string): void {

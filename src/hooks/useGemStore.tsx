@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type { ReactNode } from "react"
-import type { User, Gem, GemReference, GemStatus } from "@/lib/types"
+import type { User, Gem, GemStatus } from "@/lib/types"
 import { GEM_STATUSES } from "@/lib/types"
 import { gemsApi } from "@/lib/api/gems"
 import { usersApi } from "@/lib/api/users"
@@ -15,11 +15,12 @@ interface GemContextType {
   loading: boolean
   refreshing: boolean
   gems: Gem[]
-  references: GemReference[]
+  /** Species names the identification field offers — see referencesApi.getIdentifications. */
   species: string[]
+  /** Variety names the identification field offers, from the same source. */
+  varieties: string[]
   refreshGems: () => Promise<void>
-  refreshReferences: () => Promise<void>
-  refreshSpecies: () => Promise<void>
+  refreshIdentifications: () => Promise<void>
   handleIntake: (
     data: {
       gemId?: string
@@ -63,8 +64,8 @@ const GemContext = createContext<GemContextType | undefined>(undefined)
 export function GemProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<User | null>(usersApi.getCurrentUser())
   const [gems, setGems] = useState<Gem[]>([])
-  const [references, setReferences] = useState<GemReference[]>([])
   const [species, setSpecies] = useState<string[]>([])
+  const [varieties, setVarieties] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -87,27 +88,15 @@ export function GemProvider({ children }: { children: ReactNode }) {
     }
   }, [user])
 
-  const refreshReferences = useCallback(async () => {
+  const refreshIdentifications = useCallback(async () => {
     if (!user) return
     setRefreshing(true)
     try {
-      const data = await referencesApi.getReferences()
-      setReferences(data)
+      const data = await referencesApi.getIdentifications()
+      setSpecies(data.species)
+      setVarieties(data.varieties)
     } catch (err) {
-      console.error("Failed to fetch references:", err)
-    } finally {
-      setRefreshing(false)
-    }
-  }, [user])
-
-  const refreshSpecies = useCallback(async () => {
-    if (!user) return
-    setRefreshing(true)
-    try {
-      const data = await referencesApi.getSpecies()
-      setSpecies(data)
-    } catch (err) {
-      console.error("Failed to fetch species:", err)
+      console.error("Failed to fetch identification options:", err)
     } finally {
       setRefreshing(false)
     }
@@ -120,18 +109,18 @@ export function GemProvider({ children }: { children: ReactNode }) {
       lastInitUserId.current = user.id
       const init = async () => {
         setLoading(true)
-        await Promise.all([refreshGems(), refreshReferences(), refreshSpecies()])
+        await Promise.all([refreshGems(), refreshIdentifications()])
         setLoading(false)
       }
       init()
     } else if (!user) {
       lastInitUserId.current = null
       setGems([])
-      setReferences([])
       setSpecies([])
+      setVarieties([])
       setLoading(false)
     }
-  }, [user, refreshGems, refreshReferences, refreshSpecies])
+  }, [user, refreshGems, refreshIdentifications])
 
   const handleIntake = useCallback(
     async (
@@ -482,11 +471,10 @@ export function GemProvider({ children }: { children: ReactNode }) {
           loading,
           refreshing,
           gems,
-          references,
           species,
+          varieties,
           refreshGems,
-          refreshReferences,
-          refreshSpecies,
+          refreshIdentifications,
           handleIntake,
           getGemById,
           handleTestSubmit,
@@ -502,11 +490,10 @@ export function GemProvider({ children }: { children: ReactNode }) {
           loading,
           refreshing,
           gems,
-          references,
           species,
+          varieties,
           refreshGems,
-          refreshReferences,
-          refreshSpecies,
+          refreshIdentifications,
           handleIntake,
           getGemById,
           handleTestSubmit,

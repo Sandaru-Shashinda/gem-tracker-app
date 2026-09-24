@@ -8,6 +8,10 @@ export const intakeSchema = z
     itemDescription: z.string().optional(),
     customerId: z.string().optional(),
     testerId1: z.string().optional(),
+    /**
+     * Optional on purpose. A stone can be given one reading instead of two, in which
+     * case Test 1 hands straight on to approval — see resolveSubmitStatus.
+     */
     testerId2: z.string().optional(),
     reportTypes: z.array(z.string()).min(1, "At least one report type is required"),
     // Bypasses Test 1 / Test 2 — the gem goes straight to final approval,
@@ -23,13 +27,8 @@ export const intakeSchema = z
         message: "Tester 1 is required",
       })
     }
-    if (!data.testerId2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["testerId2"],
-        message: "Tester 2 is required",
-      })
-    }
+    // No check on testerId2: leaving it unassigned is a choice about this stone, not
+    // an incomplete form.
   })
 
 export type IntakeFormValues = z.infer<typeof intakeSchema>

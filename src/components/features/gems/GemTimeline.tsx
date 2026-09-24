@@ -16,6 +16,10 @@ interface GemTimelineProps {
 
 export function GemTimeline({ gem }: GemTimelineProps) {
   const skipTesting = gem.skipTesting === true
+  // A stone can be read once instead of twice. With nobody assigned to the second
+  // reading it never happens, so the step is drawn as skipped rather than left pending
+  // forever — unless it already happened, on a gem whose Tester 2 was cleared after.
+  const skipTest2 = skipTesting || (!gem.assignedTester2 && !gem.test2?.timestamp)
 
   const steps: TimelineStep[] = [
     {
@@ -46,7 +50,7 @@ export function GemTimeline({ gem }: GemTimelineProps) {
     {
       id: "READY_FOR_T2",
       label: "Test 2",
-      status: skipTesting
+      status: skipTest2
         ? "skipped"
         : [GEM_STATUSES.READY_FOR_T2, GEM_STATUSES.DRAFT_TEST_2].includes(gem.status)
           ? "current"
@@ -54,8 +58,12 @@ export function GemTimeline({ gem }: GemTimelineProps) {
               [GEM_STATUSES.READY_FOR_APPROVAL, GEM_STATUSES.DONE].includes(gem.status)
             ? "completed"
             : "pending",
-      timestamp: skipTesting ? undefined : gem.test2?.timestamp,
-      helperText: skipTesting ? "Bypassed" : "Second verification",
+      timestamp: skipTest2 ? undefined : gem.test2?.timestamp,
+      helperText: skipTesting
+        ? "Bypassed"
+        : skipTest2
+          ? "Single reading — no second tester"
+          : "Second verification",
     },
     {
       id: "READY_FOR_APPROVAL",

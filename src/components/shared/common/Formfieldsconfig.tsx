@@ -147,7 +147,7 @@ interface FormFieldsConfigParams {
   setVarietySearch: (value: string) => void
   showVarietyList: boolean
   setShowVarietyList: (value: boolean) => void
-  filteredVarieties: any[]
+  filteredVarieties: string[]
   setValue: (
     name: any,
     value: any,
@@ -176,6 +176,8 @@ interface FormFieldsConfigParams {
   showColourList: boolean
   setShowColourList: (value: boolean) => void
   // Custom option callbacks
+  onAddSpeciesOption?: (value: string) => void
+  onAddVarietyOption?: (value: string) => void
   onAddCuttingShapeOption?: (value: string) => void
   onAddCrownStyleOption?: (value: string) => void
   onAddPavilionStyleOption?: (value: string) => void
@@ -212,6 +214,8 @@ export function getFormFieldsConfig({
   setColourSearch,
   showColourList,
   setShowColourList,
+  onAddSpeciesOption,
+  onAddVarietyOption,
   onAddCuttingShapeOption,
   onAddCrownStyleOption,
   onAddPavilionStyleOption,
@@ -540,7 +544,10 @@ export function getFormFieldsConfig({
       className: "",
     },
 
-    // 14. Species
+    // 14–15. Species and variety. Both are free text — a stone the reference table does
+    //        not cover still has to be named — so closing the list remembers whatever was
+    //        typed, the same way the cut and colour comboboxes do. What the lab has
+    //        already recorded arrives in filteredSpecies / filteredVarieties.
     species: {
       name: "species",
       label: "Species",
@@ -554,16 +561,18 @@ export function getFormFieldsConfig({
       onFocus: () => setShowSpeciesList(true),
       filteredItems: filteredSpecies,
       showList: showSpeciesList,
-      onItemSelect: (species) => {
+      onItemSelect: (species: string) => {
         setValue("species", species, { shouldValidate: true, shouldDirty: true })
         setSpeciesSearch(species)
         setShowSpeciesList(false)
       },
-      onCloseList: () => setShowSpeciesList(false),
-      renderItem: (species) => species,
+      onCloseList: () => {
+        onAddSpeciesOption?.(speciesSearch)
+        setShowSpeciesList(false)
+      },
+      renderItem: (species: string) => species,
     },
 
-    // 15. Variety
     selectedVariety: {
       name: "selectedVariety",
       label: "Variety",
@@ -577,13 +586,16 @@ export function getFormFieldsConfig({
       onFocus: () => setShowVarietyList(true),
       filteredItems: filteredVarieties,
       showList: showVarietyList,
-      onItemSelect: (reference) => {
-        setValue("selectedVariety", reference.variety, { shouldValidate: true, shouldDirty: true })
-        setVarietySearch(reference.variety)
+      onItemSelect: (variety: string) => {
+        setValue("selectedVariety", variety, { shouldValidate: true, shouldDirty: true })
+        setVarietySearch(variety)
         setShowVarietyList(false)
       },
-      onCloseList: () => setShowVarietyList(false),
-      renderItem: (reference) => reference.variety,
+      onCloseList: () => {
+        onAddVarietyOption?.(varietySearch)
+        setShowVarietyList(false)
+      },
+      renderItem: (variety: string) => variety,
     },
 
     // 16. Geographic Origin

@@ -118,6 +118,24 @@ export function mapSourceToFormValues(source: any, seed: StageSeed = {}): TestFo
   }
 }
 
+/**
+ * Folds several name lists into one, matching case-insensitively so the same name typed
+ * two ways appears once. The first spelling seen wins, so pass the authoritative list
+ * first — the same rule the API applies in GET /api/references/identifications.
+ */
+export function mergeNameOptions(...lists: string[][]): string[] {
+  const seen = new Map<string, string>()
+  for (const list of lists) {
+    for (const raw of list) {
+      const name = typeof raw === "string" ? raw.trim() : ""
+      if (!name) continue
+      const key = name.toLowerCase()
+      if (!seen.has(key)) seen.set(key, name)
+    }
+  }
+  return [...seen.values()]
+}
+
 /** Keeps the search-input states in sync with the current form values. */
 export function syncSearchStates(values: TestFormValues, setters: SearchSetters) {
   setters.setSpeciesSearch(values.species || "")
@@ -138,54 +156,88 @@ export type StageAccess = {
   isT2: boolean
   isAssignedT1: boolean
   isAssignedT2: boolean
-  isEditingT1AfterSubmit: boolean
-  isEditingT2AfterSubmit: boolean
 }
 
 /**
  * The stage this user may write to on this gem, or null when they may write to none.
  *
- * Everything that touches the analysis form goes through here: which stage's data is
- * loaded into the form, which stage a draft saves to, and whether the actions are
- * offered at all. Deriving the save target separately from the load target is what let
- * a tester's draft be aimed at an admin-only endpoint, and let work typed against Test 1
- * be saved into Test 2 — so the load and the save must read the same answer.
+ * Every save goes through here: which stage a submit posts to, which stage a draft saves
+ * to, and whether those actions are offered at all. Deriving the save target separately
+ * from the loaded record is what let a tester's draft be aimed at an admin-only endpoint,
+ * and let work typed against Test 1 be saved into Test 2.
+ *
+ * A tester only writes while the gem is actually sitting at their stage. Submitting hands
+ * the stone on, and their record is sealed at that moment — see resolveViewStage, which
+ * is what still shows it to them. Reopening it is the admin's call: a correction request
+ * moves the gem back to that stage, and write access follows from the move rather than
+ * from anyone keeping a private door open.
  *
  * Testers are checked Test 2 first: a tester holding both assignments is working on the
  * later stage, and that ordering is what decides which of their two records they see.
  */
 export function resolveActiveStage(access: StageAccess): StageKey | null {
-  const {
-    isAdmin,
-    isTester,
-    isT1,
-    isT2,
-    isAssignedT1,
-    isAssignedT2,
-    isEditingT1AfterSubmit,
-    isEditingT2AfterSubmit,
-  } = access
+  const { isAdmin, isTester, isT1, isT2, isAssignedT1, isAssignedT2 } = access
 
   // An admin owns whichever stage the gem currently sits in, and approval otherwise.
   if (isAdmin) return isT1 ? "test1" : isT2 ? "test2" : "finalApproval"
 
   if (isTester) {
-    if (isAssignedT2 && (isT2 || isEditingT2AfterSubmit)) return "test2"
-    if (isAssignedT1 && (isT1 || isEditingT1AfterSubmit)) return "test1"
+    if (isAssignedT2 && isT2) return "test2"
+    if (isAssignedT1 && isT1) return "test1"
   }
 
-  // A tester looking at a gem that is not theirs, or not at their stage, may read the
-  // form but has nothing to write to.
+  // A tester looking at a gem that is not theirs, or not at their stage, has nothing to
+  // write to. Whether they can still *read* a stage is resolveViewStage's question.
   return null
 }
 
-/** Derives the target GemStatus after a successful submit. */
+export type StageView = StageAccess & {
+  /** True once Test 1 has an owner — every save stamps one. */
+  hasSubmittedT1: boolean
+  hasSubmittedT2: boolean
+}
+
+/**
+ * The stage whose record the form shows, which is not always one this user can write to.
+ *
+ * A tester who has submitted keeps their own work on screen for as long as the gem
+ * exists, completed or not — going back to check what you recorded is ordinary, and it
+ * used to be offered as an edit, which quietly let a sealed record be rewritten after the
+ * next stage had already read it.
+ *
+ * They are shown their own stage and no other. A tester never reads the other tester's
+ * findings: two independent readings are the whole point of testing a stone twice, and
+ * one of them is not independent if it can be looked up. So a tester who is not assigned
+ * to this gem at all gets no stage, and the form stays empty.
+ */
+export function resolveViewStage(access: StageView): StageKey | null {
+  const writable = resolveActiveStage(access)
+  if (writable) return writable
+
+  if (access.isTester) {
+    if (access.isAssignedT2 && access.hasSubmittedT2) return "test2"
+    if (access.isAssignedT1 && access.hasSubmittedT1) return "test1"
+  }
+
+  return null
+}
+
+/**
+ * Derives the target GemStatus after a successful submit.
+ *
+ * A second reading only happens when someone is assigned to give it. With no Tester 2
+ * the stone is read once and Test 1 hands straight on to approval, so there is no empty
+ * Test 2 queue entry for a gem nobody is going to pick up. The server decides this the
+ * same way and from the same fact — the assignment itself — so a stale client cannot
+ * route a gem into a stage that has no owner.
+ */
 export function resolveSubmitStatus(
   role: UserRole | undefined,
   isT1: boolean,
   isT2: boolean,
+  hasSecondTester = true,
 ): GemStatus {
   if (role === UserRole.ADMIN || (!isT1 && !isT2)) return GEM_STATUSES.SUBMITTED_FOR_REPORT
-  if (isT1) return GEM_STATUSES.READY_FOR_T2
+  if (isT1) return hasSecondTester ? GEM_STATUSES.READY_FOR_T2 : GEM_STATUSES.READY_FOR_APPROVAL
   return GEM_STATUSES.READY_FOR_APPROVAL
 }

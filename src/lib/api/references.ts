@@ -1,6 +1,17 @@
 import type { GemReference } from "../types"
 import { API_BASE_URL, fetchWithAuth } from "./config"
 
+/**
+ * The names the identification fields offer. Both are free text on the form — a stone
+ * the reference table does not cover still has to be named — so these lists are the
+ * published table *and* every name the lab has actually recorded, folded together
+ * server-side. See GET /api/references/identifications.
+ */
+export interface IdentificationOptions {
+  species: string[]
+  varieties: string[]
+}
+
 export const referencesApi = {
   searchReferences: async (
     riMin?: string,
@@ -21,15 +32,9 @@ export const referencesApi = {
     return response.json()
   },
 
-  getReferences: async (): Promise<GemReference[]> => {
-    const response = await fetchWithAuth(`${API_BASE_URL}/references`)
-    if (!response.ok) throw new Error("Failed to fetch references")
-    return response.json()
-  },
-
-  getSpecies: async (): Promise<string[]> => {
-    const response = await fetchWithAuth(`${API_BASE_URL}/references/species`)
-    if (!response.ok) throw new Error("Failed to fetch species")
+  getIdentifications: async (): Promise<IdentificationOptions> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/references/identifications`)
+    if (!response.ok) throw new Error("Failed to fetch identification options")
     return response.json()
   },
 }

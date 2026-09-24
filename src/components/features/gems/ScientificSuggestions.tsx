@@ -11,6 +11,12 @@ interface ScientificSuggestionsProps {
   onWatch: () => any
   onSetSpeciesSearch: (val: string) => void
   onSetVarietySearch: (val: string) => void
+  /**
+   * True when the analysis form below is locked. The matches are still worth reading —
+   * they are scored against this stage's own readings — but applying one would rewrite a
+   * record its owner can no longer save, leaving the screen disagreeing with the file.
+   */
+  readOnly?: boolean
 }
 
 export function ScientificSuggestions({
@@ -20,6 +26,7 @@ export function ScientificSuggestions({
   onWatch,
   onSetSpeciesSearch,
   onSetVarietySearch,
+  readOnly,
 }: ScientificSuggestionsProps) {
   const getScoreBadgeClass = (score: number) => {
     if (score >= 80) return 'bg-green-100 border-green-300 text-green-700'
@@ -39,7 +46,9 @@ export function ScientificSuggestions({
       </div>
 
       <p className='text-[10px] text-blue-600 mb-3 leading-relaxed shrink-0'>
-        Matching species based on current RI, SG, and Hardness readings:
+        {readOnly
+          ? "Species matching the RI, SG and Hardness recorded on this analysis:"
+          : "Matching species based on current RI, SG, and Hardness readings:"}
       </p>
 
       <div className='space-y-2 pr-1 overflow-y-auto flex-1'>
@@ -62,6 +71,7 @@ export function ScientificSuggestions({
                   )}
                   <button
                     type='button'
+                    disabled={readOnly}
                     onClick={() => {
                       onReset({
                         ...onWatch(),
@@ -73,7 +83,11 @@ export function ScientificSuggestions({
                       onSetSpeciesSearch(s.species || "")
                       onSetVarietySearch(s.variety || "")
                     }}
-                    className='w-full text-left p-3 bg-white border border-blue-100 rounded-xl hover:border-blue-400 hover:shadow-lg transition-all group relative overflow-hidden'
+                    className={`w-full text-left p-3 bg-white border border-blue-100 rounded-xl transition-all group relative overflow-hidden ${
+                      readOnly
+                        ? "cursor-default"
+                        : "hover:border-blue-400 hover:shadow-lg"
+                    }`}
                   >
                     <div className='absolute top-0 right-0 p-1'>
                       <Badge
@@ -84,7 +98,11 @@ export function ScientificSuggestions({
                       </Badge>
                     </div>
                     <div className='flex flex-col'>
-                      <p className='text-xs font-black text-slate-800 group-hover:text-blue-700 font-serif transition-colors'>
+                      <p
+                        className={`text-xs font-black text-slate-800 font-serif transition-colors ${
+                          readOnly ? "" : "group-hover:text-blue-700"
+                        }`}
+                      >
                         {s.variety}
                       </p>
                       <p className='text-[10px] text-slate-500 italic opacity-80 mb-2'>

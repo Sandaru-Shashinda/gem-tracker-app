@@ -44,6 +44,8 @@ interface GemIntakeAndHistoryProps {
   onCopyValues: (source: any) => void
   onHandleRequestCorrection: (gemId: string, stage: "test1" | "test2", note: string) => void
   isApproval: boolean
+  /** False when the analysis form is locked — see resolveActiveStage. */
+  canWrite: boolean
 }
 
 import { GemImage } from "./GemImage"
@@ -64,6 +66,7 @@ export function GemIntakeAndHistory({
   onCopyValues,
   onHandleRequestCorrection,
   isApproval,
+  canWrite,
 }: GemIntakeAndHistoryProps) {
   const toast = useToast()
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false)
@@ -281,6 +284,7 @@ export function GemIntakeAndHistory({
           onWatch={onWatch}
           onSetSpeciesSearch={onSetSpeciesSearch}
           onSetVarietySearch={onSetVarietySearch}
+          readOnly={!canWrite}
         />
       )}
 
