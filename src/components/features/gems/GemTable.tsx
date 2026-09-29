@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { createColumnHelper, type PaginationState } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { type Gem, GEM_STATUSES } from "@/lib/types"
+import { type Gem, GEM_STATUSES, REPORT_MODES, customSizeLabel } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
 import { useNavigate } from "react-router-dom"
 import { StatusBadge } from "@/components/shared/common/StatusBadge"
@@ -74,6 +74,18 @@ export function GemTable({
         header: "Report Types",
         cell: (info) => {
           const reportTypes = info.getValue() || []
+          // A custom gem is never asked for paper sizes, so an empty cell here would
+          // read as an intake somebody left half-finished rather than as the answer.
+          if (info.row.original.reportMode === REPORT_MODES.CUSTOM) {
+            return (
+              <Badge
+                variant='secondary'
+                className='text-[10px] px-2 py-0.5 bg-amber-100 text-amber-800 border-none'
+              >
+                Custom {customSizeLabel(reportTypes[0])}
+              </Badge>
+            )
+          }
           return (
             <div className='flex flex-wrap gap-1 max-w-[150px]'>
               {reportTypes.map((type) => (

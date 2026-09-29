@@ -3,7 +3,15 @@ import { Building2, AlertCircle, Eye, X, Plus, Loader2, Columns2 } from "lucide-
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { type Gem, type Customer, type GemReference, type ObservationData, UserRole } from "@/lib/types"
+import {
+  type Gem,
+  type Customer,
+  type GemReference,
+  type ObservationData,
+  REPORT_MODES,
+  UserRole,
+  customSizeLabel,
+} from "@/lib/types"
 import { TREATMENT_SECTIONS, normalizeTreatments } from "@/lib/treatments"
 import { gemsApi } from "@/lib/api/gems"
 import { getImageById, deleteImage } from "@/lib/api/images"
@@ -254,17 +262,30 @@ export function GemIntakeAndHistory({
               Report Types
             </span>
             <div className='flex gap-1.5'>
-              {(gem.reportTypes || []).map((type) => (
+              {gem.reportMode === REPORT_MODES.CUSTOM ? (
+                // Not an unanswered question — a custom job asks for exactly one
+                // certificate, and the size it names is the one it was taken in at.
                 <Badge
-                  key={type}
                   variant='outline'
-                  className='capitalize text-[10px] bg-white text-blue-600 border-blue-100'
+                  className='text-[10px] bg-white text-amber-700 border-amber-200'
                 >
-                  {type}
+                  Custom {customSizeLabel(gem.reportTypes?.[0])}
                 </Badge>
-              ))}
-              {(!gem.reportTypes || gem.reportTypes.length === 0) && (
-                <span className='text-xs text-slate-400 italic'>None selected</span>
+              ) : (
+                <>
+                  {(gem.reportTypes || []).map((type) => (
+                    <Badge
+                      key={type}
+                      variant='outline'
+                      className='capitalize text-[10px] bg-white text-blue-600 border-blue-100'
+                    >
+                      {type}
+                    </Badge>
+                  ))}
+                  {(!gem.reportTypes || gem.reportTypes.length === 0) && (
+                    <span className='text-xs text-slate-400 italic'>None selected</span>
+                  )}
+                </>
               )}
             </div>
           </div>

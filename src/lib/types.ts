@@ -49,6 +49,44 @@ export const GEM_STATUSES = {
 
 export type GemStatus = (typeof GEM_STATUSES)[keyof typeof GEM_STATUSES]
 
+/**
+ * Which kind of certificate a gem was taken in for.
+ *
+ * Chosen at intake, and read from there on as the answer to a question nothing else
+ * asks twice: a default gem is offered the lab's standard paper sizes and never the
+ * card editor, a custom gem the other way round. Missing means default — every gem
+ * taken in before the choice existed was getting the standard certificate.
+ */
+export const REPORT_MODES = {
+  DEFAULT: "default",
+  CUSTOM: "custom",
+} as const
+
+export type ReportMode = (typeof REPORT_MODES)[keyof typeof REPORT_MODES]
+
+/**
+ * The sizes a custom certificate can be written at — the two that have an editor.
+ *
+ * Chosen at intake and stored in the gem's own reportTypes, so a custom job carries its
+ * size the same way a standard one carries the sizes it asked for, and the report is
+ * raised at that size without anybody having to configure it afterwards.
+ */
+export const CUSTOM_REPORT_SIZES = ["small", "medium", "large"] as const
+
+export type CustomReportSize = (typeof CUSTOM_REPORT_SIZES)[number]
+
+/** What each custom size is called wherever a badge or a heading names it. */
+export const CUSTOM_SIZE_LABELS: Record<CustomReportSize, string> = {
+  small: "card",
+  medium: "A5",
+  large: "A4",
+}
+
+/** The badge label for a custom job's size, read off its reportTypes or its report. */
+export function customSizeLabel(size: string | undefined): string {
+  return CUSTOM_SIZE_LABELS[size as CustomReportSize] ?? CUSTOM_SIZE_LABELS.small
+}
+
 export interface ObservationData {
   grade?: string
   shape?: string
@@ -109,6 +147,7 @@ export interface Gem {
   assignedTester1?: string
   assignedTester2?: string
   reportTypes?: string[]
+  reportMode?: ReportMode
   skipTesting?: boolean
 
   intake: {

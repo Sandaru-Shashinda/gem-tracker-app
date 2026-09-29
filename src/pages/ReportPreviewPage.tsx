@@ -7,10 +7,18 @@ import { MediumReportPreview } from "@/components/features/reports/MediumReportP
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
 import { VerbalReportPreview } from "@/components/features/reports/VerbalReportPreview"
+import { CustomSmallReportView } from "@/components/features/reports/custom/CustomSmallReportView"
+import { CustomMediumReportView } from "@/components/features/reports/custom/CustomMediumReportView"
+import { CustomLargeReportView } from "@/components/features/reports/custom/CustomLargeReportView"
 import { primeImageCache } from "@/components/features/gems/GemImage"
 import type { Image } from "@/lib/api/images"
 import type { Gem } from "@/lib/types"
 import { signatoryName, type ReportSignatory } from "@/lib/report-signature"
+import type {
+  StoredCustomLargeReport,
+  StoredCustomMediumReport,
+  StoredCustomSmallReport,
+} from "@/lib/custom-report"
 
 interface ReportData {
   _id: string
@@ -20,6 +28,12 @@ interface ReportData {
   gemId: string | Gem
   signedBy?: ReportSignatory | string | null
   gemImages?: Array<Partial<Image> & { _id: string }>
+  /** Set when this report prints a card somebody rewrote rather than the gem's own. */
+  customCard?: Partial<StoredCustomSmallReport> | null
+  /** The same one paper size up, read only when this report prints at A5. */
+  customMediumCard?: Partial<StoredCustomMediumReport> | null
+  /** And the A4, read only when this report prints at full page. */
+  customLargeCard?: Partial<StoredCustomLargeReport> | null
 }
 
 export function ReportPreviewPage() {
@@ -125,6 +139,17 @@ export function ReportPreviewPage() {
   // Determine which UI to show
   // If we have a report, use its type. Default to 'medium' for gem-only views
   const reportType = report?.reportType || "medium"
+  // A customised report prints its saved certificate wherever the certificate is drawn,
+  // this page included. A customer scanning the QR on a custom one has to land on that
+  // certificate — a page showing the standard one instead reads as a mismatch between
+  // what is in their hand and the record vouching for it.
+  //
+  // Each size reads only its own saved document, so a report that was customised at one
+  // size and then switched to another prints the standard certificate rather than the
+  // wording of a sheet it is no longer printing.
+  const customCard = reportType === "small" ? report?.customCard : null
+  const customMediumCard = reportType === "medium" ? report?.customMediumCard : null
+  const customLargeCard = reportType === "large" ? report?.customLargeCard : null
   const includeLogo = report?.isClientDataAdd ?? true
 
   const previewProps = {
@@ -154,7 +179,27 @@ export function ReportPreviewPage() {
             flex row here would let the fixed-size cards stretch it past the
             viewport via min-width:auto, defeating their own scaling. */}
         <div className='w-full'>
-          {reportType === "large" ? (
+          {customLargeCard ? (
+            <CustomLargeReportView
+              gem={gem}
+              customReport={customLargeCard}
+              reportId={report?._id || gem._id}
+              signatureName={previewProps.signatureName}
+            />
+          ) : customMediumCard ? (
+            <CustomMediumReportView
+              gem={gem}
+              customReport={customMediumCard}
+              reportId={report?._id || gem._id}
+              signatureName={previewProps.signatureName}
+            />
+          ) : customCard ? (
+            <CustomSmallReportView
+              gem={gem}
+              customCard={customCard}
+              reportId={report?._id || gem._id}
+            />
+          ) : reportType === "large" ? (
             <LargeReportPreview {...previewProps} />
           ) : reportType === "small" ? (
             <SmallReportPreview {...previewProps} />

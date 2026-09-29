@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, Loader2, Download, Save, Check } from "lucide-react"
+import { Navigate, useParams, useNavigate } from "react-router-dom"
+import { ArrowLeft, Loader2, Download, Save, Check, SlidersHorizontal } from "lucide-react"
 import { useGem } from "@/hooks/useGemStore"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Card } from "@/components/ui/card"
@@ -18,7 +18,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { reportsApi } from "@/lib/api/reports"
 import { usersApi } from "@/lib/api/users"
-import { type Gem, type User, GEM_STATUSES, UserRole } from "@/lib/types"
+import { type Gem, type User, GEM_STATUSES, REPORT_MODES, UserRole } from "@/lib/types"
 import {
   SIGNATORY_ROLE,
   signatoryName,
@@ -309,6 +309,21 @@ export function ReportConfigurationPage() {
 
   const currentGem = gem || (report && typeof report.gemId === "object" ? report.gemId : null)
 
+  /**
+   * A custom report has none of the settings on this page: no paper size drawn from the
+   * lab's four, no signatory, no customer logo. Its size and its every word are settled
+   * on the page it is written on, so a custom report arriving here is a wrong turn —
+   * which is the point of sending it straight back out rather than rendering a version
+   * of this page with most of it missing.
+   */
+  const isCustomMode = currentGem?.reportMode === REPORT_MODES.CUSTOM
+  /** The sizes a one-off can be written at. Only the verbal report has no custom editor. */
+  const customisableSize = size === "small" || size === "medium" || size === "large"
+
+  if (isCustomMode && report?._id) {
+    return <Navigate to={`/reports/${report._id}/custom`} replace />
+  }
+
   if (!currentGem) {
     return (
       <MainLayout>
@@ -327,8 +342,26 @@ export function ReportConfigurationPage() {
             <ArrowLeft className='h-4 w-4' />
           </Button>
           <h1 className='text-2xl font-bold text-slate-800'>Report Configuration</h1>
-          <div className='ml-auto text-sm text-slate-500'>
-            Report ID: {report?.reportId || "New"}
+          <div className='ml-auto flex items-center gap-3'>
+            <span className='text-sm text-slate-500'>Report ID: {report?.reportId || "New"}</span>
+            {/* A custom gem reaches the card editor from its own panel below, which
+                says why the paper sizes are missing. This is the way in for a gem that
+                was taken in for a standard certificate and needs a one-off anyway. */}
+            {customisableSize && (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => navigate(`/reports/${report?._id}/custom`)}
+                disabled={!report?._id}
+              >
+                <SlidersHorizontal className='w-4 h-4 mr-2' />
+                {size === "large"
+                  ? "Custom A4 Report"
+                  : size === "medium"
+                    ? "Custom A5 Report"
+                    : "Custom Card Report"}
+              </Button>
+            )}
           </div>
         </div>
 

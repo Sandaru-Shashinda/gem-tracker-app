@@ -12,6 +12,7 @@ import { UserRole } from "./lib/types"
 import { ReportPreviewPage } from "./pages/ReportPreviewPage"
 import { ReportsPage } from "./pages/ReportsPage"
 import { ReportConfigurationPage } from "./pages/ReportConfigurationPage"
+import { CustomReportPage } from "./pages/CustomReportPage"
 import { SpectrometerPage } from "./pages/SpectrometerPage"
 import { MessagesPage } from "./pages/MessagesPage"
 import { PostsPage } from "./pages/PostsPage"
@@ -88,6 +89,16 @@ export default function App() {
           }
         />
         <Route path='/reports/:id' element={<ReportPreviewPage />} />
+        <Route
+          path='/reports/:id/custom'
+          element={
+            user?.role === UserRole.ADMIN || user?.role === "HELPER" ? (
+              <CustomReportPage />
+            ) : (
+              <Navigate to='/dashboard' replace />
+            )
+          }
+        />
         <Route
           path='/reports/:id/configure'
           element={

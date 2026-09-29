@@ -40,8 +40,11 @@ export function ReportsPage() {
     loadReports()
   }, [pagination.pageIndex, pagination.pageSize])
 
-  const handleGenerateReport = async (gemId: string) => {
-    navigate(`/reports/${gemId}/configure`)
+  // A custom report is written on its own page and has no paper-size settings to
+  // configure; a standard one is the other way round. Neither has anything to offer
+  // on the other's page, so the row sends you to the one that applies.
+  const handleOpenReport = (reportId: string, isCustom: boolean) => {
+    navigate(`/reports/${reportId}/${isCustom ? "custom" : "configure"}`)
   }
 
   return (
@@ -64,7 +67,7 @@ export function ReportsPage() {
           onPaginationChange={setPagination}
           totalRecords={totalRecords}
           isLoading={isLoading}
-          onGenerateReport={handleGenerateReport}
+          onOpenReport={handleOpenReport}
         />
       </div>
     </MainLayout>

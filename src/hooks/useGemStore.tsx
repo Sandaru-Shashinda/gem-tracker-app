@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type { ReactNode } from "react"
-import type { User, Gem, GemStatus } from "@/lib/types"
+import type { User, Gem, GemStatus, ReportMode } from "@/lib/types"
 import { GEM_STATUSES } from "@/lib/types"
 import { gemsApi } from "@/lib/api/gems"
 import { usersApi } from "@/lib/api/users"
@@ -32,6 +32,7 @@ interface GemContextType {
       customerId?: string
       status?: GemStatus
       reportTypes?: string[]
+      reportMode?: ReportMode
       skipTesting?: boolean
     },
     images?: File[],
@@ -134,6 +135,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
         customerId?: string
         status?: GemStatus
         reportTypes?: string[]
+        reportMode?: ReportMode
         skipTesting?: boolean
       },
       images?: File[],

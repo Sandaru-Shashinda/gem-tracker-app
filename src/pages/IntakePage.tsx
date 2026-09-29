@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +32,14 @@ import { useGem } from "@/hooks/useGemStore"
 import { usersApi } from "@/lib/api/users"
 import { customersApi } from "@/lib/api/customers"
 import { gemsApi } from "@/lib/api/gems"
-import { type User, type Customer, GEM_STATUSES, UserRole } from "@/lib/types"
+import {
+  type User,
+  type Customer,
+  GEM_STATUSES,
+  REPORT_MODES,
+  UserRole,
+  customSizeLabel,
+} from "@/lib/types"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
@@ -47,6 +56,34 @@ import {
 
 /** Sentinel for the "No second tester" row; never leaves this file as a real value. */
 const NO_SECOND_TESTER = "__none__"
+
+/**
+ * The one choice that decides what the rest of the report flow asks about this stone.
+ *
+ * Taken here rather than at the end because it is a fact about the job the customer
+ * brought in, not a decision the lab makes later. Everything downstream reads it: the
+ * paper sizes below are asked only of a default gem, and the configuration page offers
+ * each gem only the half of its options that its answer here made relevant.
+ */
+const REPORT_STYLE_OPTIONS = [
+  {
+    value: REPORT_MODES.DEFAULT,
+    title: "Default report",
+    hint: "Tested, approved, then printed from the gem's own record.",
+  },
+  {
+    value: REPORT_MODES.CUSTOM,
+    title: "Custom report",
+    hint: "Written by hand on the certificate itself. No testing and no approval stage.",
+  },
+] as const
+
+/** The two sizes a custom certificate can be written at, and what each one is. */
+const CUSTOM_SIZE_OPTIONS = [
+  { value: "small", title: "Card", hint: "Visa card size (85.60 x 53.98 mm)" },
+  { value: "medium", title: "A5", hint: "Half-page size" },
+  { value: "large", title: "A4", hint: "Full page" },
+] as const
 
 export function IntakePage() {
   const navigate = useNavigate()
@@ -88,12 +125,16 @@ export function IntakePage() {
       testerId1: "",
       testerId2: "",
       reportTypes: [],
+      reportMode: REPORT_MODES.DEFAULT,
       skipTesting: false,
     },
     mode: "onChange",
   })
 
   const skipTesting = watch("skipTesting")
+  const reportMode = watch("reportMode")
+  const isCustom = reportMode === REPORT_MODES.CUSTOM
+  const reportTypes = watch("reportTypes")
   // Radix Select has no empty-valued item, so "nobody" needs a stand-in value of its own.
   // It is mapped back to "" on the way into the form, which is what the API reads.
   const secondTesterId = watch("testerId2")
@@ -154,6 +195,9 @@ export function IntakePage() {
               gem.assignedTester2 ||
               "",
             reportTypes: gem.reportTypes || [],
+            // Gems taken in before the choice existed were getting the standard
+            // certificate, so that is what a missing mode means.
+            reportMode: gem.reportMode || REPORT_MODES.DEFAULT,
             skipTesting: gem.skipTesting ?? false,
           })
 
@@ -274,6 +318,20 @@ export function IntakePage() {
   const onSubmit = async (data: IntakeFormValues) => {
     setIsSubmitting(true)
     try {
+      // A custom job has no stage to wait in: its certificate is written by hand, so
+      // there is nothing to test and nothing to approve. The API raises its report on
+      // the way through, which is the thing the lab actually opens next.
+      if (data.reportMode === REPORT_MODES.CUSTOM) {
+        await handleIntake(
+          { ...data, testerId1: "", testerId2: "", status: GEM_STATUSES.DONE },
+          images,
+          id,
+          existingImageIds,
+        )
+        navigate("/reports")
+        return
+      }
+
       // Skipping the testing flow sends the gem straight to the approver,
       // with no testers assigned.
       await handleIntake(
@@ -523,6 +581,10 @@ export function IntakePage() {
                     Workflow Assignment
                   </h3>
 
+                  {/* Only the testing controls are hidden for a custom job. The report
+                      style below it stays put whatever is chosen, because it is the
+                      control you reach for to change the choice back. */}
+                  {!isCustom && (
                   <Controller
                     name='skipTesting'
                     control={control}
@@ -556,6 +618,7 @@ export function IntakePage() {
                       </div>
                     )}
                   />
+                  )}
 
                   <div className='space-y-3'>
                     <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>
@@ -591,6 +654,107 @@ export function IntakePage() {
                     )}
                   </div>
 
+                  <div className='space-y-3 pt-2'>
+                    <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>
+                      Report Style
+                    </label>
+                    <Controller
+                      name='reportMode'
+                      control={control}
+                      render={({ field }) => (
+                        <RadioGroup
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          className='grid grid-cols-1 gap-3 sm:grid-cols-2'
+                        >
+                          {REPORT_STYLE_OPTIONS.map((option) => (
+                            <div
+                              key={option.value}
+                              className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${
+                                field.value === option.value
+                                  ? "border-blue-300 bg-blue-50/60"
+                                  : "border-slate-100 bg-slate-50 hover:bg-slate-100"
+                              }`}
+                            >
+                              <RadioGroupItem
+                                value={option.value}
+                                id={`report-mode-${option.value}`}
+                                className='mt-0.5'
+                              />
+                              <Label
+                                htmlFor={`report-mode-${option.value}`}
+                                className='flex-1 cursor-pointer'
+                              >
+                                <span className='block text-sm font-bold text-slate-700'>
+                                  {option.title}
+                                </span>
+                                <span className='mt-1 block text-[11px] font-medium leading-snug text-slate-500'>
+                                  {option.hint}
+                                </span>
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      )}
+                    />
+                  </div>
+
+                  {isCustom ? (
+                    <div className='space-y-3 pt-2'>
+                      <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>
+                        Report Size
+                      </label>
+                      {/* A custom job is one certificate at one size, so this is a
+                          choice rather than the standard report's checklist. The size
+                          is what the report is raised at, which is why it is asked
+                          here and not later — a custom gem never reaches the
+                          configuration page. */}
+                      <Controller
+                        name='reportTypes'
+                        control={control}
+                        render={({ field }) => (
+                          <RadioGroup
+                            value={field.value?.[0] ?? ""}
+                            onValueChange={(val) => field.onChange([val])}
+                            className='grid grid-cols-1 gap-3 sm:grid-cols-3'
+                          >
+                            {CUSTOM_SIZE_OPTIONS.map((option) => (
+                              <div
+                                key={option.value}
+                                className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${
+                                  field.value?.[0] === option.value
+                                    ? "border-blue-300 bg-blue-50/60"
+                                    : "border-slate-100 bg-slate-50 hover:bg-slate-100"
+                                }`}
+                              >
+                                <RadioGroupItem
+                                  value={option.value}
+                                  id={`custom-size-${option.value}`}
+                                  className='mt-0.5'
+                                />
+                                <Label
+                                  htmlFor={`custom-size-${option.value}`}
+                                  className='flex-1 cursor-pointer'
+                                >
+                                  <span className='block text-sm font-bold text-slate-700'>
+                                    {option.title}
+                                  </span>
+                                  <span className='mt-1 block text-[11px] font-medium leading-snug text-slate-500'>
+                                    {option.hint}
+                                  </span>
+                                </Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        )}
+                      />
+                      {errors.reportTypes && (
+                        <p className='text-xs text-red-500 font-medium'>
+                          {errors.reportTypes.message}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
                   <div className='space-y-3 pt-2'>
                     <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>
                       Report Types
@@ -631,7 +795,19 @@ export function IntakePage() {
                       </p>
                     )}
                   </div>
+                  )}
 
+                  {isCustom ? (
+                    <div className='rounded-xl border border-dashed border-blue-200 bg-blue-50/40 p-6'>
+                      <p className='text-sm font-bold text-slate-700'>No workflow for this one</p>
+                      <p className='mt-1 text-xs font-medium leading-relaxed text-slate-500'>
+                        A custom certificate is written by hand on the certificate itself, so
+                        there is nothing to test and nothing to approve. Saving this intake
+                        raises its report straight away — open it from Reports and type the
+                        values onto the {customSizeLabel(reportTypes?.[0])}.
+                      </p>
+                    </div>
+                  ) : (
                   <div className='space-y-6 pt-4'>
                     {skipTesting ? (
                       <div className='p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center'>
@@ -736,6 +912,7 @@ export function IntakePage() {
                       </div>
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
 
