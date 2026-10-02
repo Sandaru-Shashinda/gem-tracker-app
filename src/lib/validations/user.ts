@@ -24,5 +24,20 @@ export const editUserSchema = userSchema.extend({
     .or(z.literal("")),
 })
 
+export const profileSchema = userSchema.omit({ role: true, password: true })
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password"),
+    newPassword: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+
 export type UserFormValues = z.infer<typeof userSchema>
 export type EditUserFormValues = z.infer<typeof editUserSchema>
+export type ProfileFormValues = z.infer<typeof profileSchema>
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>

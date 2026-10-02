@@ -18,7 +18,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { reportsApi } from "@/lib/api/reports"
 import { usersApi } from "@/lib/api/users"
-import { type Gem, type User, GEM_STATUSES, REPORT_MODES, UserRole } from "@/lib/types"
+import {
+  type Gem,
+  type User,
+  GEM_STATUSES,
+  REPORT_MODES,
+  UserRole,
+  customSizeLabel,
+} from "@/lib/types"
 import {
   SIGNATORY_ROLE,
   signatoryName,
@@ -355,11 +362,7 @@ export function ReportConfigurationPage() {
                 disabled={!report?._id}
               >
                 <SlidersHorizontal className='w-4 h-4 mr-2' />
-                {size === "large"
-                  ? "Custom A4 Report"
-                  : size === "medium"
-                    ? "Custom A5 Report"
-                    : "Custom Card Report"}
+                Custom {customSizeLabel(size)} Report
               </Button>
             )}
           </div>

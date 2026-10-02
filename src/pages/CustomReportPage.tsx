@@ -50,9 +50,9 @@ import { CUSTOM_REPORT_SIZES, type CustomReportSize, type Gem } from "@/lib/type
 
 /** What the size switch offers, in order, and how each is described. */
 const SIZE_OPTIONS: Record<CustomReportSize, { title: string; hint: string; heading: string }> = {
-  small: { title: "Card", hint: "85.60 × 53.98 mm", heading: "Custom Card Report" },
-  medium: { title: "A5", hint: "Half page", heading: "Custom A5 Report" },
-  large: { title: "A4", hint: "Full page", heading: "Custom A4 Report" },
+  small: { title: "Small", hint: "Card, 85.60 × 53.98 mm", heading: "Custom Small Report" },
+  medium: { title: "Medium", hint: "A5, half page", heading: "Custom Medium Report" },
+  large: { title: "Large", hint: "A4, full page", heading: "Custom Large Report" },
 }
 
 /** A report's size as this page reads it: any of the three, else the card. */

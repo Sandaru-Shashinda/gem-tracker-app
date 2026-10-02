@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select"
 import { userSchema, type UserFormValues } from "@/lib/validations/user"
 import { UserRole } from "@/lib/types"
+import { useGem } from "@/hooks/useGemStore"
 
 interface CreateUserModalProps {
   isOpen: boolean
@@ -35,6 +36,7 @@ export function CreateUserModal({
   onSubmit,
   isSubmitting,
 }: CreateUserModalProps) {
+  const viewerIsAdmin = useGem().user?.role === UserRole.ADMIN
   const [showPassword, setShowPassword] = useState(false)
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -113,7 +115,7 @@ export function CreateUserModal({
                       <SelectContent>
                         <SelectItem value={UserRole.TESTER}>TESTER</SelectItem>
                         <SelectItem value={UserRole.HELPER}>HELPER</SelectItem>
-                        <SelectItem value={UserRole.ADMIN}>ADMIN</SelectItem>
+                        {viewerIsAdmin && <SelectItem value={UserRole.ADMIN}>ADMIN</SelectItem>}
                       </SelectContent>
                     </Select>
                   )}

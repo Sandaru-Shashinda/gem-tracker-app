@@ -22,6 +22,7 @@ import {
 import { editUserSchema, type EditUserFormValues } from "@/lib/validations/user"
 import type { User } from "@/lib/types"
 import { UserRole } from "@/lib/types"
+import { useGem } from "@/hooks/useGemStore"
 
 interface EditUserModalProps {
   user: User | null
@@ -38,6 +39,7 @@ export function EditUserModal({
   onSubmit,
   isSubmitting,
 }: EditUserModalProps) {
+  const viewerIsAdmin = useGem().user?.role === UserRole.ADMIN
   const form = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
     mode: "onChange",
@@ -118,7 +120,7 @@ export function EditUserModal({
                       <SelectContent>
                         <SelectItem value={UserRole.TESTER}>TESTER</SelectItem>
                         <SelectItem value={UserRole.HELPER}>HELPER</SelectItem>
-                        <SelectItem value={UserRole.ADMIN}>ADMIN</SelectItem>
+                        {viewerIsAdmin && <SelectItem value={UserRole.ADMIN}>ADMIN</SelectItem>}
                       </SelectContent>
                     </Select>
                   )}

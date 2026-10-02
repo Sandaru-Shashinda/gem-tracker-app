@@ -19,6 +19,8 @@ export interface User {
   address?: string
   email?: string
   phoneNumber?: string
+  /** Data URI of the user's profile picture; `avatar` (initials) is shown when absent. */
+  profileImage?: string
   isDeleted?: boolean
 }
 
@@ -75,11 +77,15 @@ export const CUSTOM_REPORT_SIZES = ["small", "medium", "large"] as const
 
 export type CustomReportSize = (typeof CUSTOM_REPORT_SIZES)[number]
 
-/** What each custom size is called wherever a badge or a heading names it. */
+/**
+ * What each custom size is called wherever a badge or a heading names it — the same
+ * Small / Medium / Large a standard report goes by, so the two kinds read alike in
+ * every list and count. The paper each one is (card, A5, A4) is told in its hint.
+ */
 export const CUSTOM_SIZE_LABELS: Record<CustomReportSize, string> = {
-  small: "card",
-  medium: "A5",
-  large: "A4",
+  small: "Small",
+  medium: "Medium",
+  large: "Large",
 }
 
 /** The badge label for a custom job's size, read off its reportTypes or its report. */
@@ -215,6 +221,44 @@ export interface Gem {
     approverCorrectionRequested?: boolean
     approverCorrectionNote?: string
   }
+}
+
+export type ReportType = "small" | "medium" | "large" | "verbal"
+
+/** Lab-wide figures for the dashboard, aggregated by the API over every gem. */
+export interface DashboardStats {
+  totalGems: number
+  pendingWorkflow: number
+  completedGems: number
+  myActionItems: number
+  /** Completed gems by report size; a gem taken in for several sizes counts under each. */
+  reportTypesDone: Partial<Record<ReportType, number>>
+  /** The same count, for gems given final approval in the current lab month. */
+  reportTypesDoneThisMonth: Partial<Record<ReportType, number>>
+  /** The species named most often among this month's completed gems; null if none. */
+  topSpeciesThisMonth: { name: string; count: number } | null
+  totalCarats: number
+  averageCarats: number
+  /** Intake to final approval, averaged over completed gems; null until one completes. */
+  averageTurnaroundDays: number | null
+  statusCounts: Partial<Record<GemStatus, number>>
+  reportModes: Partial<Record<ReportMode, number>>
+  /** Completed gems by species, largest first, with the tail folded into "Other". */
+  species: { name: string; count: number }[]
+  topCustomers: { name: string; count: number }[]
+}
+
+/** The spans the dashboard's activity chart can show. */
+export type ActivityRange = "month" | "6m" | "year" | "all"
+
+/**
+ * Gems taken in and completed per bucket, oldest first, with empty buckets included.
+ * Keys are lab-calendar dates: "YYYY-MM-DD" by day, "YYYY-MM" by month, "YYYY" by year.
+ */
+export interface ActivityData {
+  range: ActivityRange
+  granularity: "day" | "month" | "year"
+  buckets: { key: string; intake: number; completed: number }[]
 }
 
 export interface GemReference {

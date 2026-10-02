@@ -85,7 +85,7 @@ export function CustomerTable({
         cell: (info) => {
           const customer = info.row.original
 
-          if (userRole !== UserRole.ADMIN) return null
+          if (userRole !== UserRole.ADMIN && userRole !== UserRole.HELPER) return null
 
           return (
             <div className='flex items-center justify-end gap-1'>

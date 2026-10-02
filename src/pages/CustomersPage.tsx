@@ -93,7 +93,7 @@ export function CustomersPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            {user?.role === UserRole.ADMIN && (
+            {(user?.role === UserRole.ADMIN || user?.role === UserRole.HELPER) && (
               <Button
                 onClick={() => setIsCreateModalOpen(true)}
                 className='bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-100 flex items-center gap-2 h-10 px-4 rounded-xl transition-all active:scale-95 whitespace-nowrap'

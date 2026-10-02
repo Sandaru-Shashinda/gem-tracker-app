@@ -1,31 +1,51 @@
-import { useMemo } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { StatCard } from "@/components/features/dashboard/StatCard"
 import { SpeciesDistributionWidget } from "@/components/features/dashboard/SpeciesDistributionWidget"
-import { FileText, Activity, CheckCircle, AlertCircle } from "lucide-react"
+import { ActivityChart } from "@/components/features/dashboard/ActivityChart"
+import { WorkflowStageWidget } from "@/components/features/dashboard/WorkflowStageWidget"
+import { TopCustomersWidget } from "@/components/features/dashboard/TopCustomersWidget"
+import { ReportModeWidget } from "@/components/features/dashboard/ReportModeWidget"
+import { MultiStatCard } from "@/components/features/dashboard/MultiStatCard"
+import {
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  Timer,
+  FileCheck,
+  CalendarCheck,
+  Sparkles,
+  Gem as GemIcon,
+} from "lucide-react"
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useGem } from "@/hooks/useGemStore"
-import { GemTimeline } from "@/components/features/gems/GemTimeline"
-import { GEM_STATUSES, UserRole } from "@/lib/types"
-import { GemImage } from "@/components/features/gems/GemImage"
+import { gemsApi } from "@/lib/api/gems"
+import type { DashboardStats } from "@/lib/types"
 
 export function DashboardPage() {
-  const { user, gems } = useGem()
+  const { user } = useGem()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const stats = useMemo(() => {
-    return {
-      total: gems.length,
-      pending: gems.filter((g) => g.status !== GEM_STATUSES.DONE).length,
-      completed: gems.filter((g) => g.status === GEM_STATUSES.DONE).length,
-      myPending: gems.filter((g) => {
-        if (user?.role === UserRole.HELPER) return g.status === GEM_STATUSES.TOOK_IN
-        if (user?.role === UserRole.TESTER)
-          return g.status === GEM_STATUSES.READY_FOR_T1 || g.status === GEM_STATUSES.READY_FOR_T2
-        if (user?.role === UserRole.ADMIN) return g.status === GEM_STATUSES.READY_FOR_APPROVAL
-        return false
-      }).length,
-    }
-  }, [gems, user])
+  const fetchStats = useCallback(
+    () =>
+      gemsApi.getDashboardStats().then(setStats, (err) => {
+        console.error("Failed to fetch dashboard stats:", err)
+        setError("Couldn't load dashboard figures.")
+      }),
+    [],
+  )
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
+
+  const retry = () => {
+    setError(null)
+    fetchStats()
+  }
 
   return (
     <MainLayout>
@@ -37,65 +57,130 @@ export function DashboardPage() {
           <span className='text-sm text-slate-500'>{new Date().toLocaleDateString()}</span>
         </div>
 
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-          <StatCard title='Total Gems' value={stats.total} icon={FileText} color='blue' />
-          <StatCard title='Pending Workflow' value={stats.pending} icon={Activity} color='amber' />
-          <StatCard title='Completed' value={stats.completed} icon={CheckCircle} color='emerald' />
-          <StatCard
-            title='My Action Items'
-            value={stats.myPending}
-            icon={AlertCircle}
-            color='purple'
-          />
-        </div>
-
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-          <div className='space-y-6 lg:col-span-2'>
-            <Card className='p-6 h-full flex flex-col'>
-              <h3 className='font-semibold text-lg mb-4 flex items-center gap-2'>
-                <Activity size={20} className='text-blue-500' />
-                Recent Gems
-              </h3>
-              <div className='overflow-y-auto pr-2 -mr-2 flex-1 space-y-5'>
-                {gems.slice(0, 5).map((gem) => {
-                  const firstImageId = gem.images && gem.images.length > 0 ? gem.images[0] : null
-                  return (
-                    <Card key={gem._id} className='group p-4 pb-10'>
-                      <div className='flex items-center gap-3 mb-4'>
-                        <div className='h-10 w-10 shrink-0 rounded bg-slate-100 overflow-hidden border border-slate-200'>
-                          {firstImageId ? (
-                            <GemImage
-                              imageId={firstImageId}
-                              alt={gem.gemId}
-                              className='h-full w-full'
-                            />
-                          ) : (
-                            <div className='h-full w-full flex items-center justify-center text-slate-300'>
-                              <FileText size={16} />
-                            </div>
-                          )}
-                        </div>
-                        <div className='flex-1 min-w-0'>
-                          <div className='flex justify-between items-center'>
-                            <p className='font-bold text-slate-800 truncate text-sm'>{gem.gemId}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Visual Timeline */}
-                      <GemTimeline gem={gem} />
-                    </Card>
-                  )
-                })}
-              </div>
-            </Card>
-          </div>
-
-          <div className='lg:col-span-1'>
-            <SpeciesDistributionWidget gems={gems} />
-          </div>
-        </div>
+        {error ? (
+          <Card className='p-6 flex-row items-center justify-between'>
+            <p className='text-sm text-slate-600'>{error}</p>
+            <Button variant='outline' size='sm' onClick={retry}>
+              Retry
+            </Button>
+          </Card>
+        ) : !stats ? (
+          <DashboardSkeleton />
+        ) : (
+          <DashboardContent stats={stats} />
+        )}
       </div>
     </MainLayout>
+  )
+}
+
+const REPORT_SIZES = [
+  { key: "small", label: "Small" },
+  { key: "medium", label: "Medium" },
+  { key: "large", label: "Large" },
+] as const
+
+const bySize = (counts: DashboardStats["reportTypesDone"]) =>
+  REPORT_SIZES.map((s) => ({ label: s.label, value: counts[s.key] ?? 0 }))
+
+function DashboardContent({ stats }: { stats: DashboardStats }) {
+  const topSpecies = stats.topSpeciesThisMonth
+
+  return (
+    <>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+        <StatCard title='Total Gems' value={stats.totalGems} icon={FileText} color='blue' />
+        <MultiStatCard
+          title='Workflow'
+          icon={CheckCircle}
+          color='emerald'
+          items={[
+            { label: "Completed", value: stats.completedGems },
+            { label: "Pending", value: stats.pendingWorkflow },
+          ]}
+        />
+        <StatCard
+          title='My Action Items'
+          value={stats.myActionItems}
+          icon={AlertCircle}
+          color='purple'
+        />
+        <StatCard
+          title='Avg. Turnaround'
+          value={
+            stats.averageTurnaroundDays === null
+              ? "—"
+              : `${stats.averageTurnaroundDays.toFixed(1)} days`
+          }
+          icon={Timer}
+          color='teal'
+          hint='Intake to final approval'
+        />
+        <MultiStatCard
+          title='Reports Done'
+          icon={FileCheck}
+          color='indigo'
+          items={bySize(stats.reportTypesDone)}
+        />
+        <MultiStatCard
+          title='Reports Done This Month'
+          icon={CalendarCheck}
+          color='sky'
+          items={bySize(stats.reportTypesDoneThisMonth)}
+        />
+        <StatCard
+          title='Top Species This Month'
+          value={topSpecies?.name ?? "—"}
+          icon={Sparkles}
+          color='amber'
+          hint={
+            topSpecies
+              ? `${topSpecies.count} ${topSpecies.count === 1 ? "gem" : "gems"} identified`
+              : "No gems completed yet this month"
+          }
+        />
+        <StatCard
+          title='Carats Received'
+          value={`${stats.totalCarats.toFixed(2)} ct`}
+          icon={GemIcon}
+          color='rose'
+          hint={`Avg. ${stats.averageCarats.toFixed(2)} ct per gem`}
+        />
+      </div>
+
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+        <div className='lg:col-span-2'>
+          <ActivityChart />
+        </div>
+        <SpeciesDistributionWidget species={stats.species} />
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        <WorkflowStageWidget statusCounts={stats.statusCounts} />
+        <TopCustomersWidget customers={stats.topCustomers} />
+        <ReportModeWidget reportModes={stats.reportModes} />
+      </div>
+    </>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+        {Array.from({ length: 8 }, (_, i) => (
+          <Skeleton key={i} className='h-[104px] rounded-xl' />
+        ))}
+      </div>
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+        <Skeleton className='h-[340px] rounded-xl lg:col-span-2' />
+        <Skeleton className='h-[340px] rounded-xl' />
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        {Array.from({ length: 3 }, (_, i) => (
+          <Skeleton key={i} className='h-[260px] rounded-xl' />
+        ))}
+      </div>
+    </>
   )
 }

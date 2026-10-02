@@ -13,8 +13,26 @@ export const reportsApi = {
     return response.json()
   },
 
-  getReports: async (page = 1, limit = 10): Promise<any> => {
-    const response = await fetchWithAuth(`${API_BASE_URL}/reports?page=${page}&limit=${limit}`)
+  getReports: async (
+    page = 1,
+    limit = 10,
+    filters?: {
+      /** Matches the report number or the gem's GRC number. */
+      search?: string
+      status?: string
+      type?: string
+      mode?: string
+      /** ISO instant, inclusive. */
+      from?: string
+      /** ISO instant, exclusive. */
+      to?: string
+    },
+  ): Promise<any> => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) })
+    for (const [key, value] of Object.entries(filters ?? {})) {
+      if (value) params.set(key, value)
+    }
+    const response = await fetchWithAuth(`${API_BASE_URL}/reports?${params}`)
     if (!response.ok) throw new Error("Failed to fetch reports")
     return response.json()
   },

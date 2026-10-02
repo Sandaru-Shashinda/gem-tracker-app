@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { Navigate } from "react-router-dom"
-import { Microscope, Loader2, Eye, EyeOff } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { useGem } from "@/hooks/useGemStore"
 import { usersApi } from "@/lib/api/users"
+import grcLogo from "@/assets/grc-logo.png"
 
 export function LoginPage() {
   const { user, setUser } = useGem()
@@ -30,14 +31,14 @@ export function LoginPage() {
   }
 
   return (
-    <div className='min-h-screen bg-slate-100 flex items-center justify-center p-4'>
+    <div className='min-h-screen bg-[#faf5e5] flex items-center justify-center p-4'>
       <Card className='w-full max-w-md p-8 space-y-8'>
         <div className='text-center'>
-          <div className='w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200'>
-            <Microscope className='text-white' size={32} />
+          <div className='w-20 h-20 bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-slate-300 p-3'>
+            <img src={grcLogo} alt='GRC logo' className='w-full h-auto' />
           </div>
-          <h1 className='text-3xl font-bold text-slate-900'>Gem Tracker</h1>
-          <p className='text-slate-500 mt-2'>Laboratory Management System</p>
+          <h1 className='text-3xl font-bold text-slate-900'>GRC Portal</h1>
+          <p className='text-slate-500 mt-2'>Gemological Report of Ceylon</p>
         </div>
 
         <form onSubmit={handleLogin} className='space-y-4'>
@@ -47,7 +48,7 @@ export function LoginPage() {
               type='text'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className='w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-[#dca54a]'
               placeholder='e.g. admin, assistant, tester'
             />
           </div>
@@ -58,7 +59,7 @@ export function LoginPage() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className='w-full px-4 py-2 pr-12 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500'
+                className='w-full px-4 py-2 pr-12 border rounded-lg outline-none focus:ring-2 focus:ring-[#dca54a]'
               />
               <button
                 type='button'
@@ -73,7 +74,7 @@ export function LoginPage() {
           <button
             type='submit'
             disabled={!!loading}
-            className='w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all disabled:opacity-50 flex items-center justify-center'
+            className='w-full h-11 bg-[#dca54a] hover:bg-[#d09a40] text-slate-900 rounded-lg font-bold transition-all disabled:opacity-50 flex items-center justify-center'
           >
             {loading === "manual" ? <Loader2 className='animate-spin' size={20} /> : "Sign In"}
           </button>

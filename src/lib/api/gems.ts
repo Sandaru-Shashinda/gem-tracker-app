@@ -1,4 +1,4 @@
-import type { Gem } from "../types"
+import type { ActivityData, ActivityRange, DashboardStats, Gem } from "../types"
 import { API_BASE_URL, fetchWithAuth, describeFailure } from "./config"
 
 export const gemsApi = {
@@ -145,6 +145,18 @@ export const gemsApi = {
   getLastGrc: async (): Promise<{ gemId: string | null }> => {
     const response = await fetchWithAuth(`${API_BASE_URL}/gems/last-grc`)
     if (!response.ok) throw new Error("Failed to fetch last GRC")
+    return response.json()
+  },
+
+  getDashboardStats: async (): Promise<DashboardStats> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/gems/stats`)
+    if (!response.ok) throw new Error("Failed to fetch dashboard stats")
+    return response.json()
+  },
+
+  getActivity: async (range: ActivityRange): Promise<ActivityData> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/gems/stats/activity?range=${range}`)
+    if (!response.ok) throw new Error("Failed to fetch activity")
     return response.json()
   },
 }

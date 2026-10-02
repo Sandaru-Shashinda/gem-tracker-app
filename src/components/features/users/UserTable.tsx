@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import type { User } from "@/lib/types"
 import { UserRole } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
+import { UserAvatar } from "@/components/shared/common/UserAvatar"
+import { useGem } from "@/hooks/useGemStore"
 
 interface UserTableProps {
   data: User[]
@@ -27,6 +29,8 @@ export function UserTable({
   onPaginationChange,
   isLoading = false,
 }: UserTableProps) {
+  const { user: currentUser } = useGem()
+  const viewerIsAdmin = currentUser?.role === UserRole.ADMIN
   const columns = useMemo(
     () => [
       columnHelper.accessor("name", {
@@ -35,9 +39,10 @@ export function UserTable({
           const user = info.row.original
           return (
             <div className='flex items-center gap-4'>
-              <div className='w-10 h-10 rounded-xl bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center font-black text-slate-500 shadow-inner'>
-                {user.avatar}
-              </div>
+              <UserAvatar
+                user={user}
+                className='w-10 h-10 rounded-xl bg-linear-to-br from-slate-100 to-slate-200 font-black text-slate-500 shadow-inner'
+              />
               <div>
                 <p className='font-bold text-slate-800 leading-tight'>{user.name}</p>
                 <p className='text-[10px] text-slate-400 font-mono'>{user.email}</p>
@@ -112,6 +117,7 @@ export function UserTable({
                   onEdit(user)
                 }}
                 className='h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg'
+                disabled={!viewerIsAdmin && user.role === UserRole.ADMIN}
               >
                 <Edit2 size={14} />
               </Button>
@@ -132,7 +138,7 @@ export function UserTable({
         },
       }),
     ],
-    [onEdit, onDelete],
+    [onEdit, onDelete, viewerIsAdmin],
   )
 
   return (

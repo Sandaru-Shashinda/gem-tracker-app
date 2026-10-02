@@ -80,9 +80,9 @@ const REPORT_STYLE_OPTIONS = [
 
 /** The two sizes a custom certificate can be written at, and what each one is. */
 const CUSTOM_SIZE_OPTIONS = [
-  { value: "small", title: "Card", hint: "Visa card size (85.60 x 53.98 mm)" },
-  { value: "medium", title: "A5", hint: "Half-page size" },
-  { value: "large", title: "A4", hint: "Full page" },
+  { value: "small", title: "Small", hint: "Visa card size (85.60 x 53.98 mm)" },
+  { value: "medium", title: "Medium", hint: "A5, half-page size" },
+  { value: "large", title: "Large", hint: "A4, full page" },
 ] as const
 
 export function IntakePage() {
@@ -804,7 +804,8 @@ export function IntakePage() {
                         A custom certificate is written by hand on the certificate itself, so
                         there is nothing to test and nothing to approve. Saving this intake
                         raises its report straight away — open it from Reports and type the
-                        values onto the {customSizeLabel(reportTypes?.[0])}.
+                        values onto the {customSizeLabel(reportTypes?.[0]).toLowerCase()}{" "}
+                        certificate.
                       </p>
                     </div>
                   ) : (
