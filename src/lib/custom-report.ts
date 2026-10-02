@@ -88,9 +88,12 @@ export interface FontField {
   size: number
 }
 
-/** The card's text elements and their template sizes. "rows" is every row that sets none of its own. */
+/**
+ * The card's text elements and their template sizes. "rows" is the size of every row's
+ * value that sets none of its own; labels are never resized.
+ */
 export const SMALL_FONT_FIELDS: readonly FontField[] = [
-  { key: "rows", label: "Rows", size: 14 },
+  { key: "rows", label: "Row values", size: 14 },
   { key: "comments", label: "Comments", size: 12 },
   { key: "gemName", label: "Gem name", size: 18 },
   { key: "weightLine", label: "Weight", size: 16 },
@@ -100,7 +103,7 @@ export const SMALL_FONT_FIELDS: readonly FontField[] = [
 
 export const MEDIUM_FONT_FIELDS: readonly FontField[] = [
   { key: "title", label: "Title", size: 28 },
-  { key: "rows", label: "Rows", size: 14 },
+  { key: "rows", label: "Row values", size: 14 },
   { key: "resultsHeading", label: "Results heading", size: 15 },
   { key: "comments", label: "Comments", size: 14 },
   { key: "gemName", label: "Gem name", size: 30 },
@@ -115,7 +118,7 @@ export const LARGE_FONT_FIELDS: readonly FontField[] = [
   { key: "reportNumberLine", label: "Report number", size: 12 },
   { key: "dateLine", label: "Date", size: 12 },
   { key: "headings", label: "Section headings", size: 12 },
-  { key: "rows", label: "Rows", size: 11.5 },
+  { key: "rows", label: "Row values", size: 11.5 },
   { key: "treatments", label: "Treatment checklist", size: 10 },
   { key: "specialNote", label: "Special note", size: 11 },
   { key: "statement", label: "Statement", size: 10.5 },

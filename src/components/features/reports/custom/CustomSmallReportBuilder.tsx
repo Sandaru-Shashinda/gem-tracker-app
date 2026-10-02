@@ -340,7 +340,7 @@ export function CustomSmallReportBuilder({
                   value={row.fontSize}
                   fallback={rowSize}
                   onChange={(size) => setRowSize(row.id, size)}
-                  title={`Type size for this row — blank prints at ${rowSize}px`}
+                  title={`Type size for this row's value — blank prints at ${rowSize}px`}
                 />
                 <Button
                   variant='ghost'

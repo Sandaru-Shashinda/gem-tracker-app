@@ -39,6 +39,11 @@ const DATA_COL_W = CARD_WIDTH - CARD_PAD_L - CARD_PAD_R - COL_GAP - NAME_COL_W
 /** The data rows' type. The line box is what the dotted leader is drawn against. */
 const ROW_FONT_FAMILY = "Arial, Helvetica, sans-serif"
 const ROW_LINE_HEIGHT = 1.3
+/**
+ * The labels' size — the template's, always. A size set in the layout changes a row's
+ * value, never its label, so the labels stay one even column however the values are set.
+ */
+const LABEL_SIZE = 14
 /** Canvas font shorthand for a row set at `size`. */
 const rowFont = (size: number) => `${size}px ${ROW_FONT_FAMILY}`
 /** A row's gutters: the label, the dotted leader at its narrowest, then the value. */
@@ -78,6 +83,20 @@ function leaderStyle(size: number): CSSProperties {
     top: `${-(4 * size) / 14}px`,
     minWidth: `${LEADER_MIN_W}px`,
   }
+}
+
+/**
+ * The leader on a row whose value is set at another size than its label.
+ *
+ * Such a row lines its label and value up on their baselines — top-aligned, a larger
+ * value would sit lower than the label beside it — and an empty item in a baseline row
+ * stands on the baseline itself, so the dots fall where they do on every other row.
+ * Rows at the template's size keep the template's own leader, untouched.
+ */
+const BASELINE_LEADER: CSSProperties = {
+  flex: 1,
+  borderBottom: "2px dotted #a3a3a3",
+  minWidth: `${LEADER_MIN_W}px`,
 }
 
 interface CustomSmallReportCardProps {
@@ -138,7 +157,7 @@ export function CustomSmallReportCard({
     width: DATA_COL_W,
     firstLineWidth:
       DATA_COL_W -
-      textWidth(`${data.commentsLabel}:`, rowFont(rowSize)) -
+      textWidth(`${data.commentsLabel}:`, rowFont(LABEL_SIZE)) -
       LABEL_GAP -
       LEADER_MIN_W -
       VALUE_GAP,
@@ -217,7 +236,7 @@ export function CustomSmallReportCard({
             display: "flex",
             flexDirection: "column",
             gap: 2,
-            fontSize: `${rowSize}px`,
+            fontSize: `${LABEL_SIZE}px`,
             marginTop: "-65px",
             padding: "10px 0",
             fontFamily: ROW_FONT_FAMILY,
@@ -228,12 +247,18 @@ export function CustomSmallReportCard({
           }}
         >
           {data.rows.map((row) => {
+            // The value's size; the label keeps the template's whatever this is.
             const own = row.fontSize ?? rowSize
+            const resized = own !== LABEL_SIZE
             return (
             <div
               key={row.id}
               className='crc-row'
-              style={{ display: "flex", position: "relative", fontSize: `${own}px` }}
+              style={{
+                display: "flex",
+                position: "relative",
+                alignItems: resized ? "baseline" : undefined,
+              }}
             >
               {editable && (
                 <button
@@ -269,12 +294,12 @@ export function CustomSmallReportCard({
                   onChange={(label) => patchRow(row.id, { label })}
                   editable={editable}
                   hint='Label'
-                  font={rowFont(own)}
+                  font={rowFont(LABEL_SIZE)}
                   title='Click to rename this field'
                 />
                 :
               </span>
-              <span style={leaderStyle(own)} />
+              <span style={resized ? BASELINE_LEADER : leaderStyle(LABEL_SIZE)} />
               <EditableWrapText
                 value={row.value}
                 onChange={(value) => patchRow(row.id, { value })}
@@ -284,7 +309,7 @@ export function CustomSmallReportCard({
                 font={rowFont(own)}
                 maxTextWidth={VALUE_MAX_W - VALUE_GAP}
                 gutter={VALUE_GAP}
-                style={WRAPPING_VALUE_STYLE}
+                style={{ ...WRAPPING_VALUE_STYLE, fontSize: `${own}px` }}
               />
             </div>
             )
@@ -301,7 +326,7 @@ export function CustomSmallReportCard({
             multiline
             editing={editingComments}
             onEditingChange={setEditingComments}
-            style={{ marginTop: "8px", minHeight: `${rowSize * ROW_LINE_HEIGHT}px` }}
+            style={{ marginTop: "8px", minHeight: `${LABEL_SIZE * ROW_LINE_HEIGHT}px` }}
             editorStyle={{
               fontSize: `${commentSize}px`,
               fontFamily: ROW_FONT_FAMILY,
@@ -317,12 +342,12 @@ export function CustomSmallReportCard({
                   onChange={(commentsLabel) => onChange({ commentsLabel })}
                   editable={editable}
                   hint='Label'
-                  font={rowFont(rowSize)}
+                  font={rowFont(LABEL_SIZE)}
                   title='Click to rename this field'
                 />
                 :
               </span>
-              <span style={leaderStyle(rowSize)} />
+              <span style={leaderStyle(LABEL_SIZE)} />
               <span
                 className={editable ? "crc-editable" : undefined}
                 onClick={editable ? () => setEditingComments(true) : undefined}
@@ -333,7 +358,7 @@ export function CustomSmallReportCard({
                   fontSize: `${commentSize}px`,
                   // Set on the row's own line box, so the smaller type still sits on the
                   // same baseline as the label beside it.
-                  lineHeight: `${rowSize * ROW_LINE_HEIGHT}px`,
+                  lineHeight: `${LABEL_SIZE * ROW_LINE_HEIGHT}px`,
                   cursor: editable ? "text" : undefined,
                 }}
               >

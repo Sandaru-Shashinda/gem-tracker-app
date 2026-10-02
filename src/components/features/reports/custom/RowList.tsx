@@ -58,7 +58,7 @@ export function RowList({
               value={row.fontSize}
               fallback={rowSize}
               onChange={(size) => onFontSize(row.id, size)}
-              title={`Type size for this row — blank prints at ${rowSize}px`}
+              title={`Type size for this row's value — blank prints at ${rowSize}px`}
             />
             <Button
               variant='ghost'

@@ -42,6 +42,12 @@ const ROW_BLOCK_W = 480
 const ROW_FONT_FAMILY = "'Nimbus Mono Antique', 'Courier New', Courier, monospace"
 /** Canvas font shorthand for a row set at `size`. */
 const rowFont = (size: number) => `${size}px ${ROW_FONT_FAMILY}`
+/**
+ * The labels' size — the template's, always. A size set in the layout changes a row's
+ * value, never its label; the rows align on baselines, so a larger value still sits on
+ * its label's line.
+ */
+const LABEL_SIZE = 14
 /** The 200px image frame and its 2px border. */
 const IMAGE_BOX = 200
 const IMAGE_BORDER = 2
@@ -158,11 +164,13 @@ interface DataRowProps {
  * ordinary re-render that leaves the input — and the cursor — where they were.
  */
 function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps) {
+  // The value's size; the label keeps the template's whatever this is.
   const size = row.fontSize ?? blockSize
   // A value wraps only where the template's own row would have run out of room: the
   // block's measure, less the label, the two gaps and the leader at its narrowest. The
   // standard A5 never caps a value, so anything that fits it prints on one line here too.
-  const room = ROW_BLOCK_W - textWidth(`${row.label}:`, rowFont(size)) - ROW_GAP * 2 - LEADER_MIN_W
+  const room =
+    ROW_BLOCK_W - textWidth(`${row.label}:`, rowFont(LABEL_SIZE)) - ROW_GAP * 2 - LEADER_MIN_W
   return (
     <div
       className='crc-row'
@@ -172,7 +180,6 @@ function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps)
         width: "100%",
         gap: `${ROW_GAP}px`,
         position: "relative",
-        fontSize: `${size}px`,
       }}
     >
       {editable && (
@@ -207,7 +214,7 @@ function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps)
           onChange={(label) => onChange({ label })}
           editable={editable}
           hint='Label'
-          font={rowFont(size)}
+          font={rowFont(LABEL_SIZE)}
           maxWidth={220}
           title='Click to rename this field'
         />
@@ -223,7 +230,7 @@ function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps)
         title='Click to edit this value'
         font={rowFont(size)}
         maxTextWidth={Math.max(40, room)}
-        style={WRAPPING_VALUE_STYLE}
+        style={{ ...WRAPPING_VALUE_STYLE, fontSize: `${size}px` }}
       />
     </div>
   )
@@ -288,7 +295,7 @@ export function CustomMediumReportCard({
     width: ROW_BLOCK_W,
     firstLineWidth:
       ROW_BLOCK_W -
-      textWidth(`${data.commentsLabel}:`, rowFont(rowSize)) -
+      textWidth(`${data.commentsLabel}:`, rowFont(LABEL_SIZE)) -
       ROW_GAP * 2 -
       LEADER_MIN_W,
     maxLines: COMMENT_MAX_LINES,
@@ -305,7 +312,7 @@ export function CustomMediumReportCard({
     flexDirection: "column",
     gap: "3px",
     color: DARK,
-    fontSize: `${rowSize}px`,
+    fontSize: `${LABEL_SIZE}px`,
     fontFamily: ROW_FONT_FAMILY,
     fontWeight: 400,
     width: "100%",
@@ -481,7 +488,7 @@ export function CustomMediumReportCard({
                   onChange={(commentsLabel) => onChange({ commentsLabel })}
                   editable={editable}
                   hint='Label'
-                  font={rowFont(rowSize)}
+                  font={rowFont(LABEL_SIZE)}
                   maxWidth={220}
                   title='Click to rename this field'
                 />

@@ -50,6 +50,12 @@ const COURIER_FAMILY = "'Nimbus Mono', 'Courier New', Courier, monospace"
 const COURIER: CSSProperties = { fontFamily: COURIER_FAMILY, color: "#1a1a1a" }
 /** Canvas font shorthand for a row set at `size`. */
 const rowFont = (size: number) => `400 ${size}px ${COURIER_FAMILY}`
+/**
+ * The labels' size — the template's, always. A size set in the layout changes a row's
+ * value, never its label; the rows align on baselines, so a larger value still sits on
+ * its label's line.
+ */
+const LABEL_SIZE = 11.5
 /** A details or results column: the page's content width, halved either side of the 40px gutter. */
 const COLUMN_W = (A4_W - 56 * 2 - 40) / 2
 /** A row's label gap, its leader at its narrowest, and the value's gutter. */
@@ -215,12 +221,17 @@ interface DataRowProps {
 
 /** One label : leader : value row, set exactly as the standard A4 sets them. */
 function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps) {
+  // The value's size; the label keeps the template's whatever this is.
   const size = row.fontSize ?? blockSize
   // A value wraps only where the template's own row would have run out of room: the
   // column, less the label, its gap, the leader at its narrowest and the gutter. The
   // standard A4 never caps a value, so anything that fits it prints on one line here too.
   const room =
-    COLUMN_W - textWidth(`${row.label}:`, rowFont(size)) - LABEL_GAP - LEADER_MIN_W - VALUE_GAP
+    COLUMN_W -
+    textWidth(`${row.label}:`, rowFont(LABEL_SIZE)) -
+    LABEL_GAP -
+    LEADER_MIN_W -
+    VALUE_GAP
   return (
     <div
       className='crc-row'
@@ -229,7 +240,6 @@ function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps)
         alignItems: "baseline",
         width: "100%",
         position: "relative",
-        fontSize: `${size}px`,
       }}
     >
       {editable && (
@@ -249,7 +259,7 @@ function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps)
           onChange={(label) => onChange({ label })}
           editable={editable}
           hint='Label'
-          font={rowFont(size)}
+          font={rowFont(LABEL_SIZE)}
           maxWidth={200}
           title='Click to rename this field'
         />
@@ -273,7 +283,7 @@ function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps)
         font={rowFont(size)}
         maxTextWidth={Math.max(40, room)}
         gutter={VALUE_GAP}
-        style={WRAPPING_VALUE_STYLE}
+        style={{ ...WRAPPING_VALUE_STYLE, fontSize: `${size}px` }}
       />
     </div>
   )
@@ -613,7 +623,8 @@ export function CustomLargeReportCard({
   const headingSize = size("headings")
   // The panels' titles sit a point under the section headings, as on the template.
   const panelHeadingSize = (headingSize * 11) / 12
-  const column: CSSProperties = { ...COLUMN_STYLE, fontSize: `${rowSize}px` }
+  // Labels and the colour grades stay at the template's size; only values are resized.
+  const column: CSSProperties = { ...COLUMN_STYLE, fontSize: `${LABEL_SIZE}px` }
 
   // The frame at its chosen size; the photo's box is the frame less its 1px border.
   const imageW = IMAGE_BOX_W * data.imageBoxScale
@@ -838,7 +849,7 @@ export function CustomLargeReportCard({
             <GradeRow
               label={data.toneLabel}
               value={data.tone}
-              size={rowSize}
+              size={LABEL_SIZE}
               editable={editable}
               onLabelChange={(toneLabel) => onChange({ toneLabel })}
               onValueChange={(tone) => onChange({ tone })}
@@ -846,7 +857,7 @@ export function CustomLargeReportCard({
             <GradeRow
               label={data.saturationLabel}
               value={data.saturation}
-              size={rowSize}
+              size={LABEL_SIZE}
               editable={editable}
               onLabelChange={(saturationLabel) => onChange({ saturationLabel })}
               onValueChange={(saturation) => onChange({ saturation })}

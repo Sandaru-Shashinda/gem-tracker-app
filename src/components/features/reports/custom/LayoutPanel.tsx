@@ -239,8 +239,8 @@ export function LayoutPanel({ layout, fontFields, onChange }: LayoutPanelProps) 
           </div>
         ))}
         <p className='text-[11px] leading-snug text-slate-500'>
-          Blank keeps the template's size. A single row can also be sized on its own in the
-          field list above.
+          Blank keeps the template's size. Row values are resized; their labels never are.
+          A single row's value can also be sized on its own in the field list above.
         </p>
       </div>
     </div>
