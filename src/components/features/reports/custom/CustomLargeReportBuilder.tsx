@@ -4,6 +4,10 @@ import { Check, Download, Loader2, RotateCcw, Save, Undo2 } from "lucide-react"
 import type { Gem } from "@/lib/types"
 import {
   buildCustomLargeReport,
+  fontSizer,
+  LARGE_FONT_FIELDS,
+  pickLayout,
+  withRowSize,
   newCustomReportRow,
   toStoredCustomLargeReport,
   CUSTOM_LARGE_FIELD_PRESETS,
@@ -28,6 +32,7 @@ import { OverflowWarning } from "./OverflowWarning"
 import { RowList } from "./RowList"
 import { useCardExport } from "./useCardExport"
 import { usePageOverflow } from "./usePageOverflow"
+import { LayoutPanel } from "./LayoutPanel"
 
 /**
  * The custom A4 report: one gem, one editable copy of the full certificate.
@@ -126,7 +131,7 @@ export function CustomLargeReportBuilder({
     "large",
   )
 
-  const overflow = usePageOverflow(printRef)
+  const overflow = usePageOverflow(printRef, snapshot)
 
   // The page is a fixed-size print artefact; shrink it to fit the column it is given.
   // The transform lives on a wrapper, so printRef stays at natural size and downloads
@@ -152,6 +157,12 @@ export function CustomLargeReportBuilder({
     if (isFull(list)) return
     patch({ [list]: [...data[list], newCustomReportRow(label || "New field")] })
   }
+
+  const rowSize = fontSizer(data.fontSizes, LARGE_FONT_FIELDS)("rows")
+  const setRowSize = (list: LargeRowList, rowId: string, size: number | undefined) =>
+    patch({
+      [list]: data[list].map((row) => (row.id === rowId ? withRowSize(row, size) : row)),
+    })
 
   const removeRow = (list: LargeRowList, rowId: string) =>
     patch({ [list]: data[list].filter((row) => row.id !== rowId) })
@@ -279,7 +290,12 @@ export function CustomLargeReportBuilder({
             <Button
               variant='outline'
               size='sm'
-              onClick={() => setData(buildCustomLargeReport(gem, verificationUrl, signatureName))}
+              onClick={() =>
+                setData({
+                  ...buildCustomLargeReport(gem, verificationUrl, signatureName),
+                  ...pickLayout(data),
+                })
+              }
             >
               <RotateCcw className='mr-1.5 h-3 w-3' />
               Reset wording
@@ -366,9 +382,15 @@ export function CustomLargeReportBuilder({
               onMove={(index, delta) => moveRow(list, index, delta)}
               onRemove={(rowId) => removeRow(list, rowId)}
               onAdd={() => addRow(list, presetLabel)}
+              rowSize={rowSize}
+              onFontSize={(rowId, size) => setRowSize(list, rowId, size)}
             />
           </div>
         ))}
+
+        <div className='border-t pt-5'>
+          <LayoutPanel layout={data} fontFields={LARGE_FONT_FIELDS} onChange={patch} />
+        </div>
 
         <div className='space-y-3 border-t pt-5'>
           <Label>Elements</Label>

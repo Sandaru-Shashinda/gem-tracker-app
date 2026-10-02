@@ -5,8 +5,11 @@ import { ImageIcon, X } from "lucide-react"
 import { useRealSizeGemImage } from "../../gems/RealSizeGemImage"
 import type { MeasurementSource, RenderTarget } from "@/lib/real-size"
 import { layoutGemName } from "@/lib/gem-name"
+import { textWidth } from "@/lib/text-layout"
 import {
   COLOUR_GRADE_STEPS,
+  fontSizer,
+  LARGE_FONT_FIELDS,
   type CustomLargeReport,
   type CustomReportRow,
   type LargeRowList,
@@ -21,7 +24,7 @@ import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo_trimmed.png"
 import { EditableOverlay, EditableText, EditableWrapText } from "./EditableField"
-import { WRAPPING_VALUE_STYLE } from "./fieldStyles"
+import { transformFor, WRAPPING_VALUE_STYLE } from "./fieldStyles"
 
 /**
  * The A4 report, drawn from an editable document instead of from a gem.
@@ -45,9 +48,17 @@ export const A4_H = 1123
 
 const COURIER_FAMILY = "'Nimbus Mono', 'Courier New', Courier, monospace"
 const COURIER: CSSProperties = { fontFamily: COURIER_FAMILY, color: "#1a1a1a" }
-const ROW_FONT = `400 11.5px ${COURIER_FAMILY}`
-/** Widest a value may print before it wraps onto a further line. */
-const VALUE_MAX_W = 220
+/** Canvas font shorthand for a row set at `size`. */
+const rowFont = (size: number) => `400 ${size}px ${COURIER_FAMILY}`
+/** A details or results column: the page's content width, halved either side of the 40px gutter. */
+const COLUMN_W = (A4_W - 56 * 2 - 40) / 2
+/** A row's label gap, its leader at its narrowest, and the value's gutter. */
+const LABEL_GAP = 4
+const LEADER_MIN_W = 12
+const VALUE_GAP = 6
+/** The 170x160 image frame and its 1px border. */
+const IMAGE_BOX_W = 170
+const IMAGE_BOX_H = 160
 const GOLD = "#C5A259"
 
 /*
@@ -69,12 +80,9 @@ const SIG_RULE_OFFSET = 0.49
 
 /* 268 + 24 gap + the signature pair (2 × 182.75 + 24) fills the 682px content width. */
 const NAME_COL_W = 268
-/** Size the name is set at when it fits the column on one line. */
-const NAME_FONT_SIZE = 22
 
 const COLUMN_STYLE: CSSProperties = {
   ...COURIER,
-  fontSize: "11.5px",
   fontWeight: 400,
   display: "flex",
   flexDirection: "column",
@@ -198,17 +206,31 @@ function SectionTitle({ value, onChange, editable, fontSize = 12, style }: Secti
 
 interface DataRowProps {
   row: CustomReportRow
+  /** The rows' type size; the row's own, if it has one, wins. */
+  blockSize: number
   editable: boolean
   onChange: (patch: Partial<CustomReportRow>) => void
   onRemove: () => void
 }
 
 /** One label : leader : value row, set exactly as the standard A4 sets them. */
-function DataRow({ row, editable, onChange, onRemove }: DataRowProps) {
+function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps) {
+  const size = row.fontSize ?? blockSize
+  // A value wraps only where the template's own row would have run out of room: the
+  // column, less the label, its gap, the leader at its narrowest and the gutter. The
+  // standard A4 never caps a value, so anything that fits it prints on one line here too.
+  const room =
+    COLUMN_W - textWidth(`${row.label}:`, rowFont(size)) - LABEL_GAP - LEADER_MIN_W - VALUE_GAP
   return (
     <div
       className='crc-row'
-      style={{ display: "flex", alignItems: "baseline", width: "100%", position: "relative" }}
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        width: "100%",
+        position: "relative",
+        fontSize: `${size}px`,
+      }}
     >
       {editable && (
         <button
@@ -221,13 +243,13 @@ function DataRow({ row, editable, onChange, onRemove }: DataRowProps) {
           <X style={{ width: "9px", height: "9px" }} />
         </button>
       )}
-      <span style={{ whiteSpace: "nowrap", paddingRight: "4px", flexShrink: 0 }}>
+      <span style={{ whiteSpace: "nowrap", paddingRight: `${LABEL_GAP}px`, flexShrink: 0 }}>
         <EditableText
           value={row.label}
           onChange={(label) => onChange({ label })}
           editable={editable}
           hint='Label'
-          font={ROW_FONT}
+          font={rowFont(size)}
           maxWidth={200}
           title='Click to rename this field'
         />
@@ -239,7 +261,7 @@ function DataRow({ row, editable, onChange, onRemove }: DataRowProps) {
           borderBottom: "1.5px dotted #a3a3a3",
           position: "relative",
           top: "-3px",
-          minWidth: "12px",
+          minWidth: `${LEADER_MIN_W}px`,
         }}
       />
       {/* The row aligns on baselines, so a wrapped value keeps the leader on its first line. */}
@@ -248,7 +270,10 @@ function DataRow({ row, editable, onChange, onRemove }: DataRowProps) {
         onChange={(value) => onChange({ value })}
         editable={editable}
         title='Click to edit this value'
-        style={{ ...WRAPPING_VALUE_STYLE, paddingLeft: "6px", maxWidth: `${VALUE_MAX_W}px` }}
+        font={rowFont(size)}
+        maxTextWidth={Math.max(40, room)}
+        gutter={VALUE_GAP}
+        style={WRAPPING_VALUE_STYLE}
       />
     </div>
   )
@@ -287,6 +312,8 @@ function CheckBox({ checked, size = 11 }: { checked: boolean; size?: number }) {
 interface GradeRowProps {
   label: string
   value: string
+  /** The rows' type size, which the colour grades share. */
+  size: number
   editable: boolean
   onLabelChange: (next: string) => void
   onValueChange: (next: string) => void
@@ -297,7 +324,7 @@ interface GradeRowProps {
  * label is what a custom report can retype; the grade is chosen by ticking a box, and
  * ticking the marked one again leaves the row ungraded.
  */
-function GradeRow({ label, value, editable, onLabelChange, onValueChange }: GradeRowProps) {
+function GradeRow({ label, value, size, editable, onLabelChange, onValueChange }: GradeRowProps) {
   const selected = value.trim().toLowerCase()
   return (
     <div style={{ display: "flex", alignItems: "center", width: "100%", gap: "10px" }}>
@@ -307,7 +334,7 @@ function GradeRow({ label, value, editable, onLabelChange, onValueChange }: Grad
           onChange={onLabelChange}
           editable={editable}
           hint='Label'
-          font={ROW_FONT}
+          font={rowFont(size)}
           maxWidth={140}
           title='Click to rename this field'
         />
@@ -343,6 +370,7 @@ function GradeRow({ label, value, editable, onLabelChange, onValueChange }: Grad
 interface TreatmentRowProps {
   label: string
   value: TreatmentAnswer
+  size: number
   editable: boolean
   onChange: (next: TreatmentAnswer) => void
 }
@@ -352,7 +380,7 @@ interface TreatmentRowProps {
  * "no answer" stays visibly different from a certified "No". Ticking the marked box
  * again clears it back to unassessed.
  */
-function TreatmentRow({ label, value, editable, onChange }: TreatmentRowProps) {
+function TreatmentRow({ label, value, size, editable, onChange }: TreatmentRowProps) {
   return (
     <div
       style={{
@@ -361,7 +389,7 @@ function TreatmentRow({ label, value, editable, onChange }: TreatmentRowProps) {
         gap: "6px",
         fontFamily: COURIER_FAMILY,
         color: "#1a1a1a",
-        fontSize: "10px",
+        fontSize: `${size}px`,
         fontWeight: 400,
         lineHeight: 1.2,
       }}
@@ -580,12 +608,21 @@ export function CustomLargeReportCard({
   editable = false,
   innerRef,
 }: CustomLargeReportCardProps) {
-  // 170x160px box, less its 1px border on each side.
+  const size = fontSizer(data.fontSizes, LARGE_FONT_FIELDS)
+  const rowSize = size("rows")
+  const headingSize = size("headings")
+  // The panels' titles sit a point under the section headings, as on the template.
+  const panelHeadingSize = (headingSize * 11) / 12
+  const column: CSSProperties = { ...COLUMN_STYLE, fontSize: `${rowSize}px` }
+
+  // The frame at its chosen size; the photo's box is the frame less its 1px border.
+  const imageW = IMAGE_BOX_W * data.imageBoxScale
+  const imageH = IMAGE_BOX_H * data.imageBoxScale
   const gemImage = useRealSizeGemImage({
     imageId,
     obs,
     reportSize: "large",
-    box: { w: 168, h: 158 },
+    box: { w: imageW - 2, h: imageH - 2 },
     target,
   })
 
@@ -593,7 +630,7 @@ export function CustomLargeReportCard({
   // before the colour and species rather than wrapping into the signatures beside it.
   const gemName = layoutGemName(data.gemName, {
     maxWidth: NAME_COL_W,
-    fontSize: NAME_FONT_SIZE,
+    fontSize: size("gemName"),
     fontFamily: COURIER_FAMILY,
     fontWeight: 900,
     letterSpacing: 0.5,
@@ -609,6 +646,7 @@ export function CustomLargeReportCard({
       <DataRow
         key={row.id}
         row={row}
+        blockSize={rowSize}
         editable={editable}
         onChange={(patch) => patchRow(list, row.id, patch)}
         onRemove={() => onRemoveRow(list, row.id)}
@@ -702,7 +740,7 @@ export function CustomLargeReportCard({
             title='Click to edit the report title'
             editorStyle={{
               fontFamily: COURIER_FAMILY,
-              fontSize: "18px",
+              fontSize: `${size("title")}px`,
               fontWeight: 700,
               color: GOLD,
               textTransform: "uppercase",
@@ -713,7 +751,7 @@ export function CustomLargeReportCard({
             <h1
               style={{
                 fontFamily: COURIER_FAMILY,
-                fontSize: "18px",
+                fontSize: `${size("title")}px`,
                 fontWeight: 700,
                 color: GOLD,
                 textTransform: "uppercase",
@@ -729,9 +767,21 @@ export function CustomLargeReportCard({
             onChange={(reportNumberLine) => onChange({ reportNumberLine })}
             editable={editable}
             title='Click to edit the report number line'
-            editorStyle={{ ...COURIER, fontSize: "12px", fontWeight: 500, textAlign: "right" }}
+            editorStyle={{
+              ...COURIER,
+              fontSize: `${size("reportNumberLine")}px`,
+              fontWeight: 500,
+              textAlign: "right",
+            }}
           >
-            <p style={{ ...COURIER, fontSize: "12px", margin: "0px 0 0", fontWeight: 500 }}>
+            <p
+              style={{
+                ...COURIER,
+                fontSize: `${size("reportNumberLine")}px`,
+                margin: "0px 0 0",
+                fontWeight: 500,
+              }}
+            >
               {data.reportNumberLine || "\u00a0"}
             </p>
           </EditableOverlay>
@@ -741,9 +791,11 @@ export function CustomLargeReportCard({
             editable={editable}
             title='Click to edit the date'
             style={{ marginTop: "2px" }}
-            editorStyle={{ ...COURIER, fontSize: "12px", textAlign: "right" }}
+            editorStyle={{ ...COURIER, fontSize: `${size("dateLine")}px`, textAlign: "right" }}
           >
-            <p style={{ ...COURIER, fontSize: "12px", margin: 0 }}>{data.dateLine || "\u00a0"}</p>
+            <p style={{ ...COURIER, fontSize: `${size("dateLine")}px`, margin: 0 }}>
+              {data.dateLine || "\u00a0"}
+            </p>
           </EditableOverlay>
         </div>
 
@@ -770,21 +822,23 @@ export function CustomLargeReportCard({
           value={data.detailsHeading}
           onChange={(detailsHeading) => onChange({ detailsHeading })}
           editable={editable}
+          fontSize={headingSize}
         />
         <div style={{ display: "flex", gap: "40px", marginTop: "10px" }}>
           {/* Left: identity and size, then the cut */}
-          <div style={{ ...COLUMN_STYLE, flex: 1 }}>
+          <div style={{ ...column, flex: 1 }}>
             {rowsOf("detailRows")}
             <div style={{ height: "8px" }} />
             {rowsOf("cutRows")}
           </div>
 
           {/* Right: colour breakdown */}
-          <div style={{ ...COLUMN_STYLE, flex: 1 }}>
+          <div style={{ ...column, flex: 1 }}>
             {rowsOf("colourRows")}
             <GradeRow
               label={data.toneLabel}
               value={data.tone}
+              size={rowSize}
               editable={editable}
               onLabelChange={(toneLabel) => onChange({ toneLabel })}
               onValueChange={(tone) => onChange({ tone })}
@@ -792,6 +846,7 @@ export function CustomLargeReportCard({
             <GradeRow
               label={data.saturationLabel}
               value={data.saturation}
+              size={rowSize}
               editable={editable}
               onLabelChange={(saturationLabel) => onChange({ saturationLabel })}
               onValueChange={(saturation) => onChange({ saturation })}
@@ -817,8 +872,9 @@ export function CustomLargeReportCard({
             value={data.resultsHeading}
             onChange={(resultsHeading) => onChange({ resultsHeading })}
             editable={editable}
+            fontSize={headingSize}
           />
-          <div style={{ ...COLUMN_STYLE, marginTop: "10px" }}>{rowsOf("resultRows")}</div>
+          <div style={{ ...column, marginTop: "10px" }}>{rowsOf("resultRows")}</div>
         </div>
 
         <div>
@@ -826,6 +882,7 @@ export function CustomLargeReportCard({
             value={data.treatmentHeading}
             onChange={(treatmentHeading) => onChange({ treatmentHeading })}
             editable={editable}
+            fontSize={headingSize}
           />
 
           {/* Always printed: on a certificate an unticked row is itself a statement. A
@@ -837,7 +894,7 @@ export function CustomLargeReportCard({
                 <p
                   style={{
                     ...COURIER,
-                    fontSize: "10px",
+                    fontSize: `${size("treatments")}px`,
                     fontWeight: 900,
                     textTransform: "uppercase",
                     letterSpacing: "0.4px",
@@ -852,6 +909,7 @@ export function CustomLargeReportCard({
                     key={item.key}
                     label={item.label}
                     value={data.treatments[item.key]}
+                    size={size("treatments")}
                     editable={editable}
                     onChange={(answer) => setTreatment(item.key, answer)}
                   />
@@ -866,6 +924,7 @@ export function CustomLargeReportCard({
                 value={data.specialNoteHeading}
                 onChange={(specialNoteHeading) => onChange({ specialNoteHeading })}
                 editable={editable}
+                fontSize={headingSize}
                 style={{ marginTop: "16px" }}
               />
               <EditableOverlay
@@ -875,9 +934,9 @@ export function CustomLargeReportCard({
                 multiline
                 title='Click to edit the special note'
                 style={{ marginTop: "8px" }}
-                editorStyle={{ ...prose, fontSize: "11px" }}
+                editorStyle={{ ...prose, fontSize: `${size("specialNote")}px` }}
               >
-                <p style={{ ...prose, fontSize: "11px" }}>{data.specialNote || "\u00a0"}</p>
+                <p style={{ ...prose, fontSize: `${size("specialNote")}px` }}>{data.specialNote || "\u00a0"}</p>
               </EditableOverlay>
             </>
           )}
@@ -903,7 +962,7 @@ export function CustomLargeReportCard({
                 value={data.clarityHeading}
                 onChange={(clarityHeading) => onChange({ clarityHeading })}
                 editable={editable}
-                fontSize={11}
+                fontSize={panelHeadingSize}
                 style={{ paddingBottom: 0 }}
               />
             }
@@ -923,7 +982,7 @@ export function CustomLargeReportCard({
                 value={data.statementHeading}
                 onChange={(statementHeading) => onChange({ statementHeading })}
                 editable={editable}
-                fontSize={11}
+                fontSize={panelHeadingSize}
                 style={{ paddingBottom: 0 }}
               />
             }
@@ -934,9 +993,9 @@ export function CustomLargeReportCard({
               editable={editable}
               multiline
               title='Click to edit the statement'
-              editorStyle={{ ...prose, fontSize: "10.5px", lineHeight: 1.6 }}
+              editorStyle={{ ...prose, fontSize: `${size("statement")}px`, lineHeight: 1.6 }}
             >
-              <p style={{ ...prose, fontSize: "10.5px", lineHeight: 1.6 }}>
+              <p style={{ ...prose, fontSize: `${size("statement")}px`, lineHeight: 1.6 }}>
                 {data.statement || "\u00a0"}
               </p>
             </EditableOverlay>
@@ -970,9 +1029,13 @@ export function CustomLargeReportCard({
           {data.showGemImage && (
             <>
               <div
+                // Measured where it lands once it is resized; see usePageOverflow.
+                data-fit-box
                 style={{
-                  width: "170px",
-                  height: "160px",
+                  width: `${imageW}px`,
+                  height: `${imageH}px`,
+                  // Held to its size: a column short of room would otherwise squash it.
+                  flexShrink: 0,
                   border: "1px solid #aaa",
                   backgroundColor: "#f9f9f9",
                   display: "flex",
@@ -982,7 +1045,15 @@ export function CustomLargeReportCard({
                 }}
               >
                 {imageId ? (
-                  gemImage.node
+                  <div
+                    style={{
+                      display: "flex",
+                      transform:
+                        data.imageScale === 1 ? undefined : `scale(${data.imageScale})`,
+                    }}
+                  >
+                    {gemImage.node}
+                  </div>
                 ) : (
                   <ImageIcon style={{ width: "48px", height: "48px", color: "#d1d5db" }} />
                 )}
@@ -993,16 +1064,20 @@ export function CustomLargeReportCard({
                 onChange={(imageCaption) => onChange({ imageCaption })}
                 editable={editable}
                 title='Click to edit the caption'
-                style={{ width: "170px", marginTop: "4px" }}
-                editorStyle={{ fontFamily: "Arial, sans-serif", fontSize: "9px", textAlign: "center" }}
+                style={{ width: `${imageW}px`, marginTop: "4px" }}
+                editorStyle={{
+                  fontFamily: "Arial, sans-serif",
+                  fontSize: `${size("imageCaption")}px`,
+                  textAlign: "center",
+                }}
               >
                 <p
                   style={{
                     fontFamily: "Arial, sans-serif",
-                    fontSize: "9px",
+                    fontSize: `${size("imageCaption")}px`,
                     color: "#888",
                     margin: 0,
-                    width: "170px",
+                    width: `${imageW}px`,
                     textAlign: "center",
                   }}
                 >
@@ -1019,12 +1094,17 @@ export function CustomLargeReportCard({
               editable={editable}
               title='Click to edit the heat treatment line'
               style={{ marginTop: "14px" }}
-              editorStyle={{ ...COURIER, fontSize: "12px", letterSpacing: "1px", ...CENTRED_EDITOR }}
+              editorStyle={{
+                ...COURIER,
+                fontSize: `${size("heatLine")}px`,
+                letterSpacing: "1px",
+                ...CENTRED_EDITOR,
+              }}
             >
               <p
                 style={{
                   ...COURIER,
-                  fontSize: "12px",
+                  fontSize: `${size("heatLine")}px`,
                   fontWeight: 400,
                   color: "#333",
                   letterSpacing: "1px",
@@ -1079,12 +1159,17 @@ export function CustomLargeReportCard({
             editable={editable}
             title='Click to edit the weight'
             style={{ marginTop: "3px" }}
-            editorStyle={{ ...COURIER, fontSize: "14px", fontWeight: 600, ...CENTRED_EDITOR }}
+            editorStyle={{
+              ...COURIER,
+              fontSize: `${size("weightLine")}px`,
+              fontWeight: 600,
+              ...CENTRED_EDITOR,
+            }}
           >
             <p
               style={{
                 ...COURIER,
-                fontSize: "14px",
+                fontSize: `${size("weightLine")}px`,
                 fontWeight: 600,
                 color: "#444",
                 margin: 0,
@@ -1099,8 +1184,10 @@ export function CustomLargeReportCard({
         <div style={{ display: "flex", alignItems: "flex-end", gap: "24px", marginLeft: "30px" }}>
           <TypedSignature data={data} onChange={onChange} editable={editable} />
 
-          {/* Already-signed block, kept as the scanned asset */}
+          {/* Already-signed block, kept as the scanned asset. Sized about its own centre
+              and nudged by the layout; where it lands is checked by usePageOverflow. */}
           <div
+            data-fit-box
             style={{
               position: "relative",
               width: `${SIG_BOX_W}px`,
@@ -1108,6 +1195,8 @@ export function CustomLargeReportCard({
               overflow: "hidden",
               flexShrink: 0,
               visibility: data.showSignatureImage ? "visible" : "hidden",
+              transform: transformFor(data.signatureX, data.signatureY, data.signatureScale),
+              transformOrigin: "center center",
             }}
           >
             <img
@@ -1132,12 +1221,16 @@ export function CustomLargeReportCard({
         editable={editable}
         title='Click to edit the footer line'
         style={{ margin: "12px 100px 0 0", position: "relative", zIndex: 2 }}
-        editorStyle={{ fontFamily: "Arial, sans-serif", fontSize: "8.5px", textAlign: "right" }}
+        editorStyle={{
+          fontFamily: "Arial, sans-serif",
+          fontSize: `${size("termsLine")}px`,
+          textAlign: "right",
+        }}
       >
         <p
           style={{
             fontFamily: "Arial, sans-serif",
-            fontSize: "8.5px",
+            fontSize: `${size("termsLine")}px`,
             color: "#888",
             margin: 0,
             textAlign: "end",

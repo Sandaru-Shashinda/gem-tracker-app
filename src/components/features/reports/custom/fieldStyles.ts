@@ -21,3 +21,12 @@ export const WRAPPING_VALUE_STYLE: CSSProperties = {
   overflowWrap: "anywhere",
   textAlign: "right",
 }
+
+/**
+ * The transform a layout override asks for, or none at all — so a report nobody has
+ * adjusted carries no transform and renders exactly as its template does.
+ */
+export function transformFor(x: number, y: number, scale: number): string | undefined {
+  if (x === 0 && y === 0 && scale === 1) return undefined
+  return `translate(${x}px, ${y}px) scale(${scale})`
+}

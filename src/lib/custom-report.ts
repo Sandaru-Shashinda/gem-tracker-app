@@ -22,9 +22,145 @@ export interface CustomReportRow {
   id: string
   label: string
   value: string
+  /** This row's own type size in px. Absent, the row prints at its block's size. */
+  fontSize?: number
 }
 
-export interface CustomSmallReport {
+/**
+ * Where a custom report departs from its template's geometry, rather than its words.
+ *
+ * Every custom document carries the same set, so one panel in each builder can drive it.
+ * Each starts at the value that leaves the template exactly as it was — scale 1, offset
+ * 0, no font size overridden — so a report nobody has adjusted is pixel for pixel the
+ * standard one.
+ */
+export interface CustomLayout {
+  /** The scanned signature: a multiple of its template size, and a nudge in px. */
+  signatureScale: number
+  signatureX: number
+  signatureY: number
+  /** The gem image's frame, as a multiple of its template size. */
+  imageBoxScale: number
+  /**
+   * The photo inside the frame, as a multiple of the size it would otherwise print at.
+   * At anything but 1 the stone is no longer drawn at its measured size.
+   */
+  imageScale: number
+  /** Type size in px per element, keyed by the card's font fields. Absent keys print as the template does. */
+  fontSizes: Record<string, number>
+}
+
+/** A row with its own type size set, or cleared back to its block's with undefined. */
+export function withRowSize(row: CustomReportRow, size: number | undefined): CustomReportRow {
+  const next = { ...row }
+  if (size === undefined) delete next.fontSize
+  else next.fontSize = size
+  return next
+}
+
+/** Just the layout of a document — what a reset of its wording leaves alone. */
+export function pickLayout(d: CustomLayout): CustomLayout {
+  return {
+    signatureScale: d.signatureScale,
+    signatureX: d.signatureX,
+    signatureY: d.signatureY,
+    imageBoxScale: d.imageBoxScale,
+    imageScale: d.imageScale,
+    fontSizes: { ...d.fontSizes },
+  }
+}
+
+export function defaultLayout(): CustomLayout {
+  return {
+    signatureScale: 1,
+    signatureX: 0,
+    signatureY: 0,
+    imageBoxScale: 1,
+    imageScale: 1,
+    fontSizes: {},
+  }
+}
+
+/** One element whose type size the layout panel offers, at the size the template sets it. */
+export interface FontField {
+  key: string
+  label: string
+  size: number
+}
+
+/** The card's text elements and their template sizes. "rows" is every row that sets none of its own. */
+export const SMALL_FONT_FIELDS: readonly FontField[] = [
+  { key: "rows", label: "Rows", size: 14 },
+  { key: "comments", label: "Comments", size: 12 },
+  { key: "gemName", label: "Gem name", size: 18 },
+  { key: "weightLine", label: "Weight", size: 16 },
+  { key: "heatLine", label: "Heat line", size: 12 },
+  { key: "imageCaption", label: "Image caption", size: 9 },
+]
+
+export const MEDIUM_FONT_FIELDS: readonly FontField[] = [
+  { key: "title", label: "Title", size: 28 },
+  { key: "rows", label: "Rows", size: 14 },
+  { key: "resultsHeading", label: "Results heading", size: 15 },
+  { key: "comments", label: "Comments", size: 14 },
+  { key: "gemName", label: "Gem name", size: 30 },
+  { key: "weightLine", label: "Weight", size: 18 },
+  { key: "heatLine", label: "Heat line", size: 18 },
+  { key: "imageCaption", label: "Image caption", size: 10 },
+  { key: "termsLine", label: "Footer line", size: 10 },
+]
+
+export const LARGE_FONT_FIELDS: readonly FontField[] = [
+  { key: "title", label: "Title", size: 18 },
+  { key: "reportNumberLine", label: "Report number", size: 12 },
+  { key: "dateLine", label: "Date", size: 12 },
+  { key: "headings", label: "Section headings", size: 12 },
+  { key: "rows", label: "Rows", size: 11.5 },
+  { key: "treatments", label: "Treatment checklist", size: 10 },
+  { key: "specialNote", label: "Special note", size: 11 },
+  { key: "statement", label: "Statement", size: 10.5 },
+  { key: "gemName", label: "Gem name", size: 22 },
+  { key: "weightLine", label: "Weight", size: 14 },
+  { key: "heatLine", label: "Heat line", size: 12 },
+  { key: "imageCaption", label: "Image caption", size: 9 },
+  { key: "termsLine", label: "Footer line", size: 8.5 },
+]
+
+/**
+ * Reads a document's type sizes against a card's font fields: the override where there
+ * is one, the template's size where there is not.
+ */
+export function fontSizer(
+  fontSizes: Record<string, number> | undefined,
+  fields: readonly FontField[],
+): (key: string) => number {
+  return (key) => {
+    const own = fontSizes?.[key]
+    if (typeof own === "number" && own > 0) return own
+    return fields.find((f) => f.key === key)?.size ?? 12
+  }
+}
+
+/** A row as the API stores it: no React key, and its size only when it has one. */
+export interface StoredRow {
+  label: string
+  value: string
+  fontSize?: number
+}
+
+function toStoredRow({ label, value, fontSize }: CustomReportRow): StoredRow {
+  return typeof fontSize === "number" ? { label, value, fontSize } : { label, value }
+}
+
+function fromStoredRow(row: Partial<StoredRow> | undefined): CustomReportRow {
+  return newCustomReportRow(
+    row?.label ?? "",
+    row?.value ?? "",
+    typeof row?.fontSize === "number" ? row.fontSize : undefined,
+  )
+}
+
+export interface CustomSmallReport extends CustomLayout {
   rows: CustomReportRow[]
   /** Comments keeps its own pair: it is the one field set as a block rather than a row. */
   commentsLabel: string
@@ -72,12 +208,12 @@ export const CUSTOM_REPORT_FIELD_PRESETS = [
  * is the whole of what identifies it.
  */
 export type StoredCustomSmallReport = Omit<CustomSmallReport, "rows"> & {
-  rows: Array<{ label: string; value: string }>
+  rows: StoredRow[]
 }
 
 export function toStoredCustomReport(data: CustomSmallReport): StoredCustomSmallReport {
   const { rows, ...rest } = data
-  return { ...rest, rows: rows.map(({ label, value }) => ({ label, value })) }
+  return { ...rest, rows: rows.map(toStoredRow) }
 }
 
 /**
@@ -102,7 +238,7 @@ export function fromStoredCustomReport(
     ...fallback,
     ...present,
     rows: Array.isArray(rows)
-      ? rows.map((row) => newCustomReportRow(row?.label ?? "", row?.value ?? ""))
+      ? rows.map(fromStoredRow)
       : fallback.rows,
   }
 }
@@ -113,8 +249,14 @@ export function customReportRowId(): string {
   return `row-${rowSeq}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-export function newCustomReportRow(label = "New field", value = ""): CustomReportRow {
-  return { id: customReportRowId(), label, value }
+export function newCustomReportRow(
+  label = "New field",
+  value = "",
+  fontSize?: number,
+): CustomReportRow {
+  const row: CustomReportRow = { id: customReportRowId(), label, value }
+  if (typeof fontSize === "number") row.fontSize = fontSize
+  return row
 }
 
 /** Weight as both the row and the headline under the gem name print it. */
@@ -153,6 +295,7 @@ export function buildCustomSmallReport(gem: Gem, verificationUrl: string): Custo
   ].map(([label, value]) => newCustomReportRow(label as string, (value as string) ?? ""))
 
   return {
+    ...defaultLayout(),
     rows,
     commentsLabel: "Comments",
     comments: obs.comments ?? "",
@@ -184,7 +327,7 @@ export function buildCustomSmallReport(gem: Gem, verificationUrl: string): Custo
  * about it is which grade is marked — {@link CustomMediumReport.clarityGrade} — and
  * whether the scale is printed at all.
  */
-export interface CustomMediumReport {
+export interface CustomMediumReport extends CustomLayout {
   title: string
   /** The upper block: the stone's description, as the standard report lays it out. */
   rows: CustomReportRow[]
@@ -273,6 +416,7 @@ export function buildCustomMediumReport(
     newCustomReportRow(label, value === undefined || value === null ? "" : String(value))
 
   return {
+    ...defaultLayout(),
     title: "GEMOLOGICAL REPORT OF CEYLON",
     rows: [
       row("GRC Number", gem.gemId),
@@ -320,13 +464,13 @@ export function buildCustomMediumReport(
 
 /** The A5 report as the API stores it: same document, rows stripped of their React keys. */
 export type StoredCustomMediumReport = Omit<CustomMediumReport, "rows" | "resultRows"> & {
-  rows: Array<{ label: string; value: string }>
-  resultRows: Array<{ label: string; value: string }>
+  rows: StoredRow[]
+  resultRows: StoredRow[]
 }
 
 export function toStoredCustomMediumReport(data: CustomMediumReport): StoredCustomMediumReport {
   const { rows, resultRows, ...rest } = data
-  const plain = (list: CustomReportRow[]) => list.map(({ label, value }) => ({ label, value }))
+  const plain = (list: CustomReportRow[]) => list.map(toStoredRow)
   return { ...rest, rows: plain(rows), resultRows: plain(resultRows) }
 }
 
@@ -341,7 +485,7 @@ export function fromStoredCustomMediumReport(
     Object.entries(rest).filter(([, value]) => value !== undefined && value !== null),
   )
   const revive = (list: Array<{ label?: string; value?: string }> | undefined) =>
-    Array.isArray(list) ? list.map((r) => newCustomReportRow(r?.label ?? "", r?.value ?? "")) : null
+    Array.isArray(list) ? list.map(fromStoredRow) : null
 
   return {
     ...fallback,
@@ -364,7 +508,7 @@ export function fromStoredCustomMediumReport(
  * them is the answer each one records: which grade box is ticked, which treatments are
  * Yes or No, which clarity grade is marked.
  */
-export interface CustomLargeReport {
+export interface CustomLargeReport extends CustomLayout {
   // Header
   title: string
   reportNumberLine: string
@@ -494,6 +638,7 @@ export function buildCustomLargeReport(
     newCustomReportRow(label, value === undefined || value === null ? "" : String(value))
 
   return {
+    ...defaultLayout(),
     title: "Gemological Report of Ceylon",
     reportNumberLine: `GRC Report Number – ${gem.gemId || "—"}`,
     dateLine: date,
@@ -564,12 +709,12 @@ const LARGE_ROW_LISTS: LargeRowList[] = ["detailRows", "cutRows", "colourRows", 
 
 /** The A4 report as the API stores it: same document, rows stripped of their React keys. */
 export type StoredCustomLargeReport = Omit<CustomLargeReport, LargeRowList> &
-  Record<LargeRowList, Array<{ label: string; value: string }>>
+  Record<LargeRowList, StoredRow[]>
 
 export function toStoredCustomLargeReport(data: CustomLargeReport): StoredCustomLargeReport {
   const stored = { ...data } as unknown as StoredCustomLargeReport
   for (const list of LARGE_ROW_LISTS) {
-    stored[list] = data[list].map(({ label, value }) => ({ label, value }))
+    stored[list] = data[list].map(toStoredRow)
   }
   return stored
 }
@@ -587,7 +732,7 @@ export function fromStoredCustomLargeReport(
     ),
   )
   const revive = (list: Array<{ label?: string; value?: string }> | undefined) =>
-    Array.isArray(list) ? list.map((r) => newCustomReportRow(r?.label ?? "", r?.value ?? "")) : null
+    Array.isArray(list) ? list.map(fromStoredRow) : null
 
   const result = { ...fallback, ...present } as CustomLargeReport
   for (const list of LARGE_ROW_LISTS) {

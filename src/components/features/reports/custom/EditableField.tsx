@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 
-import { textWidth } from "@/lib/text-layout"
+import { textWidth, wrapText } from "@/lib/text-layout"
 
 /**
  * Editing a certificate's text on the certificate itself.
@@ -261,12 +261,40 @@ interface EditableWrapTextProps {
   /** Shown faintly, on screen only, when the field is empty and prints nothing. */
   hint?: string
   /**
-   * The value slot's own layout: its flex sizing, its maximum width and its alignment.
-   * Applied to the one element that is both the printed value and, while editing, the
-   * editor — which is the whole point of this component.
+   * The value slot's own layout: its flex sizing and its alignment. Applied to the one
+   * element that is both the printed value and, while editing, the editor — which is the
+   * whole point of this component.
    */
   style?: CSSProperties
   title?: string
+  /** Canvas font shorthand the value is set in, so its lines can be measured. */
+  font: string
+  /** Widest a line of the value may run before it wraps. */
+  maxTextWidth: number
+  /** Space between the dotted leader and the value, in px. */
+  gutter?: number
+}
+
+/**
+ * The slot's width: the widest of its wrapped lines, once it has more than one.
+ *
+ * Left to the browser, a wrapped value's box is always the full maximum width — CSS
+ * does not shrink a box to the widest line it broke into. The text is right-aligned in
+ * that box, so whenever the first line is shorter than the maximum there was an empty
+ * strip between the end of the dotted leader and the first word, and the leader seemed
+ * to stop short of the value it was leading to. Sizing the box to its widest line puts
+ * that line flush against the leader.
+ *
+ * The lines are broken here with the same measure the comments use, and the box is
+ * given a couple of pixels over the widest so the browser, measuring a hair differently
+ * from the canvas, breaks the text where these lines did rather than a word earlier. A
+ * value that fits on one line is left to size itself, exactly as it always has.
+ */
+function wrappedWidth(text: string, font: string, maxTextWidth: number): number | null {
+  const lines = wrapText(text, { width: maxTextWidth, maxLines: 100, font })
+  if (lines.length < 2) return null
+  const widest = Math.max(...lines.map((line) => textWidth(line, font)))
+  return Math.min(maxTextWidth, Math.ceil(widest) + 2)
 }
 
 /** Row values are one line of prose: line breaks and runs of whitespace print as a space. */
@@ -299,6 +327,9 @@ export function EditableWrapText({
   hint = "edit",
   style,
   title,
+  font,
+  maxTextWidth,
+  gutter = 0,
 }: EditableWrapTextProps) {
   const [editing, setEditing] = useState(false)
   const ref = useRef<HTMLSpanElement>(null)
@@ -320,7 +351,15 @@ export function EditableWrapText({
     selection?.addRange(range)
   }, [editing])
 
-  if (!editable) return <span style={style}>{value || placeholder}</span>
+  const width = wrappedWidth(value || placeholder, font, maxTextWidth)
+  const slot: CSSProperties = {
+    ...style,
+    paddingLeft: gutter ? `${gutter}px` : undefined,
+    maxWidth: `${maxTextWidth + gutter}px`,
+    width: width === null ? undefined : `${width + gutter}px`,
+  }
+
+  if (!editable) return <span style={slot}>{value || placeholder}</span>
 
   const open = () => {
     entryValue.current = value
@@ -335,7 +374,7 @@ export function EditableWrapText({
         contentEditable
         role='textbox'
         // A little room to click into when the value is empty.
-        style={{ ...style, minWidth: "40px" }}
+        style={{ ...slot, minWidth: "40px" }}
         onInput={(e) => onChange(toRowValue(e.currentTarget.textContent ?? ""))}
         onBlur={(e) => {
           e.currentTarget.textContent = ""
@@ -374,7 +413,7 @@ export function EditableWrapText({
       title={title}
       tabIndex={0}
       role='button'
-      style={style}
+      style={slot}
       onClick={open}
       onFocus={open}
     >

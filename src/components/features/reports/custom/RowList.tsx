@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react"
 import type { CustomReportRow } from "@/lib/custom-report"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { SizeInput } from "./LayoutPanel"
 
 interface RowListProps {
   heading: string
@@ -12,6 +13,10 @@ interface RowListProps {
   onMove: (index: number, delta: number) => void
   onRemove: (rowId: string) => void
   onAdd: () => void
+  /** The block's type size, which a row without its own prints at. */
+  rowSize: number
+  /** Sets one row's own size, or clears it back to the block's with undefined. */
+  onFontSize: (rowId: string, size: number | undefined) => void
 }
 
 /**
@@ -23,7 +28,16 @@ interface RowListProps {
  * keystroke typed into the sheet beside it — the same fault that cost the sheet's own
  * rows their focus after a single character.
  */
-export function RowList({ heading, rows, full, onMove, onRemove, onAdd }: RowListProps) {
+export function RowList({
+  heading,
+  rows,
+  full,
+  onMove,
+  onRemove,
+  onAdd,
+  rowSize,
+  onFontSize,
+}: RowListProps) {
   return (
     <div className='space-y-3'>
       <div className='flex items-baseline justify-between'>
@@ -40,6 +54,12 @@ export function RowList({ heading, rows, full, onMove, onRemove, onAdd }: RowLis
             className='flex items-center gap-1 rounded-md border px-2 py-1.5 text-sm'
           >
             <span className='flex-1 truncate text-slate-700'>{row.label || "Untitled"}</span>
+            <SizeInput
+              value={row.fontSize}
+              fallback={rowSize}
+              onChange={(size) => onFontSize(row.id, size)}
+              title={`Type size for this row — blank prints at ${rowSize}px`}
+            />
             <Button
               variant='ghost'
               size='icon'

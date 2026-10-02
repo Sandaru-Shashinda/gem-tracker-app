@@ -15,6 +15,10 @@ import {
 import type { Gem } from "@/lib/types"
 import {
   buildCustomSmallReport,
+  fontSizer,
+  pickLayout,
+  SMALL_FONT_FIELDS,
+  withRowSize,
   newCustomReportRow,
   toStoredCustomReport,
   CUSTOM_REPORT_FIELD_PRESETS,
@@ -37,6 +41,7 @@ import { CARD_HEIGHT, CARD_WIDTH, CustomSmallReportCard } from "./CustomSmallRep
 import { OverflowWarning } from "./OverflowWarning"
 import { useCardExport } from "./useCardExport"
 import { usePageOverflow } from "./usePageOverflow"
+import { LayoutPanel, SizeInput } from "./LayoutPanel"
 
 /**
  * The custom card report: one gem, one editable copy of the small certificate.
@@ -106,7 +111,7 @@ export function CustomSmallReportBuilder({
   )
 
   // Values wrap, so the row limit alone cannot promise the card fits.
-  const overflow = usePageOverflow(printRef)
+  const overflow = usePageOverflow(printRef, snapshot)
 
   // The card is a fixed-size print artefact; shrink it to fit narrow viewports. The
   // transform lives on a wrapper, so printRef stays at natural size and downloads keep
@@ -127,6 +132,12 @@ export function CustomSmallReportBuilder({
     if (data.rows.length >= MAX_ROWS) return
     patch({ rows: [...data.rows, newCustomReportRow(label || "New field")] })
   }
+
+  const rowSize = fontSizer(data.fontSizes, SMALL_FONT_FIELDS)("rows")
+  const setRowSize = (rowId: string, size: number | undefined) =>
+    patch({
+      rows: data.rows.map((row) => (row.id === rowId ? withRowSize(row, size) : row)),
+    })
 
   const removeRow = (rowId: string) =>
     patch({ rows: data.rows.filter((row) => row.id !== rowId) })
@@ -247,7 +258,9 @@ export function CustomSmallReportBuilder({
             <Button
               variant='outline'
               size='sm'
-              onClick={() => setData(buildCustomSmallReport(gem, verificationUrl))}
+              onClick={() =>
+                setData({ ...buildCustomSmallReport(gem, verificationUrl), ...pickLayout(data) })
+              }
             >
               <RotateCcw className='mr-1.5 h-3 w-3' />
               Reset wording
@@ -323,6 +336,12 @@ export function CustomSmallReportBuilder({
                 className='flex items-center gap-1 rounded-md border px-2 py-1.5 text-sm'
               >
                 <span className='flex-1 truncate text-slate-700'>{row.label || "Untitled"}</span>
+                <SizeInput
+                  value={row.fontSize}
+                  fallback={rowSize}
+                  onChange={(size) => setRowSize(row.id, size)}
+                  title={`Type size for this row — blank prints at ${rowSize}px`}
+                />
                 <Button
                   variant='ghost'
                   size='icon'
@@ -389,6 +408,10 @@ export function CustomSmallReportBuilder({
             Adds an empty row — type its value on the card. Leave the list unset to add a blank
             field and name it there too.
           </p>
+        </div>
+
+        <div className='border-t pt-5'>
+          <LayoutPanel layout={data} fontFields={SMALL_FONT_FIELDS} onChange={patch} />
         </div>
 
         <div className='space-y-3 border-t pt-5'>

@@ -1,4 +1,4 @@
-import { useState, type RefObject } from "react"
+import { useState, type CSSProperties, type RefObject } from "react"
 import QRCode from "react-qr-code"
 import { ImageIcon, X } from "lucide-react"
 
@@ -6,12 +6,12 @@ import { useRealSizeGemImage } from "../../gems/RealSizeGemImage"
 import type { MeasurementSource, RenderTarget } from "@/lib/real-size"
 import { layoutGemName } from "@/lib/gem-name"
 import { textWidth, wrapText } from "@/lib/text-layout"
-import type { CustomSmallReport } from "@/lib/custom-report"
+import { fontSizer, SMALL_FONT_FIELDS, type CustomSmallReport } from "@/lib/custom-report"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo.png"
 import { EditableOverlay, EditableText, EditableWrapText } from "./EditableField"
-import { WRAPPING_VALUE_STYLE } from "./fieldStyles"
+import { transformFor, WRAPPING_VALUE_STYLE } from "./fieldStyles"
 
 /**
  * The small card, drawn from an editable document instead of from a gem.
@@ -31,8 +31,6 @@ export const CARD_WIDTH = 640
 export const CARD_HEIGHT = 403.5
 /** Right-hand column: gem image, the name under it, the weight, the QR code. */
 const NAME_COL_W = 160
-/** Size the name is set at when it fits the column on one line. */
-const NAME_FONT_SIZE = 18
 /** The card's own gutters, and what they leave for the data column. */
 const CARD_PAD_L = 40
 const CARD_PAD_R = 30
@@ -40,26 +38,47 @@ const COL_GAP = 65
 const DATA_COL_W = CARD_WIDTH - CARD_PAD_L - CARD_PAD_R - COL_GAP - NAME_COL_W
 /** The data rows' type. The line box is what the dotted leader is drawn against. */
 const ROW_FONT_FAMILY = "Arial, Helvetica, sans-serif"
-const ROW_FONT_SIZE = 14
 const ROW_LINE_HEIGHT = 1.3
-const ROW_LINE_BOX = ROW_FONT_SIZE * ROW_LINE_HEIGHT
-const ROW_FONT = `${ROW_FONT_SIZE}px ${ROW_FONT_FAMILY}`
+/** Canvas font shorthand for a row set at `size`. */
+const rowFont = (size: number) => `${size}px ${ROW_FONT_FAMILY}`
 /** A row's gutters: the label, the dotted leader at its narrowest, then the value. */
 const LABEL_GAP = 4
 const LEADER_MIN_W = 20
 const VALUE_GAP = 6
 /** Widest a value may print before it wraps — where the standard card cuts it off. */
 const VALUE_MAX_W = 220
+/** The 120px image frame, and the 85% inset the photo sits in. */
+const IMAGE_BOX = 120
+const IMAGE_INSET = 0.85
 /**
  * Comments is the one field the lab writes prose into, and so the one that needs more
  * than a line. It is set a little smaller than the data rows and capped at three lines:
  * the card is a fixed-size print artefact, and every line the comment takes is a line
  * taken off the signature below it.
  */
-const COMMENT_FONT_SIZE = 12
 const COMMENT_LINE_HEIGHT = 1.4
 const COMMENT_MAX_LINES = 3
-const COMMENT_FONT = `${COMMENT_FONT_SIZE}px ${ROW_FONT_FAMILY}`
+
+/**
+ * The dotted leader between a label and its value, for a row set at `size`.
+ *
+ * Held to the first line's box rather than stretched to the row's height. The rows
+ * stretch their items, which put the dots at the foot of a single line; once a value
+ * wraps the row is taller, and a stretched leader would draw its dots under the last
+ * line instead of leading the eye from the label to the first. The 4px lift is the
+ * template's at 14px, kept in proportion when a row is set larger or smaller.
+ */
+function leaderStyle(size: number): CSSProperties {
+  return {
+    flex: 1,
+    alignSelf: "flex-start",
+    height: `${size * ROW_LINE_HEIGHT}px`,
+    borderBottom: "2px dotted #a3a3a3",
+    position: "relative",
+    top: `${-(4 * size) / 14}px`,
+    minWidth: `${LEADER_MIN_W}px`,
+  }
+}
 
 interface CustomSmallReportCardProps {
   data: CustomSmallReport
@@ -89,12 +108,17 @@ export function CustomSmallReportCard({
   // region that covers the value and nothing else to hang a click on.
   const [editingComments, setEditingComments] = useState(false)
 
-  // 120px box less the 85% inner inset the card layout uses.
+  const size = fontSizer(data.fontSizes, SMALL_FONT_FIELDS)
+  const rowSize = size("rows")
+  const commentSize = size("comments")
+
+  // The frame at its chosen size, and the photo's box: the frame less its 85% inset.
+  const imageBox = IMAGE_BOX * data.imageBoxScale
   const gem = useRealSizeGemImage({
     imageId,
     obs,
     reportSize: "small",
-    box: { w: 102, h: 102 },
+    box: { w: imageBox * IMAGE_INSET, h: imageBox * IMAGE_INSET },
     target,
   })
 
@@ -102,7 +126,7 @@ export function CustomSmallReportCard({
   // carry the same lines — a name left to wrap on its own splits at the column edge.
   const gemName = layoutGemName(data.gemName, {
     maxWidth: NAME_COL_W,
-    fontSize: NAME_FONT_SIZE,
+    fontSize: size("gemName"),
     fontFamily: ROW_FONT_FAMILY,
     fontWeight: 700,
   })
@@ -114,38 +138,16 @@ export function CustomSmallReportCard({
     width: DATA_COL_W,
     firstLineWidth:
       DATA_COL_W -
-      textWidth(`${data.commentsLabel}:`, ROW_FONT) -
+      textWidth(`${data.commentsLabel}:`, rowFont(rowSize)) -
       LABEL_GAP -
       LEADER_MIN_W -
       VALUE_GAP,
     maxLines: COMMENT_MAX_LINES,
-    font: COMMENT_FONT,
+    font: rowFont(commentSize),
   })
 
   const patchRow = (rowId: string, patch: Partial<{ label: string; value: string }>) =>
     onChange({ rows: data.rows.map((row) => (row.id === rowId ? { ...row, ...patch } : row)) })
-
-  /**
-   * The dotted leader between a label and its value.
-   *
-   * Held to the first line's box rather than stretched to the row's height. The rows
-   * stretch their items, which put the dots at the foot of a single line; once a value
-   * wraps the row is taller, and a stretched leader would draw its dots under the last
-   * line instead of leading the eye from the label to the first.
-   */
-  const leader = (
-    <span
-      style={{
-        flex: 1,
-        alignSelf: "flex-start",
-        height: `${ROW_LINE_BOX}px`,
-        borderBottom: "2px dotted #a3a3a3",
-        position: "relative",
-        top: "-4px",
-        minWidth: `${LEADER_MIN_W}px`,
-      }}
-    />
-  )
 
   return (
     <div
@@ -215,7 +217,7 @@ export function CustomSmallReportCard({
             display: "flex",
             flexDirection: "column",
             gap: 2,
-            fontSize: `${ROW_FONT_SIZE}px`,
+            fontSize: `${rowSize}px`,
             marginTop: "-65px",
             padding: "10px 0",
             fontFamily: ROW_FONT_FAMILY,
@@ -225,8 +227,14 @@ export function CustomSmallReportCard({
             zIndex: 2,
           }}
         >
-          {data.rows.map((row) => (
-            <div key={row.id} className='crc-row' style={{ display: "flex", position: "relative" }}>
+          {data.rows.map((row) => {
+            const own = row.fontSize ?? rowSize
+            return (
+            <div
+              key={row.id}
+              className='crc-row'
+              style={{ display: "flex", position: "relative", fontSize: `${own}px` }}
+            >
               {editable && (
                 <button
                   type='button'
@@ -261,26 +269,26 @@ export function CustomSmallReportCard({
                   onChange={(label) => patchRow(row.id, { label })}
                   editable={editable}
                   hint='Label'
-                  font={ROW_FONT}
+                  font={rowFont(own)}
                   title='Click to rename this field'
                 />
                 :
               </span>
-              {leader}
+              <span style={leaderStyle(own)} />
               <EditableWrapText
                 value={row.value}
                 onChange={(value) => patchRow(row.id, { value })}
                 editable={editable}
                 placeholder='-'
                 title='Click to edit this value'
-                style={{
-                  ...WRAPPING_VALUE_STYLE,
-                  paddingLeft: `${VALUE_GAP}px`,
-                  maxWidth: `${VALUE_MAX_W}px`,
-                }}
+                font={rowFont(own)}
+                maxTextWidth={VALUE_MAX_W - VALUE_GAP}
+                gutter={VALUE_GAP}
+                style={WRAPPING_VALUE_STYLE}
               />
             </div>
-          ))}
+            )
+          })}
 
           {/* Comments. Its first line shares the label's row, like every other value;
               the rest run the full width of the column underneath. The lines are
@@ -293,9 +301,9 @@ export function CustomSmallReportCard({
             multiline
             editing={editingComments}
             onEditingChange={setEditingComments}
-            style={{ marginTop: "8px", minHeight: `${ROW_LINE_BOX}px` }}
+            style={{ marginTop: "8px", minHeight: `${rowSize * ROW_LINE_HEIGHT}px` }}
             editorStyle={{
-              fontSize: `${COMMENT_FONT_SIZE}px`,
+              fontSize: `${commentSize}px`,
               fontFamily: ROW_FONT_FAMILY,
               lineHeight: COMMENT_LINE_HEIGHT,
             }}
@@ -309,12 +317,12 @@ export function CustomSmallReportCard({
                   onChange={(commentsLabel) => onChange({ commentsLabel })}
                   editable={editable}
                   hint='Label'
-                  font={ROW_FONT}
+                  font={rowFont(rowSize)}
                   title='Click to rename this field'
                 />
                 :
               </span>
-              {leader}
+              <span style={leaderStyle(rowSize)} />
               <span
                 className={editable ? "crc-editable" : undefined}
                 onClick={editable ? () => setEditingComments(true) : undefined}
@@ -322,10 +330,10 @@ export function CustomSmallReportCard({
                 style={{
                   whiteSpace: "pre",
                   paddingLeft: `${VALUE_GAP}px`,
-                  fontSize: `${COMMENT_FONT_SIZE}px`,
+                  fontSize: `${commentSize}px`,
                   // Set on the row's own line box, so the smaller type still sits on the
                   // same baseline as the label beside it.
-                  lineHeight: `${ROW_LINE_BOX}px`,
+                  lineHeight: `${rowSize * ROW_LINE_HEIGHT}px`,
                   cursor: editable ? "text" : undefined,
                 }}
               >
@@ -339,7 +347,7 @@ export function CustomSmallReportCard({
                 onClick={editable ? () => setEditingComments(true) : undefined}
                 style={{
                   whiteSpace: "pre",
-                  fontSize: `${COMMENT_FONT_SIZE}px`,
+                  fontSize: `${commentSize}px`,
                   lineHeight: COMMENT_LINE_HEIGHT,
                   cursor: editable ? "text" : undefined,
                 }}
@@ -364,13 +372,17 @@ export function CustomSmallReportCard({
               marginLeft: "-12px",
               maxWidth: "58%",
               clipPath: "inset(25% 0 10% 0)",
+              // The ink sits in the middle of this tall box, at its left edge.
+              transform: transformFor(data.signatureX, data.signatureY, data.signatureScale),
+              transformOrigin: "left center",
             }}
           />
         )}
       </div>
 
-      {/* ── RIGHT COLUMN ── */}
+      {/* ── RIGHT COLUMN ── ending in the QR code; see usePageOverflow. */}
       <div
+        data-fit-column
         style={{
           width: `${NAME_COL_W}px`,
           flexShrink: 0,
@@ -387,9 +399,13 @@ export function CustomSmallReportCard({
         {data.showGemImage && (
           <>
             <div
+              // Measured where it lands once it is resized; see usePageOverflow.
+              data-fit-box
               style={{
-                width: "120px",
-                height: "120px",
+                width: `${imageBox}px`,
+                height: `${imageBox}px`,
+                // Held to its size: a column short of room would otherwise squash it.
+                flexShrink: 0,
                 backgroundColor: "#ffffff",
                 display: "flex",
                 alignItems: "center",
@@ -406,6 +422,7 @@ export function CustomSmallReportCard({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    transform: data.imageScale === 1 ? undefined : `scale(${data.imageScale})`,
                   }}
                 >
                   {gem.node}
@@ -417,7 +434,7 @@ export function CustomSmallReportCard({
 
             <p
               style={{
-                fontSize: "9px",
+                fontSize: `${size("imageCaption")}px`,
                 fontFamily: ROW_FONT_FAMILY,
                 color: "#888",
                 textAlign: "center",
@@ -431,7 +448,7 @@ export function CustomSmallReportCard({
                 onChange={(imageCaption) => onChange({ imageCaption })}
                 editable={editable}
                 hint='Caption'
-                font={`9px ${ROW_FONT_FAMILY}`}
+                font={rowFont(size("imageCaption"))}
                 maxWidth={NAME_COL_W}
                 title='Click to edit the caption'
               />
@@ -445,7 +462,7 @@ export function CustomSmallReportCard({
             <p
               style={{
                 fontWeight: 600,
-                fontSize: "12px",
+                fontSize: `${size("heatLine")}px`,
                 color: "#1e293b",
                 lineHeight: 1.2,
                 margin: 0,
@@ -457,7 +474,7 @@ export function CustomSmallReportCard({
                 onChange={(heatLine) => onChange({ heatLine })}
                 editable={editable}
                 hint='Heat'
-                font={`600 12px ${ROW_FONT_FAMILY}`}
+                font={`600 ${size("heatLine")}px ${ROW_FONT_FAMILY}`}
                 maxWidth={NAME_COL_W}
                 title='Click to edit the heat treatment line'
               />
@@ -498,7 +515,7 @@ export function CustomSmallReportCard({
 
           <p
             style={{
-              fontSize: "16px",
+              fontSize: `${size("weightLine")}px`,
               color: "#1e293b",
               fontWeight: 700,
               marginTop: "4px",
@@ -510,7 +527,7 @@ export function CustomSmallReportCard({
               onChange={(weightLine) => onChange({ weightLine })}
               editable={editable}
               hint='Weight'
-              font={`700 16px ${ROW_FONT_FAMILY}`}
+              font={`700 ${size("weightLine")}px ${ROW_FONT_FAMILY}`}
               maxWidth={NAME_COL_W}
               title='Click to edit the weight'
             />

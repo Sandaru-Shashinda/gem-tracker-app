@@ -4,6 +4,10 @@ import { Check, Download, Loader2, RotateCcw, Save, Undo2 } from "lucide-react"
 import type { Gem } from "@/lib/types"
 import {
   buildCustomMediumReport,
+  fontSizer,
+  MEDIUM_FONT_FIELDS,
+  pickLayout,
+  withRowSize,
   newCustomReportRow,
   toStoredCustomMediumReport,
   CUSTOM_MEDIUM_FIELD_PRESETS,
@@ -27,6 +31,7 @@ import { OverflowWarning } from "./OverflowWarning"
 import { RowList } from "./RowList"
 import { useCardExport } from "./useCardExport"
 import { usePageOverflow } from "./usePageOverflow"
+import { LayoutPanel } from "./LayoutPanel"
 
 /**
  * The custom A5 report: one gem, one editable copy of the medium certificate.
@@ -116,7 +121,7 @@ export function CustomMediumReportBuilder({
   )
 
   // Values wrap, so the row limit alone cannot promise the sheet fits.
-  const overflow = usePageOverflow(printRef)
+  const overflow = usePageOverflow(printRef, snapshot)
 
   // The sheet is a fixed-size print artefact; shrink it to fit the column it is given.
   // The transform lives on a wrapper, so printRef stays at natural size and downloads
@@ -140,6 +145,12 @@ export function CustomMediumReportBuilder({
     if (full) return
     patch({ [block]: [...data[block], newCustomReportRow(label || "New field")] })
   }
+
+  const rowSize = fontSizer(data.fontSizes, MEDIUM_FONT_FIELDS)("rows")
+  const setRowSize = (block: RowBlock, rowId: string, size: number | undefined) =>
+    patch({
+      [block]: data[block].map((row) => (row.id === rowId ? withRowSize(row, size) : row)),
+    })
 
   const removeRow = (block: RowBlock, rowId: string) =>
     patch({ [block]: data[block].filter((row) => row.id !== rowId) })
@@ -258,7 +269,10 @@ export function CustomMediumReportBuilder({
               variant='outline'
               size='sm'
               onClick={() =>
-                setData(buildCustomMediumReport(gem, verificationUrl, signatureName))
+                setData({
+                  ...buildCustomMediumReport(gem, verificationUrl, signatureName),
+                  ...pickLayout(data),
+                })
               }
             >
               <RotateCcw className='mr-1.5 h-3 w-3' />
@@ -351,6 +365,8 @@ export function CustomMediumReportBuilder({
             onMove={(index, delta) => moveRow("rows", index, delta)}
             onRemove={(rowId) => removeRow("rows", rowId)}
             onAdd={() => addRow("rows", presetLabel)}
+            rowSize={rowSize}
+            onFontSize={(rowId, size) => setRowSize("rows", rowId, size)}
           />
         </div>
 
@@ -362,7 +378,13 @@ export function CustomMediumReportBuilder({
             onMove={(index, delta) => moveRow("resultRows", index, delta)}
             onRemove={(rowId) => removeRow("resultRows", rowId)}
             onAdd={() => addRow("resultRows", presetLabel)}
+            rowSize={rowSize}
+            onFontSize={(rowId, size) => setRowSize("resultRows", rowId, size)}
           />
+        </div>
+
+        <div className='border-t pt-5'>
+          <LayoutPanel layout={data} fontFields={MEDIUM_FONT_FIELDS} onChange={patch} />
         </div>
 
         <div className='space-y-3 border-t pt-5'>

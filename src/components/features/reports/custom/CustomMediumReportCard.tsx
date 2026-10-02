@@ -6,11 +6,16 @@ import { useRealSizeGemImage } from "../../gems/RealSizeGemImage"
 import type { MeasurementSource, RenderTarget } from "@/lib/real-size"
 import { layoutGemName } from "@/lib/gem-name"
 import { textWidth, wrapText } from "@/lib/text-layout"
-import type { CustomMediumReport, CustomReportRow } from "@/lib/custom-report"
+import {
+  fontSizer,
+  MEDIUM_FONT_FIELDS,
+  type CustomMediumReport,
+  type CustomReportRow,
+} from "@/lib/custom-report"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import { EditableOverlay, EditableText, EditableWrapText } from "./EditableField"
-import { WRAPPING_VALUE_STYLE } from "./fieldStyles"
+import { transformFor, WRAPPING_VALUE_STYLE } from "./fieldStyles"
 
 /**
  * The A5 report, drawn from an editable document instead of from a gem.
@@ -32,18 +37,17 @@ export const PAGE_HEIGHT = 792
 
 /** Right panel is 45% of the 1120px canvas, less its 32px/52px side padding. */
 const NAME_COL_W = PAGE_WIDTH * 0.45 - 32 - 52
-/** Size the name is set at when it fits the panel on one line. */
-const NAME_FONT_SIZE = 30
 /** The data blocks' measure, and the type they are set in. */
 const ROW_BLOCK_W = 480
-const ROW_FONT_SIZE = 14
 const ROW_FONT_FAMILY = "'Nimbus Mono Antique', 'Courier New', Courier, monospace"
-const ROW_FONT = `${ROW_FONT_SIZE}px ${ROW_FONT_FAMILY}`
+/** Canvas font shorthand for a row set at `size`. */
+const rowFont = (size: number) => `${size}px ${ROW_FONT_FAMILY}`
+/** The 200px image frame and its 2px border. */
+const IMAGE_BOX = 200
+const IMAGE_BORDER = 2
 /** A row's gap either side of its dotted leader, and the leader at its narrowest. */
 const ROW_GAP = 10
 const LEADER_MIN_W = 20
-/** Widest a value may print before it wraps onto a further line. */
-const VALUE_MAX_W = 300
 /** The display face the headings and the name are set in. */
 const DISPLAY_FONT_FAMILY = "'Nimbus Mono', 'Courier New', Courier, monospace"
 /**
@@ -136,6 +140,8 @@ const LEADER_STYLE: CSSProperties = {
 
 interface DataRowProps {
   row: CustomReportRow
+  /** The block's type size; the row's own, if it has one, wins. */
+  blockSize: number
   editable: boolean
   onChange: (patch: Partial<CustomReportRow>) => void
   onRemove: () => void
@@ -151,7 +157,12 @@ interface DataRowProps {
  * before the field blurs. At module scope the type is stable, and a keystroke is an
  * ordinary re-render that leaves the input — and the cursor — where they were.
  */
-function DataRow({ row, editable, onChange, onRemove }: DataRowProps) {
+function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps) {
+  const size = row.fontSize ?? blockSize
+  // A value wraps only where the template's own row would have run out of room: the
+  // block's measure, less the label, the two gaps and the leader at its narrowest. The
+  // standard A5 never caps a value, so anything that fits it prints on one line here too.
+  const room = ROW_BLOCK_W - textWidth(`${row.label}:`, rowFont(size)) - ROW_GAP * 2 - LEADER_MIN_W
   return (
     <div
       className='crc-row'
@@ -161,6 +172,7 @@ function DataRow({ row, editable, onChange, onRemove }: DataRowProps) {
         width: "100%",
         gap: `${ROW_GAP}px`,
         position: "relative",
+        fontSize: `${size}px`,
       }}
     >
       {editable && (
@@ -195,7 +207,7 @@ function DataRow({ row, editable, onChange, onRemove }: DataRowProps) {
           onChange={(label) => onChange({ label })}
           editable={editable}
           hint='Label'
-          font={ROW_FONT}
+          font={rowFont(size)}
           maxWidth={220}
           title='Click to rename this field'
         />
@@ -209,7 +221,9 @@ function DataRow({ row, editable, onChange, onRemove }: DataRowProps) {
         editable={editable}
         placeholder='-'
         title='Click to edit this value'
-        style={{ ...WRAPPING_VALUE_STYLE, maxWidth: `${VALUE_MAX_W}px` }}
+        font={rowFont(size)}
+        maxTextWidth={Math.max(40, room)}
+        style={WRAPPING_VALUE_STYLE}
       />
     </div>
   )
@@ -243,12 +257,16 @@ export function CustomMediumReportCard({
   // region that covers the value and nothing else to hang a click on.
   const [editingComments, setEditingComments] = useState(false)
 
-  // 200px box, less its 2px border on each side.
+  const size = fontSizer(data.fontSizes, MEDIUM_FONT_FIELDS)
+  const rowSize = size("rows")
+
+  // The frame at its chosen size; the photo's box is the frame less its border.
+  const imageBox = IMAGE_BOX * data.imageBoxScale
   const gemImage = useRealSizeGemImage({
     imageId,
     obs,
     reportSize: "medium",
-    box: { w: 196, h: 196 },
+    box: { w: imageBox - IMAGE_BORDER * 2, h: imageBox - IMAGE_BORDER * 2 },
     target,
   })
 
@@ -256,7 +274,7 @@ export function CustomMediumReportCard({
   // and species stay on one line and a long name steps down instead of running over.
   const gemName = layoutGemName(data.gemName, {
     maxWidth: NAME_COL_W,
-    fontSize: NAME_FONT_SIZE,
+    fontSize: size("gemName"),
     fontFamily: DISPLAY_FONT_FAMILY,
     fontWeight: 900,
     letterSpacing: 0.5,
@@ -269,9 +287,12 @@ export function CustomMediumReportCard({
   const commentLines = wrapText(data.comments, {
     width: ROW_BLOCK_W,
     firstLineWidth:
-      ROW_BLOCK_W - textWidth(`${data.commentsLabel}:`, ROW_FONT) - ROW_GAP * 2 - LEADER_MIN_W,
+      ROW_BLOCK_W -
+      textWidth(`${data.commentsLabel}:`, rowFont(rowSize)) -
+      ROW_GAP * 2 -
+      LEADER_MIN_W,
     maxLines: COMMENT_MAX_LINES,
-    font: ROW_FONT,
+    font: rowFont(size("comments")),
   })
 
   const patchRow = (block: RowBlock, rowId: string, patch: Partial<CustomReportRow>) =>
@@ -284,7 +305,7 @@ export function CustomMediumReportCard({
     flexDirection: "column",
     gap: "3px",
     color: DARK,
-    fontSize: `${ROW_FONT_SIZE}px`,
+    fontSize: `${rowSize}px`,
     fontFamily: ROW_FONT_FAMILY,
     fontWeight: 400,
     width: "100%",
@@ -358,7 +379,7 @@ export function CustomMediumReportCard({
           style={{ margin: "0 0 36px 0" }}
           editorStyle={{
             color: GOLD,
-            fontSize: "28px",
+            fontSize: `${size("title")}px`,
             fontWeight: 700,
             letterSpacing: "0.5px",
             fontFamily: DISPLAY_FONT_FAMILY,
@@ -368,7 +389,7 @@ export function CustomMediumReportCard({
           <h1
             style={{
               color: GOLD,
-              fontSize: "28px",
+              fontSize: `${size("title")}px`,
               fontWeight: 700,
               textTransform: "uppercase",
               margin: 0,
@@ -386,6 +407,7 @@ export function CustomMediumReportCard({
             <DataRow
               key={row.id}
               row={row}
+              blockSize={rowSize}
               editable={editable}
               onChange={(patch) => patchRow("rows", row.id, patch)}
               onRemove={() => onRemoveRow("rows", row.id)}
@@ -400,7 +422,7 @@ export function CustomMediumReportCard({
           <div
             style={{
               alignSelf: "flex-start",
-              fontSize: "15px",
+              fontSize: `${size("resultsHeading")}px`,
               fontWeight: 700,
               letterSpacing: "2px",
               textTransform: "uppercase",
@@ -414,7 +436,7 @@ export function CustomMediumReportCard({
               onChange={(resultsHeading) => onChange({ resultsHeading })}
               editable={editable}
               hint='Heading'
-              font={`700 15px ${ROW_FONT_FAMILY}`}
+              font={`700 ${size("resultsHeading")}px ${ROW_FONT_FAMILY}`}
               letterSpacing={2}
               uppercase
               maxWidth={360}
@@ -426,6 +448,7 @@ export function CustomMediumReportCard({
             <DataRow
               key={row.id}
               row={row}
+              blockSize={rowSize}
               editable={editable}
               onChange={(patch) => patchRow("resultRows", row.id, patch)}
               onRemove={() => onRemoveRow("resultRows", row.id)}
@@ -442,7 +465,7 @@ export function CustomMediumReportCard({
             multiline
             editing={editingComments}
             onEditingChange={setEditingComments}
-            editorStyle={{ fontSize: `${ROW_FONT_SIZE}px`, fontFamily: ROW_FONT_FAMILY }}
+            editorStyle={{ fontSize: `${size("comments")}px`, fontFamily: ROW_FONT_FAMILY }}
           >
             <div
               style={{
@@ -458,7 +481,7 @@ export function CustomMediumReportCard({
                   onChange={(commentsLabel) => onChange({ commentsLabel })}
                   editable={editable}
                   hint='Label'
-                  font={ROW_FONT}
+                  font={rowFont(rowSize)}
                   maxWidth={220}
                   title='Click to rename this field'
                 />
@@ -469,7 +492,12 @@ export function CustomMediumReportCard({
                 className={editable ? "crc-editable" : undefined}
                 onClick={editable ? () => setEditingComments(true) : undefined}
                 title={editable ? "Click to edit the comments" : undefined}
-                style={{ flexShrink: 0, whiteSpace: "pre", cursor: editable ? "text" : undefined }}
+                style={{
+                  flexShrink: 0,
+                  whiteSpace: "pre",
+                  fontSize: `${size("comments")}px`,
+                  cursor: editable ? "text" : undefined,
+                }}
               >
                 {commentLines[0] ?? "-"}
               </span>
@@ -481,6 +509,7 @@ export function CustomMediumReportCard({
                 onClick={editable ? () => setEditingComments(true) : undefined}
                 style={{
                   whiteSpace: "pre",
+                  fontSize: `${size("comments")}px`,
                   lineHeight: COMMENT_LINE_HEIGHT,
                   cursor: editable ? "text" : undefined,
                 }}
@@ -586,11 +615,15 @@ export function CustomMediumReportCard({
             editable={editable}
             title='Click to edit the footer line'
             style={{ width: "100%" }}
-            editorStyle={{ fontSize: "10px", fontFamily: "Arial, sans-serif", textAlign: "center" }}
+            editorStyle={{
+              fontSize: `${size("termsLine")}px`,
+              fontFamily: "Arial, sans-serif",
+              textAlign: "center",
+            }}
           >
             <div
               style={{
-                fontSize: "10px",
+                fontSize: `${size("termsLine")}px`,
                 color: "#666",
                 fontFamily: "Arial, sans-serif",
                 textAlign: "center",
@@ -622,18 +655,32 @@ export function CustomMediumReportCard({
         {data.showGemImage && (
           <>
             <div
+              // Measured where it lands once it is resized; see usePageOverflow.
+              data-fit-box
               style={{
-                width: "200px",
-                height: "200px",
+                width: `${imageBox}px`,
+                height: `${imageBox}px`,
+                // Held to its size: a column short of room would otherwise squash it.
+                flexShrink: 0,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 marginBottom: "10px",
-                border: "2px solid #ccc",
+                border: `${IMAGE_BORDER}px solid #ccc`,
+                // A photo zoomed past its frame is cropped by it, not spilled over it.
+                overflow: data.imageScale === 1 ? undefined : "hidden",
               }}
             >
               {imageId ? (
-                gemImage.node
+                <div
+                  style={{
+                    display: "flex",
+                    transform:
+                      data.imageScale === 1 ? undefined : `scale(${data.imageScale})`,
+                  }}
+                >
+                  {gemImage.node}
+                </div>
               ) : (
                 <img
                   src={turtlesLogo}
@@ -650,7 +697,7 @@ export function CustomMediumReportCard({
               title='Click to edit the caption'
               style={{ marginBottom: "30px" }}
               editorStyle={{
-                fontSize: "10px",
+                fontSize: `${size("imageCaption")}px`,
                 fontFamily: "Arial, sans-serif",
                 textAlign: "center",
               }}
@@ -658,7 +705,7 @@ export function CustomMediumReportCard({
               <div
                 style={{
                   fontFamily: "Arial, sans-serif",
-                  fontSize: "10px",
+                  fontSize: `${size("imageCaption")}px`,
                   color: "#666",
                   textAlign: "center",
                 }}
@@ -679,7 +726,7 @@ export function CustomMediumReportCard({
               title='Click to edit the heat treatment line'
               style={{ marginTop: "8px" }}
               editorStyle={{
-                fontSize: "18px",
+                fontSize: `${size("heatLine")}px`,
                 letterSpacing: "1px",
                 fontFamily: DISPLAY_FONT_FAMILY,
                 textAlign: "center",
@@ -687,7 +734,7 @@ export function CustomMediumReportCard({
             >
               <div
                 style={{
-                  fontSize: "18px",
+                  fontSize: `${size("heatLine")}px`,
                   fontWeight: 400,
                   color: "#333",
                   letterSpacing: "1px",
@@ -743,14 +790,19 @@ export function CustomMediumReportCard({
             title='Click to edit the weight'
             style={{ marginTop: "12px" }}
             editorStyle={{
-              fontSize: "18px",
+              fontSize: `${size("weightLine")}px`,
               letterSpacing: "1px",
               fontFamily: DISPLAY_FONT_FAMILY,
               textAlign: "center",
             }}
           >
             <div
-              style={{ fontSize: "18px", fontWeight: 400, color: "#333", letterSpacing: "1px" }}
+              style={{
+                fontSize: `${size("weightLine")}px`,
+                fontWeight: 400,
+                color: "#333",
+                letterSpacing: "1px",
+              }}
             >
               {data.weightLine || "\u00a0"}
             </div>
@@ -853,8 +905,10 @@ export function CustomMediumReportCard({
             </div>
           </div>
 
-          {/* Already-signed block, kept as the scanned asset */}
+          {/* Already-signed block, kept as the scanned asset. Sized about its own centre
+              and nudged by the layout; where it lands is checked by usePageOverflow. */}
           <div
+            data-fit-box
             style={{
               position: "relative",
               width: `${SIG_BOX_W}px`,
@@ -862,6 +916,8 @@ export function CustomMediumReportCard({
               overflow: "hidden",
               flexShrink: 0,
               visibility: data.showSignatureImage ? "visible" : "hidden",
+              transform: transformFor(data.signatureX, data.signatureY, data.signatureScale),
+              transformOrigin: "center center",
             }}
           >
             <img
