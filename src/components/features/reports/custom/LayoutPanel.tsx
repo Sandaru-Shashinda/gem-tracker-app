@@ -200,7 +200,7 @@ export function LayoutPanel({ layout, fontFields, onChange }: LayoutPanelProps) 
           label='Image zoom'
           value={layout.imageScale}
           min={0.5}
-          max={3}
+          max={5}
           step={0.05}
           format={percent}
           onChange={(imageScale) => onChange({ imageScale })}
