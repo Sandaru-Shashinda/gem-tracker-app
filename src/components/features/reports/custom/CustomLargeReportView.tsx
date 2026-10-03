@@ -29,6 +29,8 @@ interface CustomLargeReportViewProps {
   customReport?: Partial<StoredCustomLargeReport> | null
   reportId?: string
   signatureName?: string
+  /** The signatory's signature — this view is the digital copy, so it carries it. */
+  signatureImage?: string
 }
 
 export function CustomLargeReportView({
@@ -36,6 +38,7 @@ export function CustomLargeReportView({
   customReport,
   reportId,
   signatureName = DEFAULT_SIGNATORY_NAME,
+  signatureImage,
 }: CustomLargeReportViewProps) {
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
   const data = fromStoredCustomLargeReport(
@@ -73,6 +76,7 @@ export function CustomLargeReportView({
     onRemoveRow: noop,
     imageId: gem.images && gem.images.length > 0 ? gem.images[0] : undefined,
     obs: gem.finalApproval?.finalObservations || {},
+    signatureImage,
   }
 
   return (

@@ -11,6 +11,7 @@ import { layoutGemName } from "@/lib/gem-name"
 import { textWidth, wrapText } from "@/lib/text-layout"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
+import { HandSignature } from "./HandSignature"
 
 interface MediumReportPreviewProps {
   gem: Gem
@@ -18,6 +19,11 @@ interface MediumReportPreviewProps {
   reportId?: string
   /** Name typed under the left-hand signature rule; the report's configured signatory. */
   signatureName?: string
+  /**
+   * The signatory's own signature, written above that rule. Passed only for the digital
+   * copy a QR scan opens; the copy downloaded for printing leaves the rule blank to sign.
+   */
+  signatureImage?: string
 }
 
 const SCALE_FACTOR = 3
@@ -74,6 +80,7 @@ export function MediumReportPreview({
   gem,
   reportId,
   signatureName = DEFAULT_SIGNATORY_NAME,
+  signatureImage,
 }: MediumReportPreviewProps) {
   const [downloading, setDownloading] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
@@ -183,7 +190,7 @@ export function MediumReportPreview({
             transformOrigin: "top left",
           }}
         >
-          <DetailView gem={gem} reportId={reportId} signatureName={signatureName} target='screen' />
+          <DetailView gem={gem} reportId={reportId} signatureName={signatureName} signatureImage={signatureImage} target='screen' />
         </div>
       </div>
 
@@ -210,7 +217,7 @@ export function MediumReportPreview({
             color: "#1e293b",
           }}
         >
-          <DetailView gem={gem} reportId={reportId} signatureName={signatureName} />
+          <DetailView gem={gem} reportId={reportId} signatureName={signatureName} signatureImage={signatureImage} />
         </div>
       </div>
     </div>
@@ -221,11 +228,13 @@ function DetailView({
   gem,
   reportId,
   signatureName,
+  signatureImage,
   target = "print",
 }: {
   gem: Gem
   reportId?: string
   signatureName: string
+  signatureImage?: string
   target?: RenderTarget
 }) {
   const finalData = gem.finalApproval || {}
@@ -714,7 +723,7 @@ function DetailView({
             gap: "10px",
           }}
         >
-          <TypedSignature name={signatureName} role={SIGNATORY_ROLE} />
+          <TypedSignature name={signatureName} role={SIGNATORY_ROLE} signatureImage={signatureImage} />
 
           {/* Already-signed block, kept as the scanned asset */}
           <div
@@ -748,7 +757,15 @@ function DetailView({
  * The unsigned counterpart to the scanned signature asset: same box, same rule position,
  * so the pair reads as two matching fields with room to sign the left one by hand.
  */
-function TypedSignature({ name, role }: { name: string; role: string }) {
+function TypedSignature({
+  name,
+  role,
+  signatureImage,
+}: {
+  name: string
+  role: string
+  signatureImage?: string
+}) {
   return (
     <div
       style={{
@@ -760,8 +777,19 @@ function TypedSignature({ name, role }: { name: string; role: string }) {
         fontFamily: "Arial, Helvetica, sans-serif",
       }}
     >
-      {/* Left blank for the handwritten signature */}
-      <div style={{ height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`, flexShrink: 0 }}></div>
+      {/* Left blank for the handwritten signature — or, on the digital copy, carrying
+          the signatory's own. */}
+      <div
+        style={{ height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`, flexShrink: 0, position: "relative" }}
+      >
+        {signatureImage && (
+          <HandSignature
+            src={signatureImage}
+            space={SIG_BOX_H * SIG_RULE_OFFSET}
+            maxWidth={SIG_BOX_W * 0.8}
+          />
+        )}
+      </div>
       <div style={{ borderTop: "1.5px dotted #333", width: "80%" }}></div>
       <div
         style={{

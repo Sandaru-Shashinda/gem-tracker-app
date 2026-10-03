@@ -12,6 +12,7 @@ const toUser = (data: any): User => ({
   email: data.email,
   phoneNumber: data.phoneNumber,
   profileImage: data.profileImage,
+  signatureImage: data.signatureImage,
   avatar: data.name
     .split(" ")
     .map((n: string) => n[0])
@@ -128,6 +129,24 @@ export const usersApi = {
       body: formData,
     })
     return readProfileResponse(response, "Failed to upload profile image")
+  },
+
+  /** The server makes the paper transparent and trims to the ink before storing it. */
+  uploadSignature: async (file: File): Promise<User> => {
+    const formData = new FormData()
+    formData.append("image", file)
+    const response = await fetchWithAuth(`${API_BASE_URL}/auth/profile/signature`, {
+      method: "POST",
+      body: formData,
+    })
+    return readProfileResponse(response, "Failed to upload signature")
+  },
+
+  removeSignature: async (): Promise<User> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/auth/profile/signature`, {
+      method: "DELETE",
+    })
+    return readProfileResponse(response, "Failed to remove signature")
   },
 
   removeProfileImage: async (): Promise<User> => {

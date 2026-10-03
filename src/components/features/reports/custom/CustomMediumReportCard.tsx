@@ -15,6 +15,7 @@ import {
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import { EditableOverlay, EditableText, EditableWrapText } from "./EditableField"
+import { HandSignature } from "../HandSignature"
 import { transformFor, WRAPPING_VALUE_STYLE } from "./fieldStyles"
 
 /**
@@ -247,6 +248,11 @@ interface CustomMediumReportCardProps {
   /** Only the screen copy edits; the copy the exporters read is plain text. */
   editable?: boolean
   innerRef?: RefObject<HTMLDivElement | null>
+  /**
+   * The signatory's own signature, written above the typed field's rule. Passed only for
+   * the digital copy a QR scan opens; the builder's exports leave the rule blank to sign.
+   */
+  signatureImage?: string
 }
 
 export function CustomMediumReportCard({
@@ -258,6 +264,7 @@ export function CustomMediumReportCard({
   target,
   editable = false,
   innerRef,
+  signatureImage,
 }: CustomMediumReportCardProps) {
   // Whether the comments editor is open. Held here rather than inside the editor
   // because the block's first line shares a row with its own label, so there is no one
@@ -849,8 +856,23 @@ export function CustomMediumReportCard({
               visibility: data.showTypedSignature ? "visible" : "hidden",
             }}
           >
-            {/* Left blank for the handwritten signature */}
-            <div style={{ height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`, flexShrink: 0 }}></div>
+            {/* Left blank for the handwritten signature — or, on the digital copy,
+                carrying the signatory's own. */}
+            <div
+              style={{
+                height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`,
+                flexShrink: 0,
+                position: "relative",
+              }}
+            >
+              {signatureImage && (
+                <HandSignature
+                  src={signatureImage}
+                  space={SIG_BOX_H * SIG_RULE_OFFSET}
+                  maxWidth={SIG_BOX_W * 0.8}
+                />
+              )}
+            </div>
             <div style={{ borderTop: "1.5px dotted #333", width: "80%" }}></div>
             <div
               style={{

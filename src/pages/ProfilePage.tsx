@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { differenceInYears } from "date-fns"
-import { Camera, KeyRound, Loader2, Trash2, UserCircle } from "lucide-react"
+import { Camera, KeyRound, Loader2, PenLine, Trash2, UserCircle } from "lucide-react"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,6 +38,8 @@ export function ProfilePage() {
   const toast = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [imageBusy, setImageBusy] = useState(false)
+  const signatureInputRef = useRef<HTMLInputElement>(null)
+  const [signatureBusy, setSignatureBusy] = useState(false)
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -120,6 +122,38 @@ export function ProfilePage() {
     }
   }
 
+  const handleSignatureSelected = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast({ title: "Image too large", description: "Choose an image of 5 MB or less.", variant: "error" })
+      return
+    }
+
+    setSignatureBusy(true)
+    try {
+      setUser(await usersApi.uploadSignature(file))
+      toast({ title: "Signature updated", variant: "success" })
+    } catch (error) {
+      toast({ title: "Could not upload signature", description: (error as Error).message, variant: "error" })
+    } finally {
+      setSignatureBusy(false)
+    }
+  }
+
+  const handleRemoveSignature = async () => {
+    setSignatureBusy(true)
+    try {
+      setUser(await usersApi.removeSignature())
+      toast({ title: "Signature removed", variant: "success" })
+    } catch (error) {
+      toast({ title: "Could not remove signature", description: (error as Error).message, variant: "error" })
+    } finally {
+      setSignatureBusy(false)
+    }
+  }
+
   const { errors: profileErrors, isSubmitting: savingProfile, isDirty } = profileForm.formState
   const { errors: passwordErrors, isSubmitting: savingPassword } = passwordForm.formState
 
@@ -187,6 +221,76 @@ export function ProfilePage() {
               )}
             </div>
             <p className='text-[10px] text-slate-400'>JPG or PNG, up to 5 MB.</p>
+          </div>
+        </section>
+
+        {/* Signature — printed on the digital copy of reports this user signs */}
+        <section className='bg-white rounded-xl border border-slate-200 shadow-sm p-6'>
+          <h3 className='font-bold text-slate-800 mb-1 flex items-center gap-2'>
+            <PenLine size={16} className='text-slate-400' /> Signature
+          </h3>
+          <p className='text-xs text-slate-500 mb-4'>
+            Shown above your name on the digital copy of A5 and A4 reports you sign — the
+            copy a QR scan opens. Printed copies keep the line blank for you to sign by hand.
+          </p>
+          <div className='flex flex-col sm:flex-row sm:items-end gap-6'>
+            {/* A preview of the field as a report draws it: the signature on a dotted rule. */}
+            <div className='relative w-64 shrink-0 rounded-lg border border-dashed border-slate-200 bg-slate-50/60 px-4 pt-3 pb-2'>
+              <div className='flex h-20 items-end'>
+                {user.signatureImage ? (
+                  <img
+                    src={user.signatureImage}
+                    alt='Your signature'
+                    className='max-h-20 max-w-full object-contain object-left-bottom'
+                  />
+                ) : (
+                  <span className='text-xs text-slate-400'>No signature uploaded</span>
+                )}
+              </div>
+              <div className='border-t border-dotted border-slate-500' />
+              <p className='mt-1 text-[11px] font-bold text-slate-700'>{user.name}</p>
+              {signatureBusy && (
+                <div className='absolute inset-0 rounded-lg bg-white/70 flex items-center justify-center'>
+                  <Loader2 className='animate-spin text-slate-600' size={20} />
+                </div>
+              )}
+            </div>
+            <div className='space-y-3'>
+              <div className='flex flex-wrap gap-2'>
+                <input
+                  ref={signatureInputRef}
+                  type='file'
+                  accept='image/jpeg,image/png'
+                  className='hidden'
+                  onChange={handleSignatureSelected}
+                />
+                <Button
+                  type='button'
+                  size='sm'
+                  disabled={signatureBusy}
+                  onClick={() => signatureInputRef.current?.click()}
+                >
+                  <PenLine size={14} className='mr-2' />
+                  {user.signatureImage ? "Change signature" : "Upload signature"}
+                </Button>
+                {user.signatureImage && (
+                  <Button
+                    type='button'
+                    size='sm'
+                    variant='outline'
+                    disabled={signatureBusy}
+                    onClick={handleRemoveSignature}
+                  >
+                    <Trash2 size={14} className='mr-2' />
+                    Remove
+                  </Button>
+                )}
+              </div>
+              <p className='text-[10px] text-slate-400 max-w-xs'>
+                A photo or scan of your signature in dark ink on white paper — JPG or PNG, up to
+                5 MB. The paper is removed and the image trimmed to the ink automatically.
+              </p>
+            </div>
           </div>
         </section>
 

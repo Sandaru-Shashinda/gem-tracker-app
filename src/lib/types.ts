@@ -21,6 +21,8 @@ export interface User {
   phoneNumber?: string
   /** Data URI of the user's profile picture; `avatar` (initials) is shown when absent. */
   profileImage?: string
+  /** Transparent PNG data URI of the user's signature, printed on reports they sign. */
+  signatureImage?: string
   isDeleted?: boolean
 }
 

@@ -13,7 +13,7 @@ import { CustomLargeReportView } from "@/components/features/reports/custom/Cust
 import { primeImageCache } from "@/components/features/gems/GemImage"
 import type { Image } from "@/lib/api/images"
 import type { Gem } from "@/lib/types"
-import { signatoryName, type ReportSignatory } from "@/lib/report-signature"
+import { signatoryImage, signatoryName, type ReportSignatory } from "@/lib/report-signature"
 import type {
   StoredCustomLargeReport,
   StoredCustomMediumReport,
@@ -157,6 +157,9 @@ export function ReportPreviewPage() {
     includeLogo,
     reportId: report?._id || gem._id,
     signatureName: signatoryName(report?.signedBy),
+    // This page is the digital copy a QR scan opens. On paper the signatory signs the
+    // typed field by hand; here their uploaded signature stands in for the ink.
+    signatureImage: signatoryImage(report?.signedBy),
   }
 
   return (
@@ -185,6 +188,7 @@ export function ReportPreviewPage() {
               customReport={customLargeCard}
               reportId={report?._id || gem._id}
               signatureName={previewProps.signatureName}
+              signatureImage={previewProps.signatureImage}
             />
           ) : customMediumCard ? (
             <CustomMediumReportView
@@ -192,6 +196,7 @@ export function ReportPreviewPage() {
               customReport={customMediumCard}
               reportId={report?._id || gem._id}
               signatureName={previewProps.signatureName}
+              signatureImage={previewProps.signatureImage}
             />
           ) : customCard ? (
             <CustomSmallReportView

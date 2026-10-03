@@ -16,6 +16,7 @@ import {
 } from "@/lib/treatments"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
+import { HandSignature } from "./HandSignature"
 import grcMemoLogo from "@/assets/grc_memo_logo_trimmed.png"
 
 // A4 at 96 dpi → 794 × 1123 px  (portrait)
@@ -29,12 +30,18 @@ interface LargeReportPreviewProps {
   reportId?: string
   /** Name typed under the left-hand signature rule; the report's configured signatory. */
   signatureName?: string
+  /**
+   * The signatory's own signature, written above that rule. Passed only for the digital
+   * copy a QR scan opens; the copy downloaded for printing leaves the rule blank to sign.
+   */
+  signatureImage?: string
 }
 
 export function LargeReportPreview({
   gem,
   reportId,
   signatureName = DEFAULT_SIGNATORY_NAME,
+  signatureImage,
 }: LargeReportPreviewProps) {
   const [downloading, setDownloading] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
@@ -144,7 +151,7 @@ export function LargeReportPreview({
             overflow: "hidden",
           }}
         >
-          <ReportPage gem={gem} reportId={reportId} signatureName={signatureName} target='screen' />
+          <ReportPage gem={gem} reportId={reportId} signatureName={signatureName} signatureImage={signatureImage} target='screen' />
         </div>
       </div>
 
@@ -168,7 +175,7 @@ export function LargeReportPreview({
             overflow: "hidden",
           }}
         >
-          <ReportPage gem={gem} reportId={reportId} signatureName={signatureName} />
+          <ReportPage gem={gem} reportId={reportId} signatureName={signatureName} signatureImage={signatureImage} />
         </div>
       </div>
     </div>
@@ -212,11 +219,13 @@ function ReportPage({
   gem,
   reportId,
   signatureName,
+  signatureImage,
   target = "print",
 }: {
   gem: Gem
   reportId?: string
   signatureName: string
+  signatureImage?: string
   target?: RenderTarget
 }) {
   const finalData = gem.finalApproval || {}
@@ -614,7 +623,7 @@ function ReportPage({
 
         {/* Right: the two signature fields */}
         <div style={{ display: "flex", alignItems: "flex-end", gap: "24px", marginLeft: "30px" }}>
-          <TypedSignature name={signatureName} role={SIGNATORY_ROLE} />
+          <TypedSignature name={signatureName} role={SIGNATORY_ROLE} signatureImage={signatureImage} />
 
           {/* Already-signed block, kept as the scanned asset */}
           <div
@@ -909,7 +918,15 @@ function ClarityChart({ grade }: { grade?: string }) {
  * The unsigned counterpart to the scanned signature asset: same box, same rule position,
  * so the pair reads as two matching fields with room to sign the left one by hand.
  */
-function TypedSignature({ name, role }: { name: string; role: string }) {
+function TypedSignature({
+  name,
+  role,
+  signatureImage,
+}: {
+  name: string
+  role: string
+  signatureImage?: string
+}) {
   return (
     <div
       style={{
@@ -921,8 +938,19 @@ function TypedSignature({ name, role }: { name: string; role: string }) {
         fontFamily: "Arial, Helvetica, sans-serif",
       }}
     >
-      {/* Left blank for the handwritten signature */}
-      <div style={{ height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`, flexShrink: 0 }}></div>
+      {/* Left blank for the handwritten signature — or, on the digital copy, carrying
+          the signatory's own. */}
+      <div
+        style={{ height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`, flexShrink: 0, position: "relative" }}
+      >
+        {signatureImage && (
+          <HandSignature
+            src={signatureImage}
+            space={SIG_BOX_H * SIG_RULE_OFFSET}
+            maxWidth={SIG_BOX_W * 0.7}
+          />
+        )}
+      </div>
       <div style={{ borderTop: "1.5px dotted #333", width: "70%" }}></div>
       <div
         style={{

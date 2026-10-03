@@ -30,6 +30,8 @@ interface CustomMediumReportViewProps {
   customReport?: Partial<StoredCustomMediumReport> | null
   reportId?: string
   signatureName?: string
+  /** The signatory's signature — this view is the digital copy, so it carries it. */
+  signatureImage?: string
 }
 
 export function CustomMediumReportView({
@@ -37,6 +39,7 @@ export function CustomMediumReportView({
   customReport,
   reportId,
   signatureName = DEFAULT_SIGNATORY_NAME,
+  signatureImage,
 }: CustomMediumReportViewProps) {
   const verificationUrl = `${window.location.origin}/reports/${reportId || gem._id}`
   const data = fromStoredCustomMediumReport(
@@ -74,6 +77,7 @@ export function CustomMediumReportView({
     onRemoveRow: noop,
     imageId: gem.images && gem.images.length > 0 ? gem.images[0] : undefined,
     obs: gem.finalApproval?.finalObservations || {},
+    signatureImage,
   }
 
   return (
