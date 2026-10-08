@@ -388,8 +388,7 @@ export function GemDetailPage() {
     }
   }
 
-  // Photos are cropped to the gem outline automatically. The review dialog only opens
-  // for the ones detection wasn't confident about — a clean shot never interrupts.
+  // Every photo goes through the crop dialog; detection only suggests the starting box.
   const handleImageUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     // Let the same file be picked again after a cancel.
@@ -398,14 +397,11 @@ export function GemDetailPage() {
     if (picked.length === 0 || !gem) return
 
     setIsActionLoading(true)
-    let decision
     try {
-      decision = await analyzeGemPhotos(picked)
+      setPendingCrops(await analyzeGemPhotos(picked))
     } finally {
       setIsActionLoading(false)
     }
-    await uploadCroppedImages(decision.auto)
-    setPendingCrops(decision.review)
   }
 
   const handleCropComplete = async (results: CropResult[]) => {

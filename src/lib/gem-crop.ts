@@ -103,15 +103,12 @@ export const cropImageFile = async (file: File, rect: CropRect): Promise<File> =
 }
 
 /**
- * Detection at or above this confidence is accepted without asking.
+ * Below this confidence the crop dialog warns that the suggested box is probably wrong.
  *
- * A clean stone on a plain card scores 1.0, so the ordinary intake photo never
- * interrupts anyone. Anything that scores lower — clutter in frame, a background the
- * flood could not separate, more than one stone — is worth two seconds of a human's
- * attention, because a wrong crop silently produces a certificate claiming a size the
- * stone does not have.
+ * Detection is only ever a starting point: even a confident box can clip a stone that
+ * sits in a setting or against a busy background, so the operator confirms every crop.
  */
-export const AUTO_CONFIRM_CONFIDENCE = 0.85
+export const LOW_CONFIDENCE = 0.85
 
 export interface PendingCrop {
   file: File
@@ -119,45 +116,21 @@ export interface PendingCrop {
   naturalSize: { w: number; h: number }
 }
 
-export interface CropDecision {
-  /** Accepted automatically; ready to crop and upload. */
-  auto: Array<{ file: File; rect: CropRect; meta: GemCropMeta }>
-  /** Detection was not confident enough — put these in front of the operator. */
-  review: PendingCrop[]
-}
-
-/** Builds the metadata for a box that came straight from detection, unedited. */
-export const autoCropMeta = (bounds: GemBounds, naturalSize: { w: number; h: number }): GemCropMeta => ({
-  version: 1,
-  source: "auto",
-  rect: bounds.rect,
-  originalSize: naturalSize,
-  padFrac: bounds.padFrac,
-  confidence: bounds.confidence,
-  tight: true,
-})
-
 /**
- * Runs outline detection over a batch of photos and splits them by whether a human
- * needs to look. Files that fail to decode go to review so the operator sees the
- * problem rather than having it swallowed.
+ * Runs outline detection over a batch of photos to seed the crop dialog. Nothing is
+ * cropped here — every photo goes in front of the operator. Files that fail to decode
+ * are included too, so the problem is seen rather than swallowed.
  */
-export const analyzeGemPhotos = async (files: File[]): Promise<CropDecision> => {
-  const decision: CropDecision = { auto: [], review: [] }
+export const analyzeGemPhotos = async (files: File[]): Promise<PendingCrop[]> => {
+  const pending: PendingCrop[] = []
 
   for (const file of files) {
     try {
       const img = await loadImageFromFile(file)
       const naturalSize = { w: img.naturalWidth, h: img.naturalHeight }
-      const bounds = detectGemBounds(img)
-
-      if (bounds.ok && bounds.confidence >= AUTO_CONFIRM_CONFIDENCE) {
-        decision.auto.push({ file, rect: bounds.rect, meta: autoCropMeta(bounds, naturalSize) })
-      } else {
-        decision.review.push({ file, bounds, naturalSize })
-      }
+      pending.push({ file, bounds: detectGemBounds(img), naturalSize })
     } catch {
-      decision.review.push({
+      pending.push({
         file,
         bounds: {
           rect: { x: 0, y: 0, w: 0, h: 0 },
@@ -171,7 +144,7 @@ export const analyzeGemPhotos = async (files: File[]): Promise<CropDecision> => 
     }
   }
 
-  return decision
+  return pending
 }
 
 /** The metadata to record when the operator opts out of cropping entirely. */

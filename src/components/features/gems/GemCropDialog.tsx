@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   clampRect,
+  LOW_CONFIDENCE,
   wholeImageMeta,
   type CropRect,
   type GemCropMeta,
@@ -19,13 +20,12 @@ import {
 } from "@/lib/gem-crop"
 
 /**
- * Reviews gem outlines that detection was not confident about.
+ * Crops every gem photo by hand before it is uploaded.
  *
- * Confident detections never reach this dialog — they are cropped and uploaded
- * without interrupting anyone. What lands here is the leftovers: clutter in frame,
- * a background the flood could not separate, several stones in one shot. Those are
- * worth a human's eye, because a wrong crop silently yields a certificate claiming a
- * size the stone does not have.
+ * Detection seeds the box, but nothing is cropped without the operator confirming it:
+ * a stone in a setting or on a busy background can score as a confident detection and
+ * still be clipped, and a wrong crop silently yields a certificate claiming a size the
+ * stone does not have.
  */
 
 export interface CropResult {
@@ -34,7 +34,7 @@ export interface CropResult {
 }
 
 interface GemCropDialogProps {
-  /** Pre-analysed photos needing review; the dialog walks them one at a time. */
+  /** Pre-analysed photos to crop; the dialog walks them one at a time. */
   items: PendingCrop[]
   open: boolean
   /** Called once per item, in queue order, after the operator confirms. */
@@ -225,22 +225,24 @@ export function GemCropDialog({ items, open, onComplete, onCancel }: GemCropDial
       <DialogContent className='max-w-3xl'>
         <DialogHeader>
           <DialogTitle>
-            Check gem outline
+            Crop gem photo
             {items.length > 1 ? ` (${index + 1} of ${items.length})` : ""}
           </DialogTitle>
           <DialogDescription>
-            Automatic detection wasn't sure about this photo. The box should sit on the edges of
-            the stone — it is what lets the certificate print the gem at its true size.
+            Drag the box so it sits on the edges of the stone — it is what lets the certificate
+            print the gem at its true size. The starting box is only a suggestion.
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800'>
-          <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0' />
-          <span>
-            {warning ??
-              `Detection confidence was only ${Math.round(confidence * 100)}% — please adjust the box if it is wrong.`}
-          </span>
-        </div>
+        {(warning || confidence < LOW_CONFIDENCE) && (
+          <div className='flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800'>
+            <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0' />
+            <span>
+              {warning ??
+                `Detection confidence was only ${Math.round(confidence * 100)}% — please adjust the box if it is wrong.`}
+            </span>
+          </div>
+        )}
 
         {/* The frame shrink-wraps the image rather than filling the row, so the
             percentage-positioned overlay lines up with the photo instead of with

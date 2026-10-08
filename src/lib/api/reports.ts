@@ -67,6 +67,19 @@ export const reportsApi = {
     return response.json()
   },
 
+  /**
+   * Saves the video link the report's QR page offers, or clears it with an empty string.
+   * Its own endpoint for the same reason as the custom card: it must not move the gem.
+   */
+  saveVideoUrl: async (id: string, videoUrl: string): Promise<{ videoUrl?: string }> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/reports/${id}/video`, {
+      method: "PUT",
+      body: JSON.stringify({ videoUrl }),
+    })
+    if (!response.ok) throw new Error("Failed to save video link")
+    return response.json()
+  },
+
   getReportById: async (id: string): Promise<any> => {
     const response = await fetchWithAuth(`${API_BASE_URL}/reports/${id}`)
     if (!response.ok) throw new Error("Failed to fetch report")

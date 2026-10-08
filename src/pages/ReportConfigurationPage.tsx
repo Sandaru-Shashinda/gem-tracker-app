@@ -35,6 +35,7 @@ import { LargeReportPreview } from "@/components/features/reports/LargeReportPre
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
 import { VerbalReportPreview } from "@/components/features/reports/VerbalReportPreview"
+import { ReportVideoLinkField } from "@/components/features/reports/ReportVideoLinkField"
 import { jsPDF } from "jspdf"
 import html2canvas from "html2canvas"
 import { toJpeg } from "html-to-image"
@@ -47,6 +48,7 @@ interface Report {
   gemId: string | Gem
   signedBy?: ReportSignatory | string | null
   reportUrl?: string
+  videoUrl?: string
   createdAt?: string
   updatedAt?: string
 }
@@ -464,6 +466,15 @@ export function ReportConfigurationPage() {
                   Save Configuration
                 </Button>
               </div>
+            </div>
+
+            <div className='pt-6 border-t'>
+              <ReportVideoLinkField
+                key={report?._id}
+                reportId={report?._id}
+                initialUrl={report?.videoUrl}
+                requested={currentGem.videoPreview}
+              />
             </div>
 
             {showPreview && (

@@ -18,9 +18,12 @@ interface Report {
     status: string
     reportTypes?: string[]
     reportMode?: string
+    videoPreview?: boolean
   }
   reportType: string
   reportUrl: string
+  /** The video the QR page offers, once somebody has pasted its link. */
+  videoUrl?: string
   issuedDate: string
   /** Present once somebody has saved a custom certificate against this report. */
   customCard?: unknown
@@ -106,6 +109,23 @@ export function ReportsTable({
             ) : null}
           </div>
         ),
+      }),
+      columnHelper.accessor("videoUrl", {
+        header: "Video",
+        // "Needed" is the one that asks for action: intake promised the customer a
+        // video and nobody has linked it yet.
+        cell: (info) =>
+          info.getValue() ? (
+            <Badge className='bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0 hover:bg-emerald-100'>
+              Linked
+            </Badge>
+          ) : info.row.original.gemId?.videoPreview ? (
+            <Badge className='bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0 hover:bg-amber-100'>
+              Needed
+            </Badge>
+          ) : (
+            <span className='text-slate-300'>—</span>
+          ),
       }),
       columnHelper.accessor("issuedDate", {
         header: "Issued Date",

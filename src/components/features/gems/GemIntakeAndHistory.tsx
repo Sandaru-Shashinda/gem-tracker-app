@@ -287,6 +287,14 @@ export function GemIntakeAndHistory({
                   )}
                 </>
               )}
+              {gem.videoPreview && (
+                <Badge
+                  variant='outline'
+                  className='text-[10px] bg-white text-purple-700 border-purple-200'
+                >
+                  Video preview
+                </Badge>
+              )}
             </div>
           </div>
           <div className='pt-2 col-span-2'>

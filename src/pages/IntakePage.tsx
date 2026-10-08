@@ -127,6 +127,7 @@ export function IntakePage() {
       reportTypes: [],
       reportMode: REPORT_MODES.DEFAULT,
       skipTesting: false,
+      videoPreview: false,
     },
     mode: "onChange",
   })
@@ -199,6 +200,7 @@ export function IntakePage() {
             // certificate, so that is what a missing mode means.
             reportMode: gem.reportMode || REPORT_MODES.DEFAULT,
             skipTesting: gem.skipTesting ?? false,
+            videoPreview: gem.videoPreview ?? false,
           })
 
           const gemImageIds = gem.images && gem.images.length > 0 ? gem.images : []
@@ -259,8 +261,7 @@ export function IntakePage() {
     }
   }
 
-  // Photos are cropped to the gem outline automatically. The review dialog only opens
-  // for the ones detection wasn't confident about — a clean shot never interrupts.
+  // Every photo goes through the crop dialog; detection only suggests the starting box.
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     // Let the same file be picked again after a cancel.
@@ -270,9 +271,7 @@ export function IntakePage() {
 
     setIsImageLoading(true)
     try {
-      const { auto, review } = await analyzeGemPhotos(picked)
-      await addCroppedImages(auto)
-      setPendingCrops(review)
+      setPendingCrops(await analyzeGemPhotos(picked))
     } finally {
       setIsImageLoading(false)
     }
@@ -796,6 +795,40 @@ export function IntakePage() {
                     )}
                   </div>
                   )}
+
+                  {/* Asked of every job, custom or not: the video hangs off the
+                      certificate's QR code, and both kinds of certificate carry one. */}
+                  <div className='space-y-3 pt-2'>
+                    <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>
+                      Video Preview
+                    </label>
+                    <Controller
+                      name='videoPreview'
+                      control={control}
+                      render={({ field }) => (
+                        <div className='flex items-start gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100'>
+                          <Checkbox
+                            id='video-preview'
+                            checked={!!field.value}
+                            onCheckedChange={(checked) => field.onChange(checked === true)}
+                            className='mt-0.5'
+                          />
+                          <div>
+                            <label
+                              htmlFor='video-preview'
+                              className='text-sm font-bold text-slate-700 cursor-pointer'
+                            >
+                              Customer needs a video preview
+                            </label>
+                            <p className='text-xs text-slate-500 leading-relaxed mt-1'>
+                              Scanning the certificate's QR code will offer a video of the gem.
+                              The video link is added later from Reports.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    />
+                  </div>
 
                   {isCustom ? (
                     <div className='rounded-xl border border-dashed border-blue-200 bg-blue-50/40 p-6'>

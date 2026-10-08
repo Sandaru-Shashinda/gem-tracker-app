@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { CustomSmallReportBuilder } from "@/components/features/reports/custom/CustomSmallReportBuilder"
 import { CustomMediumReportBuilder } from "@/components/features/reports/custom/CustomMediumReportBuilder"
 import { CustomLargeReportBuilder } from "@/components/features/reports/custom/CustomLargeReportBuilder"
+import { ReportVideoLinkField } from "@/components/features/reports/ReportVideoLinkField"
 import { useGem } from "@/hooks/useGemStore"
 import { reportsApi } from "@/lib/api/reports"
 import {
@@ -85,6 +86,7 @@ export function CustomReportPage() {
   })
   const [builderKey, setBuilderKey] = useState(0)
   const [reportLabel, setReportLabel] = useState("")
+  const [videoUrl, setVideoUrl] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -96,6 +98,7 @@ export function CustomReportPage() {
       try {
         const report = await reportsApi.getReportById(id)
         setReportLabel(report?.reportId || "")
+        setVideoUrl(report?.videoUrl || "")
 
         const name = signatoryName(report?.signedBy)
         setSize(toCustomSize(report?.reportType))
@@ -256,6 +259,19 @@ export function CustomReportPage() {
             </RadioGroup>
             {savingSize && <Loader2 className='h-4 w-4 animate-spin text-slate-400' />}
             <span className='ml-auto text-xs text-slate-400'>Each size keeps its own wording.</span>
+          </div>
+        )}
+
+        {!isLoading && !error && ready && (
+          <div className='rounded-xl border bg-white p-4'>
+            <div className='max-w-2xl'>
+              <ReportVideoLinkField
+                key={id}
+                reportId={id}
+                initialUrl={videoUrl}
+                requested={gem.videoPreview}
+              />
+            </div>
           </div>
         )}
 

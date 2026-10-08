@@ -34,6 +34,7 @@ interface GemContextType {
       reportTypes?: string[]
       reportMode?: ReportMode
       skipTesting?: boolean
+      videoPreview?: boolean
     },
     images?: File[],
     id?: string,
@@ -137,6 +138,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
         reportTypes?: string[]
         reportMode?: ReportMode
         skipTesting?: boolean
+        videoPreview?: boolean
       },
       images?: File[],
       id?: string,

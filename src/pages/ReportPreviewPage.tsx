@@ -2,7 +2,9 @@ import { useParams } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { useGem } from "@/hooks/useGemStore"
 import { reportsApi } from "@/lib/api/reports"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, ExternalLink, PlayCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { isHttpUrl, videoEmbedUrl } from "@/lib/video-link"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
@@ -28,6 +30,8 @@ interface ReportData {
   gemId: string | Gem
   signedBy?: ReportSignatory | string | null
   gemImages?: Array<Partial<Image> & { _id: string }>
+  /** Link to a video of the stone; when set, this page offers to play it. */
+  videoUrl?: string
   /** Set when this report prints a card somebody rewrote rather than the gem's own. */
   customCard?: Partial<StoredCustomSmallReport> | null
   /** The same one paper size up, read only when this report prints at A5. */
@@ -44,6 +48,7 @@ export function ReportPreviewPage() {
   const [gem, setGem] = useState<Gem | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [videoOpen, setVideoOpen] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -151,6 +156,12 @@ export function ReportPreviewPage() {
   const customMediumCard = reportType === "medium" ? report?.customMediumCard : null
   const customLargeCard = reportType === "large" ? report?.customLargeCard : null
   const includeLogo = report?.isClientDataAdd ?? true
+  // A Drive link plays here in a dialog; any other link can only be opened in its own
+  // tab. Either way the visitor chooses to watch — nothing plays on arrival.
+  const videoUrl = report?.videoUrl && isHttpUrl(report.videoUrl) ? report.videoUrl : null
+  const videoEmbed = videoEmbedUrl(videoUrl)
+  const videoButtonClass =
+    "mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-slate-700 print:hidden"
 
   const previewProps = {
     gem,
@@ -176,6 +187,18 @@ export function ReportPreviewPage() {
           <p className='text-slate-500 text-xs sm:text-sm mt-1'>
             Gemological Report of Ceylon Digital Verification
           </p>
+          {videoUrl &&
+            (videoEmbed ? (
+              <button type='button' onClick={() => setVideoOpen(true)} className={videoButtonClass}>
+                <PlayCircle className='h-5 w-5' />
+                Watch Gem Video
+              </button>
+            ) : (
+              <a href={videoUrl} target='_blank' rel='noopener noreferrer' className={videoButtonClass}>
+                <PlayCircle className='h-5 w-5' />
+                Watch Gem Video
+              </a>
+            ))}
         </div>
         {/* Reuse the configured report components — each scales itself to the
             width we give it and centres itself, so this stays a plain block. A
@@ -225,6 +248,35 @@ export function ReportPreviewPage() {
           </p>
         </div>
       </div>
+
+      {videoUrl && videoEmbed && (
+        <Dialog open={videoOpen} onOpenChange={setVideoOpen}>
+          <DialogContent className='max-w-3xl w-[calc(100%-1.5rem)] rounded-lg p-4 sm:p-6'>
+            <DialogHeader>
+              <DialogTitle>Gem Video — {gem.gemId}</DialogTitle>
+            </DialogHeader>
+            {/* Mounted only while open, so closing the dialog stops playback. */}
+            <div className='aspect-video w-full overflow-hidden rounded-md bg-black'>
+              <iframe
+                src={videoEmbed}
+                title={`Video of gem ${gem.gemId}`}
+                className='h-full w-full'
+                allow='autoplay; fullscreen'
+                allowFullScreen
+              />
+            </div>
+            <a
+              href={videoUrl}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800'
+            >
+              <ExternalLink className='h-3.5 w-3.5' />
+              Video not playing? Open it in a new tab
+            </a>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <style>{`
         @media print {

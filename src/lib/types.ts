@@ -157,6 +157,8 @@ export interface Gem {
   reportTypes?: string[]
   reportMode?: ReportMode
   skipTesting?: boolean
+  /** The customer asked for a video reachable from the certificate's QR code. */
+  videoPreview?: boolean
 
   intake: {
     helperId?: string

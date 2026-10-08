@@ -25,6 +25,9 @@ export const intakeSchema = z
     // Bypasses Test 1 / Test 2 — the gem goes straight to final approval,
     // so no testers need to be assigned.
     skipTesting: z.boolean().optional(),
+    // The customer wants a video of the stone behind the certificate's QR code. The
+    // link itself is added later, on the report.
+    videoPreview: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.reportMode === REPORT_MODES.CUSTOM) {
