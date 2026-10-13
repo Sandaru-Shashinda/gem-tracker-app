@@ -10,6 +10,30 @@ import { API_BASE_URL, fetchWithAuth } from "./config"
 export interface IdentificationOptions {
   species: string[]
   varieties: string[]
+  /** Everything the lab has saved in the other free-text fields, offered back as suggestions. */
+  history: FieldHistory
+}
+
+export interface FieldHistory {
+  itemDescription: string[]
+  comments: string[]
+  specialNote: string[]
+  treatment: string[]
+  colour: string[]
+  cuttingShape: string[]
+  crownStyle: string[]
+  pavilionStyle: string[]
+}
+
+export const EMPTY_HISTORY: FieldHistory = {
+  itemDescription: [],
+  comments: [],
+  specialNote: [],
+  treatment: [],
+  colour: [],
+  cuttingShape: [],
+  crownStyle: [],
+  pavilionStyle: [],
 }
 
 export const referencesApi = {

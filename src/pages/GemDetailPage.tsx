@@ -35,16 +35,10 @@ import {
 } from "@/components/features/gems/StageAccessBanner"
 import { GemFormActions } from "@/components/features/gems/GemFormActions"
 import { getFormFieldsConfig } from "@/components/shared/common/Formfieldsconfig"
-import {
-  addCustomOption,
-  getCustomValues,
-  type CustomDropdownField,
-} from "@/lib/customDropdownOptions"
 import { makeFormDefaults } from "@/lib/validations/gemFormDefaults"
 import {
   type SearchSetters,
   mapSourceToFormValues,
-  mergeNameOptions,
   syncSearchStates,
   resolveSubmitStatus,
   resolveActiveStage,
@@ -59,6 +53,7 @@ export function GemDetailPage() {
     gems,
     species: globalSpecies,
     varieties: globalVarieties,
+    history,
     handleTestSubmit,
     handleRequestCorrection,
     handleDismissApproverCorrection,
@@ -127,7 +122,6 @@ export function GemDetailPage() {
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [pendingCrops, setPendingCrops] = useState<PendingCrop[]>([])
   const [customer, setCustomer] = useState<Customer | null>(null)
-  const [, setCustomOptTick] = useState(0)
   // Re-fetching the gem after a weight save would reset the analysis form and lose
   // whatever is being typed, so the saved value is patched in locally instead.
   const [savedWeight, setSavedWeight] = useState<number | null>(null)
@@ -135,34 +129,14 @@ export function GemDetailPage() {
   // why a full, valid form could look like it was doing nothing at all.
   const [formError, setFormError] = useState<string | null>(null)
 
-  const makeOptionAdder =
-    (field: CustomDropdownField) => (value: string) => {
-      addCustomOption(field, value)
-      setCustomOptTick((t) => t + 1)
-    }
-
-  // Species and variety already have a lab-wide list behind them, so only a name that
-  // list does not hold is worth keeping in this browser. Remembering the rest would just
-  // be a second copy of the reference table sitting in local storage.
-  const rememberIfNew =
-    (field: CustomDropdownField, known: string[]) => (value: string) => {
-      const trimmed = value.trim()
-      if (!trimmed || known.some((name) => name.toLowerCase() === trimmed.toLowerCase())) return
-      addCustomOption(field, trimmed)
-      setCustomOptTick((t) => t + 1)
-    }
-
   // ── Derived data ────────────────────────────────────────────────────────
   // Species and variety are free text: a stone the reference table does not cover still
-  // has to be named. So each list offers the lab-wide history the API returns *and*
-  // whatever has been typed in this browser since — that second half is what makes a
-  // name entered a minute ago suggestable before it has been saved and fetched back.
-  const speciesOptions = mergeNameOptions(globalSpecies, getCustomValues("species"))
-  const varietyOptions = mergeNameOptions(globalVarieties, getCustomValues("variety"))
-  const filteredSpecies = speciesOptions.filter((s) =>
+  // has to be named. Each list is the lab-wide history the API returns, re-read after
+  // every save, so a name saved on one gem is offered on the next.
+  const filteredSpecies = globalSpecies.filter((s) =>
     s.toLowerCase().includes(speciesSearch.toLowerCase()),
   )
-  const filteredVarieties = varietyOptions.filter((v) =>
+  const filteredVarieties = globalVarieties.filter((v) =>
     v.toLowerCase().includes(varietySearch.toLowerCase()),
   )
 
@@ -209,6 +183,7 @@ export function GemDetailPage() {
       showVarietyList,
       setShowVarietyList,
       filteredVarieties,
+      history,
       setValue,
       watchedSpecies,
       watchedVariety,
@@ -228,12 +203,6 @@ export function GemDetailPage() {
       setColourSearch,
       showColourList,
       setShowColourList,
-      onAddSpeciesOption: rememberIfNew("species", globalSpecies),
-      onAddVarietyOption: rememberIfNew("variety", globalVarieties),
-      onAddCuttingShapeOption: makeOptionAdder("cuttingShape"),
-      onAddCrownStyleOption: makeOptionAdder("crownStyle"),
-      onAddPavilionStyleOption: makeOptionAdder("pavilionStyle"),
-      onAddColourOption: makeOptionAdder("colour"),
     },
   )
 

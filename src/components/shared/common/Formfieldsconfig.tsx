@@ -1,5 +1,5 @@
-import { type FieldConfig } from "@/components/shared/common/FormField"
-import { getCustomOptions } from "@/lib/customDropdownOptions"
+import { type FieldConfig, type SelectOption } from "@/components/shared/common/FormField"
+import { type FieldHistory } from "@/lib/api/references"
 
 export const GRADE_OPTIONS = [
   { value: "Ex", label: "Excellent" },
@@ -148,6 +148,8 @@ interface FormFieldsConfigParams {
   showVarietyList: boolean
   setShowVarietyList: (value: boolean) => void
   filteredVarieties: string[]
+  /** What the lab has saved before in the other free-text fields — see useGem().history. */
+  history: FieldHistory
   setValue: (
     name: any,
     value: any,
@@ -175,13 +177,6 @@ interface FormFieldsConfigParams {
   setColourSearch: (value: string) => void
   showColourList: boolean
   setShowColourList: (value: boolean) => void
-  // Custom option callbacks
-  onAddSpeciesOption?: (value: string) => void
-  onAddVarietyOption?: (value: string) => void
-  onAddCuttingShapeOption?: (value: string) => void
-  onAddCrownStyleOption?: (value: string) => void
-  onAddPavilionStyleOption?: (value: string) => void
-  onAddColourOption?: (value: string) => void
 }
 
 export function getFormFieldsConfig({
@@ -195,6 +190,7 @@ export function getFormFieldsConfig({
   showVarietyList,
   setShowVarietyList,
   filteredVarieties,
+  history,
   setValue,
   watchedSpecies,
   watchedVariety,
@@ -214,23 +210,21 @@ export function getFormFieldsConfig({
   setColourSearch,
   showColourList,
   setShowColourList,
-  onAddSpeciesOption,
-  onAddVarietyOption,
-  onAddCuttingShapeOption,
-  onAddCrownStyleOption,
-  onAddPavilionStyleOption,
-  onAddColourOption,
 }: FormFieldsConfigParams) {
-  const customOpts = getCustomOptions()
-
-  function mergeCustom<T extends { value: string }>(base: T[], custom: T[]): T[] {
+  // The standard list first, then whatever else the lab has saved in that field before.
+  function mergeCustom(base: SelectOption[], saved: string[]): SelectOption[] {
     const baseKeys = new Set(base.map((o) => o.value.toLowerCase()))
-    return [...base, ...custom.filter((o) => !baseKeys.has(o.value.toLowerCase()))]
+    return [
+      ...base,
+      ...saved
+        .filter((value) => !baseKeys.has(value.toLowerCase()))
+        .map((value) => ({ value, label: value })),
+    ]
   }
 
-  const allCuttingShapeOptions = mergeCustom(CUTTING_SHAPE_OPTIONS, customOpts.cuttingShape as typeof CUTTING_SHAPE_OPTIONS)
-  const allCrownStyleOptions = mergeCustom(CUTTING_STYLE_OPTIONS, customOpts.crownStyle as typeof CUTTING_STYLE_OPTIONS)
-  const allPavilionStyleOptions = mergeCustom(CUTTING_STYLE_OPTIONS, customOpts.pavilionStyle as typeof CUTTING_STYLE_OPTIONS)
+  const allCuttingShapeOptions = mergeCustom(CUTTING_SHAPE_OPTIONS, history.cuttingShape)
+  const allCrownStyleOptions = mergeCustom(CUTTING_STYLE_OPTIONS, history.crownStyle)
+  const allPavilionStyleOptions = mergeCustom(CUTTING_STYLE_OPTIONS, history.pavilionStyle)
   let colorOptions = OTHER_COLORS
   let clarityOptions = CLARITY_OTHER_OPTIONS
 
@@ -265,7 +259,7 @@ export function getFormFieldsConfig({
     }
   }
 
-  const allColourOptions = mergeCustom(colorOptions, customOpts.colour as typeof colorOptions)
+  const allColourOptions = mergeCustom(colorOptions, history.colour)
 
   // Every field the analysis form renders, keyed by name and declared in the order it
   // appears on screen. This used to be four arrays that GemAnalysisForm indexed into,
@@ -279,6 +273,7 @@ export function getFormFieldsConfig({
       type: "textarea",
       placeholder: "Detailed item description...",
       rows: 4,
+      suggestions: history.itemDescription,
     },
 
     // 2. Weight, as this stage's owner weighed it. Helpers still set the gem's intake
@@ -309,7 +304,6 @@ export function getFormFieldsConfig({
       onComboboxFocus: () => setShowColourList(true),
       showComboboxList: showColourList,
       onComboboxClose: () => setShowColourList(false),
-      onAddCustomOption: onAddColourOption,
       className: "",
     },
     hue: {
@@ -357,7 +351,6 @@ export function getFormFieldsConfig({
       onComboboxFocus: () => setShowCuttingShapeList(true),
       showComboboxList: showCuttingShapeList,
       onComboboxClose: () => setShowCuttingShapeList(false),
-      onAddCustomOption: onAddCuttingShapeOption,
       className: "",
     },
     grade: {
@@ -384,7 +377,6 @@ export function getFormFieldsConfig({
       onComboboxFocus: () => setShowCrownStyleList(true),
       showComboboxList: showCrownStyleList,
       onComboboxClose: () => setShowCrownStyleList(false),
-      onAddCustomOption: onAddCrownStyleOption,
       className: "",
     },
     pavilionStyle: {
@@ -401,7 +393,6 @@ export function getFormFieldsConfig({
       onComboboxFocus: () => setShowPavilionStyleList(true),
       showComboboxList: showPavilionStyleList,
       onComboboxClose: () => setShowPavilionStyleList(false),
-      onAddCustomOption: onAddPavilionStyleOption,
       className: "",
     },
     cuttingGrade: {
@@ -545,9 +536,8 @@ export function getFormFieldsConfig({
     },
 
     // 14–15. Species and variety. Both are free text — a stone the reference table does
-    //        not cover still has to be named — so closing the list remembers whatever was
-    //        typed, the same way the cut and colour comboboxes do. What the lab has
-    //        already recorded arrives in filteredSpecies / filteredVarieties.
+    //        not cover still has to be named. What the lab has already recorded arrives
+    //        in filteredSpecies / filteredVarieties.
     species: {
       name: "species",
       label: "Species",
@@ -566,10 +556,7 @@ export function getFormFieldsConfig({
         setSpeciesSearch(species)
         setShowSpeciesList(false)
       },
-      onCloseList: () => {
-        onAddSpeciesOption?.(speciesSearch)
-        setShowSpeciesList(false)
-      },
+      onCloseList: () => setShowSpeciesList(false),
       renderItem: (species: string) => species,
     },
 
@@ -591,10 +578,7 @@ export function getFormFieldsConfig({
         setVarietySearch(variety)
         setShowVarietyList(false)
       },
-      onCloseList: () => {
-        onAddVarietyOption?.(varietySearch)
-        setShowVarietyList(false)
-      },
+      onCloseList: () => setShowVarietyList(false),
       renderItem: (variety: string) => variety,
     },
 
@@ -614,6 +598,7 @@ export function getFormFieldsConfig({
       type: "textarea",
       placeholder: "Laboratory comments...",
       rows: 4,
+      suggestions: history.comments,
     },
     specialNote: {
       name: "specialNote",
@@ -621,6 +606,7 @@ export function getFormFieldsConfig({
       type: "textarea",
       placeholder: "Special internal notes...",
       rows: 4,
+      suggestions: history.specialNote,
     },
 
     // 18. Treatments — this note qualifies the per-treatment checklist that
@@ -631,6 +617,7 @@ export function getFormFieldsConfig({
       type: "textarea",
       placeholder: "Treatment details...",
       rows: 4,
+      suggestions: history.treatment,
     },
     isHeated: {
       name: "isHeated",

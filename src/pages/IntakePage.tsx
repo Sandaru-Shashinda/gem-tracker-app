@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Textarea } from "../components/ui/textarea"
+import { SuggestTextarea } from "@/components/shared/common/SuggestTextarea"
 import { BASE_URL } from "@/lib/api/config"
 import { useGem } from "@/hooks/useGemStore"
 import { usersApi } from "@/lib/api/users"
@@ -89,7 +89,7 @@ const CUSTOM_SIZE_OPTIONS = [
 export function IntakePage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  const { handleIntake, getGemById } = useGem()
+  const { handleIntake, getGemById, history } = useGem()
 
   const [images, setImages] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
@@ -482,9 +482,11 @@ export function IntakePage() {
                       name='itemDescription'
                       control={control}
                       render={({ field }) => (
-                        <Textarea
+                        <SuggestTextarea
                           placeholder='e.g. One Yellow Gold & Platinum Ring set with One Natural Blue Sapphire & many small Diamonds.'
                           {...field}
+                          value={field.value || ""}
+                          suggestions={history.itemDescription}
                           className='min-h-[120px] bg-slate-50 border-slate-200 focus:bg-white transition-colors resize-none'
                         />
                       )}

@@ -4,7 +4,7 @@ import type { User, Gem, GemStatus, ReportMode } from "@/lib/types"
 import { GEM_STATUSES } from "@/lib/types"
 import { gemsApi } from "@/lib/api/gems"
 import { usersApi } from "@/lib/api/users"
-import { referencesApi } from "@/lib/api/references"
+import { referencesApi, EMPTY_HISTORY, type FieldHistory } from "@/lib/api/references"
 import { uploadImage } from "@/lib/api/images"
 import { compressImage } from "@/lib/image-utils"
 import { getCropMeta } from "@/lib/gem-crop"
@@ -19,6 +19,8 @@ interface GemContextType {
   species: string[]
   /** Variety names the identification field offers, from the same source. */
   varieties: string[]
+  /** What the lab has written before in the other free-text fields, from the same source. */
+  history: FieldHistory
   refreshGems: () => Promise<void>
   refreshIdentifications: () => Promise<void>
   handleIntake: (
@@ -68,6 +70,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
   const [gems, setGems] = useState<Gem[]>([])
   const [species, setSpecies] = useState<string[]>([])
   const [varieties, setVarieties] = useState<string[]>([])
+  const [history, setHistory] = useState<FieldHistory>(EMPTY_HISTORY)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -97,12 +100,21 @@ export function GemProvider({ children }: { children: ReactNode }) {
       const data = await referencesApi.getIdentifications()
       setSpecies(data.species)
       setVarieties(data.varieties)
+      // An API that predates the history lists still answers with the two name lists.
+      setHistory({ ...EMPTY_HISTORY, ...data.history })
     } catch (err) {
       console.error("Failed to fetch identification options:", err)
     } finally {
       setRefreshing(false)
     }
   }, [user])
+
+  // A save can add a species, a variety or a note the lab has not written before, so the
+  // suggestion lists are re-read alongside the gems.
+  const refreshAfterSave = useCallback(
+    () => Promise.all([refreshGems(), refreshIdentifications()]),
+    [refreshGems, refreshIdentifications],
+  )
 
   const lastInitUserId = useRef<string | null>(null)
 
@@ -120,6 +132,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
       setGems([])
       setSpecies([])
       setVarieties([])
+      setHistory(EMPTY_HISTORY)
       setLoading(false)
     }
   }, [user, refreshGems, refreshIdentifications])
@@ -178,9 +191,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
       } else {
         await gemsApi.createGem(payload)
       }
-      await refreshGems()
+      await refreshAfterSave()
     },
-    [user, refreshGems],
+    [user, refreshAfterSave],
   )
 
   const getGemById = useCallback(async (id: string) => {
@@ -240,9 +253,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
           status ||
           (stage === "test1" ? GEM_STATUSES.READY_FOR_T2 : GEM_STATUSES.READY_FOR_APPROVAL),
       })
-      await refreshGems()
+      await refreshAfterSave()
     },
-    [user, refreshGems],
+    [user, refreshAfterSave],
   )
 
   const handleApproval = useCallback(
@@ -297,9 +310,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
         ...update,
         status: status || GEM_STATUSES.DONE,
       })
-      await refreshGems()
+      await refreshAfterSave()
     },
-    [user, refreshGems],
+    [user, refreshAfterSave],
   )
 
   const handleSaveDraft = useCallback(
@@ -401,9 +414,9 @@ export function GemProvider({ children }: { children: ReactNode }) {
       }
 
       await gemsApi.updateGem(gemId, { [stage]: update, status })
-      await refreshGems()
+      await refreshAfterSave()
     },
-    [user, refreshGems],
+    [user, refreshAfterSave],
   )
 
   const handleOverride = useCallback(
@@ -477,6 +490,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
           gems,
           species,
           varieties,
+          history,
           refreshGems,
           refreshIdentifications,
           handleIntake,
@@ -496,6 +510,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
           gems,
           species,
           varieties,
+          history,
           refreshGems,
           refreshIdentifications,
           handleIntake,

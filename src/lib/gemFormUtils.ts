@@ -118,24 +118,6 @@ export function mapSourceToFormValues(source: any, seed: StageSeed = {}): TestFo
   }
 }
 
-/**
- * Folds several name lists into one, matching case-insensitively so the same name typed
- * two ways appears once. The first spelling seen wins, so pass the authoritative list
- * first — the same rule the API applies in GET /api/references/identifications.
- */
-export function mergeNameOptions(...lists: string[][]): string[] {
-  const seen = new Map<string, string>()
-  for (const list of lists) {
-    for (const raw of list) {
-      const name = typeof raw === "string" ? raw.trim() : ""
-      if (!name) continue
-      const key = name.toLowerCase()
-      if (!seen.has(key)) seen.set(key, name)
-    }
-  }
-  return [...seen.values()]
-}
-
 /** Keeps the search-input states in sync with the current form values. */
 export function syncSearchStates(values: TestFormValues, setters: SearchSetters) {
   setters.setSpeciesSearch(values.species || "")

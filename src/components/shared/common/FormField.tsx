@@ -2,6 +2,7 @@ import { type ReactNode } from "react"
 import { type UseFormRegister, type FieldErrors, Controller, type Control } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { SuggestTextarea } from "@/components/shared/common/SuggestTextarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Star } from "lucide-react"
 import { type TestFormValues } from "@/lib/validations/test"
@@ -50,7 +51,8 @@ export interface FieldConfig {
   showComboboxList?: boolean
   onComboboxFocus?: () => void
   onComboboxClose?: () => void
-  onAddCustomOption?: (value: string) => void
+  /** Textareas only: earlier entries to offer while typing. */
+  suggestions?: string[]
 }
 
 interface FormFieldProps {
@@ -99,7 +101,7 @@ export function FormField({
     showComboboxList,
     onComboboxFocus,
     onComboboxClose,
-    onAddCustomOption,
+    suggestions,
   } = config
 
   const error = errors[name]
@@ -130,7 +132,25 @@ export function FormField({
         />
       )}
 
-      {type === "textarea" && (
+      {type === "textarea" && suggestions && control && (
+        <Controller
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <SuggestTextarea
+              placeholder={placeholder}
+              disabled={disabled}
+              suggestions={suggestions}
+              value={(field.value as string) || ""}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              className={`min-h-[${rows || 60}px]`}
+            />
+          )}
+        />
+      )}
+
+      {type === "textarea" && !(suggestions && control) && (
         <Textarea
           placeholder={placeholder}
           disabled={disabled}
@@ -281,16 +301,7 @@ export function FormField({
               })()}
               <div
                 className='fixed inset-0 z-40'
-                onClick={() => {
-                  const trimmed = (comboboxSearch || "").trim()
-                  const isCustom =
-                    trimmed &&
-                    !comboboxOptions?.some(
-                      (opt) => opt.value.toLowerCase() === trimmed.toLowerCase(),
-                    )
-                  if (isCustom) onAddCustomOption?.(trimmed)
-                  onComboboxClose?.()
-                }}
+                onClick={() => onComboboxClose?.()}
               />
             </>
           )}
