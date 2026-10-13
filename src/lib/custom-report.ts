@@ -46,6 +46,9 @@ export interface CustomLayout {
    * At anything but 1 the stone is no longer drawn at its measured size.
    */
   imageScale: number
+  /** The drop shadow under the gem: multiples of its template width and height. 0 removes it. */
+  shadowWidthScale: number
+  shadowHeightScale: number
   /** Type size in px per element, keyed by the card's font fields. Absent keys print as the template does. */
   fontSizes: Record<string, number>
 }
@@ -66,6 +69,8 @@ export function pickLayout(d: CustomLayout): CustomLayout {
     signatureY: d.signatureY,
     imageBoxScale: d.imageBoxScale,
     imageScale: d.imageScale,
+    shadowWidthScale: d.shadowWidthScale,
+    shadowHeightScale: d.shadowHeightScale,
     fontSizes: { ...d.fontSizes },
   }
 }
@@ -77,6 +82,8 @@ export function defaultLayout(): CustomLayout {
     signatureY: 0,
     imageBoxScale: 1,
     imageScale: 1,
+    shadowWidthScale: 1,
+    shadowHeightScale: 1,
     fontSizes: {},
   }
 }

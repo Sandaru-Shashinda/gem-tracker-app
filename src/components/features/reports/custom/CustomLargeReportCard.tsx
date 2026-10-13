@@ -94,6 +94,7 @@ export function CustomLargeReportCard({
     reportSize: "large",
     box: { w: imageW - 2, h: imageH - 2 },
     target,
+    shadowScale: { w: data.shadowWidthScale, h: data.shadowHeightScale },
   })
 
   // Set in caps on this sheet, so it is measured in caps; a name too long for the column

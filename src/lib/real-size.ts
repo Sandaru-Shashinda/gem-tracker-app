@@ -103,12 +103,19 @@ const SHADOW_HEIGHT_FRAC = 0.1
  * Sizes are fractions of the image because gems render at true physical size: the
  * same layout shows a 23px melee and a 190px stone, and a fixed shadow would be a
  * smudge under one and invisible under the other.
+ *
+ * `scale` is a custom report's own adjustment — multiples of the width and height above.
+ * The 4px floor is the template's, so it applies only to a height nobody has scaled:
+ * a shadow somebody has turned down has to be able to go all the way to nothing.
  */
-export function gemShadow(longestEdgePx: number) {
-  const height = Math.max(4, longestEdgePx * SHADOW_HEIGHT_FRAC)
+export function gemShadow(longestEdgePx: number, scale: { w: number; h: number } = { w: 1, h: 1 }) {
+  const height =
+    scale.h === 1
+      ? Math.max(4, longestEdgePx * SHADOW_HEIGHT_FRAC)
+      : Math.max(0, longestEdgePx * SHADOW_HEIGHT_FRAC * scale.h)
   return {
     /** Share of the image's width, applied as a CSS percentage. */
-    widthFrac: SHADOW_WIDTH_FRAC,
+    widthFrac: Math.max(0, SHADOW_WIDTH_FRAC * scale.w),
     height,
     /**
      * Centred on the image's bottom edge, so the upper half hides behind the photo

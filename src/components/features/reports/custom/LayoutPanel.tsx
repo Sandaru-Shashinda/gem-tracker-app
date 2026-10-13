@@ -93,7 +93,8 @@ interface LayoutPanelProps {
 
 /**
  * The geometry a custom report can depart from its template by: the signature's size
- * and position, the gem image's frame and zoom, and the type size of each text element.
+ * and position, the gem image's frame, zoom and drop shadow, and the type size of each
+ * text element.
  *
  * Everything here starts at the value that leaves the template exactly as it is, and
  * each group has its own reset back to it. Moving or growing anything can push the page
@@ -116,7 +117,10 @@ export function LayoutPanel({ layout, fontFields, onChange }: LayoutPanelProps) 
     layout.signatureX !== initial.signatureX ||
     layout.signatureY !== initial.signatureY
   const imageChanged =
-    layout.imageBoxScale !== initial.imageBoxScale || layout.imageScale !== initial.imageScale
+    layout.imageBoxScale !== initial.imageBoxScale ||
+    layout.imageScale !== initial.imageScale ||
+    layout.shadowWidthScale !== initial.shadowWidthScale ||
+    layout.shadowHeightScale !== initial.shadowHeightScale
 
   return (
     <div className='space-y-6'>
@@ -179,7 +183,12 @@ export function LayoutPanel({ layout, fontFields, onChange }: LayoutPanelProps) 
               size='sm'
               className='h-6 px-2 text-xs'
               onClick={() =>
-                onChange({ imageBoxScale: initial.imageBoxScale, imageScale: initial.imageScale })
+                onChange({
+                  imageBoxScale: initial.imageBoxScale,
+                  imageScale: initial.imageScale,
+                  shadowWidthScale: initial.shadowWidthScale,
+                  shadowHeightScale: initial.shadowHeightScale,
+                })
               }
             >
               <RotateCcw className='mr-1 h-3 w-3' />
@@ -210,6 +219,24 @@ export function LayoutPanel({ layout, fontFields, onChange }: LayoutPanelProps) 
             Zoomed, the stone no longer prints at its measured size.
           </p>
         )}
+        <SliderRow
+          label='Shadow width'
+          value={layout.shadowWidthScale}
+          min={0}
+          max={3}
+          step={0.05}
+          format={percent}
+          onChange={(shadowWidthScale) => onChange({ shadowWidthScale })}
+        />
+        <SliderRow
+          label='Shadow height'
+          value={layout.shadowHeightScale}
+          min={0}
+          max={3}
+          step={0.05}
+          format={percent}
+          onChange={(shadowHeightScale) => onChange({ shadowHeightScale })}
+        />
       </div>
 
       <div className='space-y-2 border-t pt-5'>

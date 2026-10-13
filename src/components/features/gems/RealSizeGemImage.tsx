@@ -42,6 +42,11 @@ interface UseRealSizeGemImageArgs {
    * shrink a certificate.
    */
   target?: RenderTarget
+  /**
+   * The drop shadow's width and height, as multiples of the size it is normally drawn
+   * at. Only custom reports set this; left out, the shadow is the standard one.
+   */
+  shadowScale?: { w: number; h: number }
   alt?: string
 }
 
@@ -63,6 +68,7 @@ export function useRealSizeGemImage({
   reportSize,
   box,
   target = "print",
+  shadowScale,
   alt,
 }: UseRealSizeGemImageArgs): UseRealSizeGemImageResult {
   const { image, loading, error } = useGemImage(imageId ?? "")
@@ -105,7 +111,7 @@ export function useRealSizeGemImage({
   // Scale the shadow to how big the gem actually comes out. Before the image has been
   // measured there is no rendered size yet, so fall back to the box it sits in.
   const longestEdge = sized ? Math.max(sizing.width, sizing.height) : Math.max(fitBox.w, fitBox.h)
-  const shadow = gemShadow(longestEdge)
+  const shadow = gemShadow(longestEdge, shadowScale)
 
   /** Hard ceiling in pixels, so no path can draw the gem outside its frame. */
   const boxLimit = { maxWidth: `${fitBox.w}px`, maxHeight: `${fitBox.h}px` }

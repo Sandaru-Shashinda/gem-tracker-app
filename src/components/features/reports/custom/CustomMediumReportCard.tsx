@@ -282,6 +282,7 @@ export function CustomMediumReportCard({
     reportSize: "medium",
     box: { w: imageBox - IMAGE_BORDER * 2, h: imageBox - IMAGE_BORDER * 2 },
     target,
+    shadowScale: { w: data.shadowWidthScale, h: data.shadowHeightScale },
   })
 
   // Broken and sized once, so the panel never splits a name at its own edge — the colour

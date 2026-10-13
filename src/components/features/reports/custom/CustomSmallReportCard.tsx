@@ -139,6 +139,7 @@ export function CustomSmallReportCard({
     reportSize: "small",
     box: { w: imageBox * IMAGE_INSET, h: imageBox * IMAGE_INSET },
     target,
+    shadowScale: { w: data.shadowWidthScale, h: data.shadowHeightScale },
   })
 
   // Broken and sized once, so the on-screen card and the copy that becomes the PDF

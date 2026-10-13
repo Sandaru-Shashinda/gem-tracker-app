@@ -634,6 +634,7 @@ export function CustomPremiumReportCard({
     reportSize: "large",
     box: { w: imageW - 2, h: imageH - 2 },
     target,
+    shadowScale: { w: data.shadowWidthScale, h: data.shadowHeightScale },
   })
 
   // The column fits "Star Pink Sapphire" on one line by design; anything longer breaks
