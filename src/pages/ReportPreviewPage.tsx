@@ -7,17 +7,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { isHttpUrl, videoEmbedUrl } from "@/lib/video-link"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
+import { PremiumReportPreview } from "@/components/features/reports/PremiumReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
 import { VerbalReportPreview } from "@/components/features/reports/VerbalReportPreview"
 import { CustomSmallReportView } from "@/components/features/reports/custom/CustomSmallReportView"
 import { CustomMediumReportView } from "@/components/features/reports/custom/CustomMediumReportView"
 import { CustomLargeReportView } from "@/components/features/reports/custom/CustomLargeReportView"
+import { CustomPremiumReportView } from "@/components/features/reports/custom/CustomPremiumReportView"
 import { primeImageCache } from "@/components/features/gems/GemImage"
 import type { Image } from "@/lib/api/images"
-import type { Gem } from "@/lib/types"
+import type { Gem, ReportType } from "@/lib/types"
 import { signatoryImage, signatoryName, type ReportSignatory } from "@/lib/report-signature"
 import type {
   StoredCustomLargeReport,
+  StoredCustomPremiumReport,
   StoredCustomMediumReport,
   StoredCustomSmallReport,
 } from "@/lib/custom-report"
@@ -25,7 +28,7 @@ import type {
 interface ReportData {
   _id: string
   reportId: string
-  reportType: "small" | "medium" | "large" | "verbal"
+  reportType: ReportType
   isClientDataAdd?: boolean
   gemId: string | Gem
   signedBy?: ReportSignatory | string | null
@@ -36,8 +39,13 @@ interface ReportData {
   customCard?: Partial<StoredCustomSmallReport> | null
   /** The same one paper size up, read only when this report prints at A5. */
   customMediumCard?: Partial<StoredCustomMediumReport> | null
-  /** And the A4, read only when this report prints at full page. */
-  customLargeCard?: Partial<StoredCustomLargeReport> | null
+  /** The standard A4, read only when this report prints as a large report. */
+  customStandardLargeCard?: Partial<StoredCustomLargeReport> | null
+  /**
+   * And the premium A4, read only when this report prints as one. The field keeps the
+   * name it had when that sheet was called the large report.
+   */
+  customLargeCard?: Partial<StoredCustomPremiumReport> | null
 }
 
 export function ReportPreviewPage() {
@@ -154,7 +162,8 @@ export function ReportPreviewPage() {
   // wording of a sheet it is no longer printing.
   const customCard = reportType === "small" ? report?.customCard : null
   const customMediumCard = reportType === "medium" ? report?.customMediumCard : null
-  const customLargeCard = reportType === "large" ? report?.customLargeCard : null
+  const customLargeCard = reportType === "large" ? report?.customStandardLargeCard : null
+  const customPremiumCard = reportType === "premium" ? report?.customLargeCard : null
   const includeLogo = report?.isClientDataAdd ?? true
   // A Drive link plays here in a dialog; any other link can only be opened in its own
   // tab. Either way the visitor chooses to watch — nothing plays on arrival.
@@ -205,7 +214,15 @@ export function ReportPreviewPage() {
             flex row here would let the fixed-size cards stretch it past the
             viewport via min-width:auto, defeating their own scaling. */}
         <div className='w-full'>
-          {customLargeCard ? (
+          {customPremiumCard ? (
+            <CustomPremiumReportView
+              gem={gem}
+              customReport={customPremiumCard}
+              reportId={report?._id || gem._id}
+              signatureName={previewProps.signatureName}
+              signatureImage={previewProps.signatureImage}
+            />
+          ) : customLargeCard ? (
             <CustomLargeReportView
               gem={gem}
               customReport={customLargeCard}
@@ -227,6 +244,8 @@ export function ReportPreviewPage() {
               customCard={customCard}
               reportId={report?._id || gem._id}
             />
+          ) : reportType === "premium" ? (
+            <PremiumReportPreview {...previewProps} />
           ) : reportType === "large" ? (
             <LargeReportPreview {...previewProps} />
           ) : reportType === "small" ? (

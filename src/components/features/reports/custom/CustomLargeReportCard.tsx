@@ -1,612 +1,54 @@
-import type { CSSProperties, ReactNode, RefObject } from "react"
+import type { CSSProperties, RefObject } from "react"
 import QRCode from "react-qr-code"
-import { ImageIcon, X } from "lucide-react"
+import { ImageIcon } from "lucide-react"
 
 import { useRealSizeGemImage } from "../../gems/RealSizeGemImage"
 import type { MeasurementSource, RenderTarget } from "@/lib/real-size"
 import { layoutGemName } from "@/lib/gem-name"
-import { textWidth } from "@/lib/text-layout"
 import {
-  COLOUR_GRADE_STEPS,
   fontSizer,
   LARGE_FONT_FIELDS,
   type CustomLargeReport,
   type CustomReportRow,
   type LargeRowList,
 } from "@/lib/custom-report"
-import {
-  TREATMENT_ANSWERS,
-  TREATMENT_SECTIONS,
-  type TreatmentAnswer,
-  type TreatmentKey,
-} from "@/lib/treatments"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo_trimmed.png"
-import { EditableOverlay, EditableText, EditableWrapText } from "./EditableField"
-import { HandSignature } from "../HandSignature"
-import { transformFor, WRAPPING_VALUE_STYLE } from "./fieldStyles"
+import { EditableOverlay } from "./EditableField"
+import { transformFor } from "./fieldStyles"
+import { CENTRED_EDITOR, COLUMN_STYLE, COURIER, COURIER_FAMILY, NAME_COL_W } from "./a4Styles"
+import {
+  A4_H,
+  A4_W,
+  ClarityChart,
+  DataRow,
+  GOLD,
+  IMAGE_BOX_H,
+  IMAGE_BOX_W,
+  LABEL_SIZE,
+  SectionTitle,
+  SIG_BOX_H,
+  SIG_BOX_W,
+  SIG_CROP_LEFT,
+  SIG_CROP_TOP,
+  SIG_IMG_H,
+  SIG_IMG_W,
+  TypedSignature,
+} from "./CustomPremiumReportCard"
 
 /**
- * The A4 report, drawn from an editable document instead of from a gem.
+ * The large report, drawn from an editable document instead of from a gem.
  *
- * The geometry below is LargeReportPreview's, constant for constant: the page padding,
- * the 150px header columns, the 40px column gutters, the signature crop fractions and
- * the 268px name column they leave room for. A custom report is the lab's own
- * certificate with different words in it, and one laid out a millimetre differently
- * would not be the same artefact. What changes is where the words come from — every one
- * is a field of {@link CustomLargeReport}, and on the screen copy every one is editable
- * where it is printed.
- *
- * Every piece of the page below is declared at module scope, never inside the card. A
- * component declared inside another is a new type on every render, which React
- * rebuilds rather than updates — taking the focused input with it after one keystroke.
+ * The geometry is LargeReportPreview's, spacing for spacing, and the pieces it shares
+ * with the premium A4 — rows, section headings, the clarity chart, the signature block —
+ * are the premium card's own, imported rather than copied. What changes is where the
+ * words come from: every one is a field of {@link CustomLargeReport}, and on the screen
+ * copy every one is editable where it is printed.
  */
 
-// A4 at 96 dpi → 794 × 1123 px (portrait)
-export const A4_W = 794
-export const A4_H = 1123
-
-const COURIER_FAMILY = "'Nimbus Mono', 'Courier New', Courier, monospace"
-const COURIER: CSSProperties = { fontFamily: COURIER_FAMILY, color: "#1a1a1a" }
-/** Canvas font shorthand for a row set at `size`. */
-const rowFont = (size: number) => `400 ${size}px ${COURIER_FAMILY}`
-/**
- * The labels' size — the template's, always. A size set in the layout changes a row's
- * value, never its label; the rows align on baselines, so a larger value still sits on
- * its label's line.
- */
-const LABEL_SIZE = 11.5
-/** A details or results column: the page's content width, halved either side of the 40px gutter. */
-const COLUMN_W = (A4_W - 56 * 2 - 40) / 2
-/** A row's label gap, its leader at its narrowest, and the value's gutter. */
-const LABEL_GAP = 4
-const LEADER_MIN_W = 12
-const VALUE_GAP = 6
-/** The 170x160 image frame and its 1px border. */
-const IMAGE_BOX_W = 170
-const IMAGE_BOX_H = 160
-const GOLD = "#C5A259"
-
-/*
- * The scanned signature asset is 1800x1200 (3:2) and mostly whitespace. It is rendered
- * oversized inside a window cropped to its ink band, and the typed field beside it is
- * drawn to the same box so the two signature fields line up.
- *
- * Sized so the pair takes ~58% of the 682px content width, leaving 268px for the gem
- * name beside it — enough for a long variety ("Star Pink Sapphire") to stay on one line.
- */
-const SIG_IMG_W = 215
-const SIG_IMG_H = SIG_IMG_W / 1.5
-const SIG_CROP_TOP = SIG_IMG_H * 0.26
-const SIG_CROP_LEFT = SIG_IMG_W * 0.09
-const SIG_BOX_W = SIG_IMG_W * 0.85
-const SIG_BOX_H = SIG_IMG_H * 0.44
-/* Fraction of the box above the rule: blank on the typed block, ink on the image. */
-const SIG_RULE_OFFSET = 0.49
-
-/* 268 + 24 gap + the signature pair (2 × 182.75 + 24) fills the 682px content width. */
-const NAME_COL_W = 268
-
-const COLUMN_STYLE: CSSProperties = {
-  ...COURIER,
-  fontWeight: 400,
-  display: "flex",
-  flexDirection: "column",
-  gap: "3px",
-}
-
-/** The lab's clarity scale. Its cells are fixed; only the marked one is a choice. */
-const CLARITY_GRADES = [
-  { key: "FL", label: "FL" },
-  { key: "LC1", label: "LC 1" },
-  { key: "LC2", label: "LC 2" },
-  { key: "EC1", label: "EC 1" },
-  { key: "EC2", label: "EC 2" },
-  { key: "VI1", label: "VI 1" },
-  { key: "VI2", label: "VI 2" },
-  { key: "HI1", label: "HI 1" },
-  { key: "HI2", label: "HI 2" },
-] as const
-
-const CLARITY_TD: CSSProperties = {
-  border: "1px solid #111",
-  padding: "2px 1px",
-  textAlign: "center",
-  fontSize: "6.5px",
-  lineHeight: 1.25,
-  fontFamily: "Arial, sans-serif",
-  color: "#111",
-  verticalAlign: "middle",
-}
-
-/**
- * The stone's grade is marked with a heavy border and a light tint rather than reversed
- * type: at this size white-on-black closes up as soon as ink spreads, and it disappears
- * altogether when a print dialog has background graphics switched off. The 2px rule
- * still reads as the marker even if the fill is dropped.
- */
-const CLARITY_TD_ACTIVE: CSSProperties = {
-  ...CLARITY_TD,
-  backgroundColor: "#c9cbdd",
-  color: "#000",
-  fontWeight: 700,
-  border: "2px solid #111",
-  WebkitPrintColorAdjust: "exact",
-  printColorAdjust: "exact",
-}
-
-/**
- * The editor for a line centred in the name column: as wide as the column and centred
- * on the line, rather than as wide as the line. The lines here shrink to their own text,
- * so an editor that matched them would be a few pixels wide for an empty field — and the
- * lines must shrink, or a two-line name stops matching the standard report's.
- */
-const CENTRED_EDITOR: CSSProperties = {
-  left: "50%",
-  right: "auto",
-  width: `${NAME_COL_W}px`,
-  transform: "translateX(-50%)",
-  textAlign: "center",
-}
-
-const ROW_DELETE_STYLE: CSSProperties = {
-  position: "absolute",
-  left: "-22px",
-  top: "0px",
-  width: "15px",
-  height: "15px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "9999px",
-  border: "none",
-  backgroundColor: "#fee2e2",
-  color: "#b91c1c",
-  cursor: "pointer",
-  padding: 0,
-}
-
-// ---------------------------------------------------------------------------
-// Pieces of the page
-// ---------------------------------------------------------------------------
-
-interface SectionTitleProps {
-  value: string
-  onChange: (next: string) => void
-  editable: boolean
-  fontSize?: number
-  style?: CSSProperties
-}
-
-/** A section heading — DETAILS, RESULTS and the rest — retypeable where it prints. */
-function SectionTitle({ value, onChange, editable, fontSize = 12, style }: SectionTitleProps) {
-  return (
-    <p
-      style={{
-        fontFamily: COURIER_FAMILY,
-        fontSize: `${fontSize}px`,
-        fontWeight: 900,
-        color: "#1a1a1a",
-        textTransform: "uppercase",
-        letterSpacing: "1px",
-        margin: 0,
-        paddingBottom: "2px",
-        display: "inline-block",
-        ...style,
-      }}
-    >
-      <EditableText
-        value={value}
-        onChange={onChange}
-        editable={editable}
-        hint='Heading'
-        font={`900 ${fontSize}px ${COURIER_FAMILY}`}
-        letterSpacing={1}
-        uppercase
-        maxWidth={300}
-        title='Click to rename this section'
-      />
-    </p>
-  )
-}
-
-interface DataRowProps {
-  row: CustomReportRow
-  /** The rows' type size; the row's own, if it has one, wins. */
-  blockSize: number
-  editable: boolean
-  onChange: (patch: Partial<CustomReportRow>) => void
-  onRemove: () => void
-}
-
-/** One label : leader : value row, set exactly as the standard A4 sets them. */
-function DataRow({ row, blockSize, editable, onChange, onRemove }: DataRowProps) {
-  // The value's size; the label keeps the template's whatever this is.
-  const size = row.fontSize ?? blockSize
-  // A value wraps only where the template's own row would have run out of room: the
-  // column, less the label, its gap, the leader at its narrowest and the gutter. The
-  // standard A4 never caps a value, so anything that fits it prints on one line here too.
-  const room =
-    COLUMN_W -
-    textWidth(`${row.label}:`, rowFont(LABEL_SIZE)) -
-    LABEL_GAP -
-    LEADER_MIN_W -
-    VALUE_GAP
-  return (
-    <div
-      className='crc-row'
-      style={{
-        display: "flex",
-        alignItems: "baseline",
-        width: "100%",
-        position: "relative",
-      }}
-    >
-      {editable && (
-        <button
-          type='button'
-          className='crc-row-delete'
-          title='Remove this field'
-          onClick={onRemove}
-          style={ROW_DELETE_STYLE}
-        >
-          <X style={{ width: "9px", height: "9px" }} />
-        </button>
-      )}
-      <span style={{ whiteSpace: "nowrap", paddingRight: `${LABEL_GAP}px`, flexShrink: 0 }}>
-        <EditableText
-          value={row.label}
-          onChange={(label) => onChange({ label })}
-          editable={editable}
-          hint='Label'
-          font={rowFont(LABEL_SIZE)}
-          maxWidth={200}
-          title='Click to rename this field'
-        />
-        :
-      </span>
-      <span
-        style={{
-          flex: 1,
-          borderBottom: "1.5px dotted #a3a3a3",
-          position: "relative",
-          top: "-3px",
-          minWidth: `${LEADER_MIN_W}px`,
-        }}
-      />
-      {/* The row aligns on baselines, so a wrapped value keeps the leader on its first line. */}
-      <EditableWrapText
-        value={row.value}
-        onChange={(value) => onChange({ value })}
-        editable={editable}
-        title='Click to edit this value'
-        font={rowFont(size)}
-        maxTextWidth={Math.max(40, room)}
-        gutter={VALUE_GAP}
-        style={{ ...WRAPPING_VALUE_STYLE, fontSize: `${size}px` }}
-      />
-    </div>
-  )
-}
-
-/** The tick is drawn as SVG so it survives export and does not depend on a glyph font. */
-function CheckBox({ checked, size = 11 }: { checked: boolean; size?: number }) {
-  return (
-    <span
-      style={{
-        width: `${size}px`,
-        height: `${size}px`,
-        border: "1.2px solid #1a1a1a",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      {checked && (
-        <svg width={size - 2} height={size - 2} viewBox='0 0 10 10' style={{ display: "block" }}>
-          <path
-            d='M1.3 5.2 L3.9 7.9 L8.7 1.9'
-            fill='none'
-            stroke='#1a1a1a'
-            strokeWidth='1.6'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-          />
-        </svg>
-      )}
-    </span>
-  )
-}
-
-interface GradeRowProps {
-  label: string
-  value: string
-  /** The rows' type size, which the colour grades share. */
-  size: number
-  editable: boolean
-  onLabelChange: (next: string) => void
-  onValueChange: (next: string) => void
-}
-
-/**
- * Tone or saturation, graded on three fixed steps. The steps are the lab's scale, so the
- * label is what a custom report can retype; the grade is chosen by ticking a box, and
- * ticking the marked one again leaves the row ungraded.
- */
-function GradeRow({ label, value, size, editable, onLabelChange, onValueChange }: GradeRowProps) {
-  const selected = value.trim().toLowerCase()
-  return (
-    <div style={{ display: "flex", alignItems: "center", width: "100%", gap: "10px" }}>
-      <span style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
-        <EditableText
-          value={label}
-          onChange={onLabelChange}
-          editable={editable}
-          hint='Label'
-          font={rowFont(size)}
-          maxWidth={140}
-          title='Click to rename this field'
-        />
-        :
-      </span>
-      {/* Pushed to the right edge so the three steps line up under the typed values. */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "auto" }}>
-        {COLOUR_GRADE_STEPS.map((step) => {
-          const checked = step.toLowerCase() === selected
-          return (
-            <span
-              key={step}
-              onClick={editable ? () => onValueChange(checked ? "" : step) : undefined}
-              title={editable ? `Mark ${step}` : undefined}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                whiteSpace: "nowrap",
-                cursor: editable ? "pointer" : undefined,
-              }}
-            >
-              {step}
-              <CheckBox checked={checked} />
-            </span>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-interface TreatmentRowProps {
-  label: string
-  value: TreatmentAnswer
-  size: number
-  editable: boolean
-  onChange: (next: TreatmentAnswer) => void
-}
-
-/**
- * One treatment on the checklist. An unassessed treatment leaves both boxes empty, so
- * "no answer" stays visibly different from a certified "No". Ticking the marked box
- * again clears it back to unassessed.
- */
-function TreatmentRow({ label, value, size, editable, onChange }: TreatmentRowProps) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "6px",
-        fontFamily: COURIER_FAMILY,
-        color: "#1a1a1a",
-        fontSize: `${size}px`,
-        fontWeight: 400,
-        lineHeight: 1.2,
-      }}
-    >
-      <span>{label}</span>
-      <span style={{ display: "flex", alignItems: "center", gap: "5px", marginLeft: "auto" }}>
-        {TREATMENT_ANSWERS.map((answer) => {
-          const checked = value === answer
-          return (
-            <span
-              key={answer}
-              onClick={editable ? () => onChange(checked ? "" : answer) : undefined}
-              title={editable ? `Mark ${answer}` : undefined}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "2px",
-                whiteSpace: "nowrap",
-                cursor: editable ? "pointer" : undefined,
-              }}
-            >
-              {answer}
-              <CheckBox checked={checked} size={8} />
-            </span>
-          )
-        })}
-      </span>
-    </div>
-  )
-}
-
-/** Titled, outlined region — used for the clarity chart and the statement. */
-function Panel({ heading, children }: { heading: ReactNode; children: ReactNode }) {
-  return (
-    <div
-      style={{
-        border: "1px solid #cfcfcf",
-        borderRadius: "4px",
-        padding: "10px 12px 12px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-      }}
-    >
-      {heading}
-      {children}
-    </div>
-  )
-}
-
-interface ClarityChartProps {
-  grade: string
-  editable: boolean
-  onChange: (next: string) => void
-}
-
-/** The graded clarity scale. Click a grade to mark it, click it again to leave it unmarked. */
-function ClarityChart({ grade, editable, onChange }: ClarityChartProps) {
-  return (
-    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-      <tbody>
-        <tr>
-          <td rowSpan={2} style={CLARITY_TD}>
-            Flawless
-          </td>
-          <td colSpan={2} style={CLARITY_TD}>
-            Loupe Clean
-          </td>
-          <td colSpan={2} style={CLARITY_TD}>
-            Eye Clean
-          </td>
-          <td colSpan={2} style={CLARITY_TD}>
-            Visible Inclusions
-          </td>
-          <td colSpan={2} style={CLARITY_TD}>
-            Highly Included
-          </td>
-        </tr>
-        <tr>
-          {(["LC", "EC", "VI", "HI"] as const).flatMap((cat) => [
-            <td key={`${cat}-minor`} style={CLARITY_TD}>
-              Minor Inclusions
-            </td>,
-            <td key={`${cat}-highly`} style={CLARITY_TD}>
-              Highly Included
-            </td>,
-          ])}
-        </tr>
-        <tr>
-          {CLARITY_GRADES.map(({ key, label }) => {
-            const active = key === grade
-            return (
-              <td
-                key={key}
-                onClick={editable ? () => onChange(active ? "" : key) : undefined}
-                title={editable ? "Click to mark this grade" : undefined}
-                style={{
-                  ...(active ? CLARITY_TD_ACTIVE : CLARITY_TD),
-                  fontSize: "7.5px",
-                  cursor: editable ? "pointer" : undefined,
-                }}
-              >
-                {label}
-              </td>
-            )
-          })}
-        </tr>
-      </tbody>
-    </table>
-  )
-}
-
-interface TypedSignatureProps {
-  data: CustomLargeReport
-  onChange: (patch: Partial<CustomLargeReport>) => void
-  editable: boolean
-  signatureImage?: string
-}
-
-/**
- * The unsigned counterpart to the scanned signature asset: same box, same rule position,
- * so the pair reads as two matching fields with room to sign the left one by hand.
- * Hidden rather than removed when switched off, so dropping it cannot move the other.
- */
-function TypedSignature({ data, onChange, editable, signatureImage }: TypedSignatureProps) {
-  const line: CSSProperties = {
-    fontSize: "8px",
-    color: "#8d8b8b",
-    fontWeight: 750,
-    whiteSpace: "nowrap",
-  }
-  return (
-    <div
-      style={{
-        width: `${SIG_BOX_W}px`,
-        height: `${SIG_BOX_H}px`,
-        display: "flex",
-        flexDirection: "column",
-        flexShrink: 0,
-        fontFamily: "Arial, Helvetica, sans-serif",
-        visibility: data.showTypedSignature ? "visible" : "hidden",
-      }}
-    >
-      {/* Left blank for the handwritten signature — or, on the digital copy, carrying
-          the signatory's own. */}
-      <div
-        style={{ height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`, flexShrink: 0, position: "relative" }}
-      >
-        {signatureImage && (
-          <HandSignature
-            src={signatureImage}
-            space={SIG_BOX_H * SIG_RULE_OFFSET}
-            maxWidth={SIG_BOX_W * 0.7}
-          />
-        )}
-      </div>
-      <div style={{ borderTop: "1.5px dotted #333", width: "70%" }}></div>
-      <div
-        style={{
-          fontSize: "10px",
-          fontWeight: 700,
-          color: "#1a1a1a",
-          lineHeight: "12px",
-          whiteSpace: "nowrap",
-          marginTop: "2px",
-        }}
-      >
-        <EditableText
-          value={data.signatoryName}
-          onChange={(signatoryName) => onChange({ signatoryName })}
-          editable={editable}
-          placeholder='____________________'
-          font='700 10px Arial, Helvetica, sans-serif'
-          maxWidth={SIG_BOX_W}
-          title='Click to edit the signatory'
-        />
-      </div>
-      <div style={{ ...line, lineHeight: "8px" }}>
-        <EditableText
-          value={data.signatoryRole}
-          onChange={(signatoryRole) => onChange({ signatoryRole })}
-          editable={editable}
-          hint='Role'
-          font='750 8px Arial, Helvetica, sans-serif'
-          maxWidth={SIG_BOX_W}
-          title='Click to edit the role'
-        />
-      </div>
-      <div style={{ ...line, lineHeight: "10px" }}>
-        <EditableText
-          value={data.signatoryCompany}
-          onChange={(signatoryCompany) => onChange({ signatoryCompany })}
-          editable={editable}
-          hint='Company'
-          font='750 8px Arial, Helvetica, sans-serif'
-          maxWidth={SIG_BOX_W}
-          title='Click to edit the company line'
-        />
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// The page
-// ---------------------------------------------------------------------------
+/** The gem name's own colour on this sheet; the title above it stays the lab's gold. */
+const NAME_COLOR = "#2f55a4"
 
 interface CustomLargeReportCardProps {
   data: CustomLargeReport
@@ -640,9 +82,7 @@ export function CustomLargeReportCard({
   const size = fontSizer(data.fontSizes, LARGE_FONT_FIELDS)
   const rowSize = size("rows")
   const headingSize = size("headings")
-  // The panels' titles sit a point under the section headings, as on the template.
-  const panelHeadingSize = (headingSize * 11) / 12
-  // Labels and the colour grades stay at the template's size; only values are resized.
+  // Labels stay at the template's size; only values are resized.
   const column: CSSProperties = { ...COLUMN_STYLE, fontSize: `${LABEL_SIZE}px` }
 
   // The frame at its chosen size; the photo's box is the frame less its 1px border.
@@ -656,14 +96,15 @@ export function CustomLargeReportCard({
     target,
   })
 
-  // The column fits "Star Pink Sapphire" on one line by design; anything longer breaks
-  // before the colour and species rather than wrapping into the signatures beside it.
+  // Set in caps on this sheet, so it is measured in caps; a name too long for the column
+  // breaks before the colour and species rather than wrapping into the signatures.
   const gemName = layoutGemName(data.gemName, {
     maxWidth: NAME_COL_W,
     fontSize: size("gemName"),
     fontFamily: COURIER_FAMILY,
     fontWeight: 900,
     letterSpacing: 0.5,
+    uppercase: true,
   })
 
   const patchRow = (list: LargeRowList, rowId: string, patch: Partial<CustomReportRow>) =>
@@ -683,16 +124,8 @@ export function CustomLargeReportCard({
       />
     ))
 
-  const setTreatment = (key: TreatmentKey, answer: TreatmentAnswer) =>
-    onChange({ treatments: { ...data.treatments, [key]: answer } })
-
-  const prose: CSSProperties = {
-    ...COURIER,
-    fontWeight: 600,
-    margin: 0,
-    lineHeight: 1.55,
-    textAlign: "justify",
-  }
+  // Line breaks are the author's: the treatment finding is one sentence to a line.
+  const prose: CSSProperties = { ...COURIER, margin: 0, lineHeight: 1.5, whiteSpace: "pre-wrap" }
 
   return (
     <div
@@ -733,36 +166,32 @@ export function CustomLargeReportCard({
         </div>
       )}
 
-      {/* ── HEADER: logo left, title centred, verification QR right ── */}
+      {/* ── HEADER: logo left, title beside it, verification QR right. The logo and QR
+          are hidden rather than removed when switched off, so nothing else moves. ── */}
       <div
         style={{
           display: "flex",
           alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: "16px",
+          gap: "28px",
           position: "relative",
           zIndex: 2,
         }}
       >
-        {/* The logo column is matched to the QR column so the title stays centred. Both
-            are hidden rather than removed when switched off, so the header keeps its
-            height and nothing below it moves. */}
-        <div style={{ width: "150px", flexShrink: 0 }}>
-          <img
-            src={grcMemoLogo}
-            alt='GRC Logo'
-            style={{
-              width: "120px",
-              height: "auto",
-              objectFit: "contain",
-              display: "block",
-              filter: "brightness(0)",
-              visibility: data.showLogo ? "visible" : "hidden",
-            }}
-          />
-        </div>
+        <img
+          src={grcMemoLogo}
+          alt='GRC Logo'
+          style={{
+            width: "150px",
+            height: "auto",
+            objectFit: "contain",
+            display: "block",
+            flexShrink: 0,
+            filter: "brightness(0)",
+            visibility: data.showLogo ? "visible" : "hidden",
+          }}
+        />
 
-        <div style={{ flex: 1, textAlign: "end" }}>
+        <div style={{ flex: 1, paddingTop: "4px" }}>
           <EditableOverlay
             value={data.title}
             onChange={(title) => onChange({ title })}
@@ -775,7 +204,6 @@ export function CustomLargeReportCard({
               color: GOLD,
               textTransform: "uppercase",
               letterSpacing: "1.5px",
-              textAlign: "right",
             }}
           >
             <h1
@@ -789,7 +217,7 @@ export function CustomLargeReportCard({
                 margin: 0,
               }}
             >
-              {data.title || "\u00a0"}
+              {data.title || " "}
             </h1>
           </EditableOverlay>
           <EditableOverlay
@@ -797,22 +225,18 @@ export function CustomLargeReportCard({
             onChange={(reportNumberLine) => onChange({ reportNumberLine })}
             editable={editable}
             title='Click to edit the report number line'
-            editorStyle={{
-              ...COURIER,
-              fontSize: `${size("reportNumberLine")}px`,
-              fontWeight: 500,
-              textAlign: "right",
-            }}
+            style={{ marginTop: "2px" }}
+            editorStyle={{ ...COURIER, fontSize: `${size("reportNumberLine")}px`, fontWeight: 500 }}
           >
             <p
               style={{
                 ...COURIER,
                 fontSize: `${size("reportNumberLine")}px`,
-                margin: "0px 0 0",
+                margin: 0,
                 fontWeight: 500,
               }}
             >
-              {data.reportNumberLine || "\u00a0"}
+              {data.reportNumberLine || " "}
             </p>
           </EditableOverlay>
           <EditableOverlay
@@ -821,20 +245,17 @@ export function CustomLargeReportCard({
             editable={editable}
             title='Click to edit the date'
             style={{ marginTop: "2px" }}
-            editorStyle={{ ...COURIER, fontSize: `${size("dateLine")}px`, textAlign: "right" }}
+            editorStyle={{ ...COURIER, fontSize: `${size("dateLine")}px` }}
           >
             <p style={{ ...COURIER, fontSize: `${size("dateLine")}px`, margin: 0 }}>
-              {data.dateLine || "\u00a0"}
+              {data.dateLine || " "}
             </p>
           </EditableOverlay>
         </div>
 
         <div
           style={{
-            width: "150px",
             flexShrink: 0,
-            display: "flex",
-            justifyContent: "flex-end",
             paddingTop: "4px",
             visibility: data.showQr ? "visible" : "hidden",
           }}
@@ -843,11 +264,8 @@ export function CustomLargeReportCard({
         </div>
       </div>
 
-      {/* Sections are separated by whitespace alone. */}
-      <div style={{ height: "15px" }} />
-
       {/* ── DETAILS ── */}
-      <div style={{ position: "relative", zIndex: 2 }}>
+      <div style={{ position: "relative", zIndex: 2, marginTop: "56px" }}>
         <SectionTitle
           value={data.detailsHeading}
           onChange={(detailsHeading) => onChange({ detailsHeading })}
@@ -855,37 +273,12 @@ export function CustomLargeReportCard({
           fontSize={headingSize}
         />
         <div style={{ display: "flex", gap: "40px", marginTop: "10px" }}>
-          {/* Left: identity and size, then the cut */}
-          <div style={{ ...column, flex: 1 }}>
-            {rowsOf("detailRows")}
-            <div style={{ height: "8px" }} />
-            {rowsOf("cutRows")}
-          </div>
-
-          {/* Right: colour breakdown */}
-          <div style={{ ...column, flex: 1 }}>
-            {rowsOf("colourRows")}
-            <GradeRow
-              label={data.toneLabel}
-              value={data.tone}
-              size={LABEL_SIZE}
-              editable={editable}
-              onLabelChange={(toneLabel) => onChange({ toneLabel })}
-              onValueChange={(tone) => onChange({ tone })}
-            />
-            <GradeRow
-              label={data.saturationLabel}
-              value={data.saturation}
-              size={LABEL_SIZE}
-              editable={editable}
-              onLabelChange={(saturationLabel) => onChange({ saturationLabel })}
-              onValueChange={(saturation) => onChange({ saturation })}
-            />
-          </div>
+          {/* Left: identity and size */}
+          <div style={{ ...column, flex: 1 }}>{rowsOf("detailRows")}</div>
+          {/* Right: shape and cut */}
+          <div style={{ ...column, flex: 1 }}>{rowsOf("cutRows")}</div>
         </div>
       </div>
-
-      <div style={{ height: "29px", marginTop: "35px" }} />
 
       {/* ── RESULTS + TREATMENT ── */}
       <div
@@ -893,6 +286,7 @@ export function CustomLargeReportCard({
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: "0 40px",
+          marginTop: "110px",
           position: "relative",
           zIndex: 2,
         }}
@@ -914,39 +308,19 @@ export function CustomLargeReportCard({
             editable={editable}
             fontSize={headingSize}
           />
-
-          {/* Always printed: on a certificate an unticked row is itself a statement. A
-              stone assessed for nothing prints an empty grid, which reads as "not
-              examined" rather than as a clean bill. */}
-          <div style={{ marginTop: "9px" }}>
-            {TREATMENT_SECTIONS.map((section, i) => (
-              <div key={section.title} style={{ marginTop: i === 0 ? 0 : "5px" }}>
-                <p
-                  style={{
-                    ...COURIER,
-                    fontSize: `${size("treatments")}px`,
-                    fontWeight: 900,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.4px",
-                    lineHeight: 1.8,
-                    margin: "0 0 2px",
-                  }}
-                >
-                  {section.title}
-                </p>
-                {section.items.map((item) => (
-                  <TreatmentRow
-                    key={item.key}
-                    label={item.label}
-                    value={data.treatments[item.key]}
-                    size={size("treatments")}
-                    editable={editable}
-                    onChange={(answer) => setTreatment(item.key, answer)}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
+          <EditableOverlay
+            value={data.treatment}
+            onChange={(treatment) => onChange({ treatment })}
+            editable={editable}
+            multiline
+            title='Click to edit the treatment finding'
+            style={{ marginTop: "10px" }}
+            editorStyle={{ ...prose, fontSize: `${size("treatments")}px` }}
+          >
+            <p style={{ ...prose, fontSize: `${size("treatments")}px` }}>
+              {data.treatment || " "}
+            </p>
+          </EditableOverlay>
 
           {data.showSpecialNote && (
             <>
@@ -966,57 +340,61 @@ export function CustomLargeReportCard({
                 style={{ marginTop: "8px" }}
                 editorStyle={{ ...prose, fontSize: `${size("specialNote")}px` }}
               >
-                <p style={{ ...prose, fontSize: `${size("specialNote")}px` }}>{data.specialNote || "\u00a0"}</p>
+                <p style={{ ...prose, fontSize: `${size("specialNote")}px` }}>
+                  {data.specialNote || " "}
+                </p>
               </EditableOverlay>
             </>
           )}
         </div>
       </div>
 
-      {/* ── CLARITY CHART + STATEMENT ── */}
+      {/* ── CLARITY CHART + STATEMENT. Each keeps its own column when the other is
+          switched off, so the statement never slides under the results. ── */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: "0 40px",
-          alignItems: "stretch",
-          marginTop: "20px",
+          alignItems: "start",
+          marginTop: "44px",
           position: "relative",
           zIndex: 2,
         }}
       >
-        {data.showClarityChart && (
-          <Panel
-            heading={
-              <SectionTitle
+        <div>
+          {data.showClarityChart && (
+            <>
+              <EditableOverlay
                 value={data.clarityHeading}
                 onChange={(clarityHeading) => onChange({ clarityHeading })}
                 editable={editable}
-                fontSize={panelHeadingSize}
-                style={{ paddingBottom: 0 }}
-              />
-            }
-          >
-            <ClarityChart
-              grade={data.clarityGrade}
-              editable={editable}
-              onChange={(clarityGrade) => onChange({ clarityGrade })}
-            />
-          </Panel>
-        )}
-
-        {data.showStatement && (
-          <Panel
-            heading={
-              <SectionTitle
-                value={data.statementHeading}
-                onChange={(statementHeading) => onChange({ statementHeading })}
+                title='Click to rename the clarity chart'
+                style={{ marginBottom: "3px" }}
+                editorStyle={{ fontFamily: "Arial, sans-serif", fontSize: "7.5px" }}
+              >
+                <p
+                  style={{
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: "7.5px",
+                    color: "#111",
+                    margin: 0,
+                  }}
+                >
+                  {data.clarityHeading || " "}
+                </p>
+              </EditableOverlay>
+              <ClarityChart
+                grade={data.clarityGrade}
                 editable={editable}
-                fontSize={panelHeadingSize}
-                style={{ paddingBottom: 0 }}
+                onChange={(clarityGrade) => onChange({ clarityGrade })}
               />
-            }
-          >
+            </>
+          )}
+        </div>
+
+        <div>
+          {data.showStatement && (
             <EditableOverlay
               value={data.statement}
               onChange={(statement) => onChange({ statement })}
@@ -1026,11 +404,11 @@ export function CustomLargeReportCard({
               editorStyle={{ ...prose, fontSize: `${size("statement")}px`, lineHeight: 1.6 }}
             >
               <p style={{ ...prose, fontSize: `${size("statement")}px`, lineHeight: 1.6 }}>
-                {data.statement || "\u00a0"}
+                {data.statement || " "}
               </p>
             </EditableOverlay>
-          </Panel>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ── GEM IMAGE + SIGNATURES ── */}
@@ -1111,7 +489,7 @@ export function CustomLargeReportCard({
                     textAlign: "center",
                   }}
                 >
-                  {data.imageCaption || "\u00a0"}
+                  {data.imageCaption || " "}
                 </p>
               </EditableOverlay>
             </>
@@ -1141,7 +519,7 @@ export function CustomLargeReportCard({
                   margin: 0,
                 }}
               >
-                {data.heatLine || "\u00a0"}
+                {data.heatLine || " "}
               </p>
             </EditableOverlay>
           )}
@@ -1152,13 +530,14 @@ export function CustomLargeReportCard({
             onChange={(name) => onChange({ gemName: name })}
             editable={editable}
             title='Click to edit the variety'
-            style={{ marginTop: "6px" }}
+            style={{ marginTop: "12px" }}
             editorStyle={{
               ...COURIER,
               fontSize: `${gemName.fontSize}px`,
               fontWeight: 900,
-              color: GOLD,
+              color: NAME_COLOR,
               letterSpacing: "0.5px",
+              textTransform: "uppercase",
               ...CENTRED_EDITOR,
             }}
           >
@@ -1168,8 +547,10 @@ export function CustomLargeReportCard({
                 fontSize: `${gemName.fontSize}px`,
                 fontWeight: 900,
                 lineHeight: gemName.lines.length > 1 ? 1.15 : undefined,
-                color: GOLD,
+                color: NAME_COLOR,
                 letterSpacing: "0.5px",
+                textTransform: "uppercase",
+                textAlign: "center",
                 margin: 0,
               }}
             >
@@ -1189,23 +570,10 @@ export function CustomLargeReportCard({
             editable={editable}
             title='Click to edit the weight'
             style={{ marginTop: "3px" }}
-            editorStyle={{
-              ...COURIER,
-              fontSize: `${size("weightLine")}px`,
-              fontWeight: 600,
-              ...CENTRED_EDITOR,
-            }}
+            editorStyle={{ ...COURIER, fontSize: `${size("weightLine")}px`, ...CENTRED_EDITOR }}
           >
-            <p
-              style={{
-                ...COURIER,
-                fontSize: `${size("weightLine")}px`,
-                fontWeight: 600,
-                color: "#444",
-                margin: 0,
-              }}
-            >
-              {data.weightLine || "\u00a0"}
+            <p style={{ ...COURIER, fontSize: `${size("weightLine")}px`, color: "#444", margin: 0 }}>
+              {data.weightLine || " "}
             </p>
           </EditableOverlay>
         </div>
@@ -1271,7 +639,7 @@ export function CustomLargeReportCard({
             textAlign: "end",
           }}
         >
-          {data.termsLine || "\u00a0"}
+          {data.termsLine || " "}
         </p>
       </EditableOverlay>
     </div>

@@ -29,6 +29,7 @@ interface Report {
   customCard?: unknown
   customMediumCard?: unknown
   customLargeCard?: unknown
+  customStandardLargeCard?: unknown
 }
 
 interface ReportsTableProps {
@@ -102,7 +103,8 @@ export function ReportsTable({
             <span className='capitalize'>{info.getValue()}</span>
             {info.row.original.customCard ||
             info.row.original.customMediumCard ||
-            info.row.original.customLargeCard ? (
+            info.row.original.customLargeCard ||
+            info.row.original.customStandardLargeCard ? (
               <Badge className='bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0 hover:bg-amber-100'>
                 Custom
               </Badge>

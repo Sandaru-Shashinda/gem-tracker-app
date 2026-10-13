@@ -10,7 +10,9 @@ import type { GemCropMeta } from "./gem-crop"
  */
 
 export const PX_PER_MM = {
-  /** LargeReportPreview A4_W = 794px across A4's 210mm. */
+  /** PremiumReportPreview A4_W = 794px across A4's 210mm. */
+  premium: 794 / 210,
+  /** LargeReportPreview shares that A4 canvas. */
   large: 794 / 210,
   /** MediumReportPreview inner canvas is 1120px across A5 landscape's 210mm. */
   medium: 1120 / 210,

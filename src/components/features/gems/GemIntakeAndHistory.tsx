@@ -461,7 +461,7 @@ export function GemIntakeAndHistory({
                       </div>
                     </div>
 
-                    {/* Colour Profile - hue / tone / saturation, as printed on the large
+                    {/* Colour Profile - hue / tone / saturation, as printed on the premium
                         report */}
                     <div className='grid grid-cols-2 gap-3'>
                       <div className='col-span-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
@@ -790,7 +790,7 @@ export function GemIntakeAndHistory({
                       </div>
                     </div>
 
-                    {/* Colour Profile - hue / tone / saturation, as printed on the large
+                    {/* Colour Profile - hue / tone / saturation, as printed on the premium
                         report */}
                     <div className='grid grid-cols-2 gap-3'>
                       <div className='col-span-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100'>
@@ -1114,7 +1114,7 @@ export function GemIntakeAndHistory({
  *
  * Only answered treatments are listed — a tester who assessed two treatments should not
  * push the rest of the stage card off-screen behind eight "not assessed" rows. The full
- * grid, unanswered rows included, is shown on the approval record and the large report.
+ * grid, unanswered rows included, is shown on the approval record and the premium report.
  */
 function StageTreatments({ treatments }: { treatments?: ObservationData["treatments"] }) {
   const values = normalizeTreatments(treatments)

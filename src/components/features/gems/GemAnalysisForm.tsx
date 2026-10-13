@@ -95,7 +95,7 @@ export function GemAnalysisForm({ form, fields, disabled }: GemAnalysisFormProps
         {field(fields.weight)}
       </Section>
 
-      {/* 3. Colour, and the breakdown printed on the large report */}
+      {/* 3. Colour, and the breakdown printed on the premium report */}
       <Section title='Colour' tone='amber'>
         {field(fields.colour)}
         {field(fields.hue)}

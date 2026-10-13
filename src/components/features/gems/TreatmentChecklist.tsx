@@ -29,7 +29,7 @@ interface TreatmentChecklistProps {
  *
  * Neither box ticked means the treatment was not assessed — that is the initial state
  * and it stays reachable, because clicking the ticked box clears the answer again. The
- * large report distinguishes the three states, so the form has to be able to produce
+ * premium report distinguishes the three states, so the form has to be able to produce
  * all three.
  */
 export function TreatmentChecklist({ control, setValue, disabled }: TreatmentChecklistProps) {

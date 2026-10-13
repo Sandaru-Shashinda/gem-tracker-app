@@ -1,9 +1,10 @@
 import { API_BASE_URL, fetchWithAuth } from "./config"
+import type { CustomReportSize } from "@/lib/types"
 
 export const reportsApi = {
   generateReport: async (
     gemId: string,
-    config: { size: "small" | "medium" | "large"; includeLogo: boolean },
+    config: { size: "small" | "medium" | "large" | "premium"; includeLogo: boolean },
   ): Promise<{ reportUrl: string; qrCode: string }> => {
     const response = await fetchWithAuth(`${API_BASE_URL}/reports/${gemId}/generate`, {
       method: "POST",
@@ -57,7 +58,7 @@ export const reportsApi = {
   saveCustomCard: async (
     id: string,
     customCard: unknown | null,
-    reportSize: "small" | "medium" | "large" = "small",
+    reportSize: CustomReportSize = "small",
   ): Promise<unknown> => {
     const response = await fetchWithAuth(`${API_BASE_URL}/reports/${id}/custom-card`, {
       method: "PUT",

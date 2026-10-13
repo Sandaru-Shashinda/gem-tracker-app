@@ -1,5 +1,5 @@
 /**
- * The treatment checklist assessed at every test stage and printed on the large report.
+ * The treatment checklist assessed at every test stage and printed on the premium report.
  *
  * Each treatment is answered "Yes" or "No"; an empty string means the lab has not
  * assessed it, which is why the answer is a tri-state string rather than a boolean —
@@ -92,4 +92,38 @@ export function normalizeTreatments(raw: unknown): TreatmentValues {
 export function hasAnyTreatment(treatments?: Partial<TreatmentValues> | null): boolean {
   if (!treatments) return false
   return TREATMENT_KEYS.some((k) => treatments[k] === "Yes" || treatments[k] === "No")
+}
+
+/**
+ * The treatment finding as sentences — what the large report prints under TREATMENT in
+ * place of the premium report's checklist.
+ *
+ * The tester's own treatment note is the lab's wording and is printed as written. Without
+ * one, the finding is read off the record: each treatment the checklist answers "Yes",
+ * then the heat flag for stones recorded before the checklist existed. A stone with
+ * nothing recorded prints nothing — a blank is not a claim that it is untreated.
+ */
+export function treatmentStatement(obs: {
+  treatment?: string
+  treatments?: Partial<TreatmentValues>
+  showHeatInReport?: boolean
+  isHeated?: boolean
+}): string[] {
+  const note = obs.treatment?.trim()
+  if (note) return [note]
+
+  const treatments = normalizeTreatments(obs.treatments)
+  const found = TREATMENT_KEYS.filter((key) => treatments[key] === "Yes").map(
+    (key) => `Indications of ${TREATMENT_LABELS[key].toLowerCase()} observed.`,
+  )
+  if (found.length) return found
+
+  if (obs.showHeatInReport) {
+    return [
+      obs.isHeated
+        ? "Indications of heat treatment observed."
+        : "No indications of heat treatment observed.",
+    ]
+  }
+  return []
 }

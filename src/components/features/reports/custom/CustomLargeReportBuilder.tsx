@@ -27,7 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { EDITABLE_FIELD_STYLES } from "./EditableField"
-import { A4_H, A4_W, CustomLargeReportCard } from "./CustomLargeReportCard"
+import { CustomLargeReportCard } from "./CustomLargeReportCard"
+import { A4_H, A4_W } from "./CustomPremiumReportCard"
 import { OverflowWarning } from "./OverflowWarning"
 import { RowList } from "./RowList"
 import { useCardExport } from "./useCardExport"
@@ -35,12 +36,11 @@ import { usePageOverflow } from "./usePageOverflow"
 import { LayoutPanel } from "./LayoutPanel"
 
 /**
- * The custom A4 report: one gem, one editable copy of the full certificate.
+ * The custom large report: one gem, one editable copy of the standard A4.
  *
- * The document starts as the gem's own report — the same rows, the same words, the same
- * ticks on the checklist — and every change made from there is somebody's deliberate
- * departure from it. Saving stores it on the report and nowhere else: the gem's own
- * record is never touched.
+ * The document starts as the gem's own report, the same rows and the same words, and
+ * every change made from there is somebody's deliberate departure from it. Saving stores
+ * it on the report and nowhere else: the gem's own record is never touched.
  *
  * The page is drawn twice, as every report preview here is: the screen copy inside a
  * scale transform, carrying the editors, and an off-screen copy at natural size with no
@@ -50,30 +50,20 @@ import { LayoutPanel } from "./LayoutPanel"
 /**
  * Ceilings on each block, not a guarantee that the page fits.
  *
- * Measured on the sheet: the standard A4 leaves 48px free, a left-hand detail row costs
- * 20px, and the colour and results blocks grow into room their neighbour already takes
- * — colour for three rows, results for about as many as the treatment column is taller
- * than them. So each block has its own ceiling rather than one number across the page.
- *
- * But the A4 also carries two blocks of free prose, the special note and the statement,
- * and a three-line special note alone costs 95px — twice the free space. No row limit
- * can make that fit, so these only stop the absurd, and the page itself is measured
+ * The sheet has room to spare, but it also carries free prose (the treatment finding, the
+ * special note and the statement) that takes whatever length it is given. No row limit
+ * can promise a fit, so these only stop the absurd, and the page itself is measured
  * after every edit (see usePageOverflow) to say when it no longer fits.
  */
 const ROW_LIMITS: Record<LargeRowList, number> = {
-  detailRows: 5,
-  cutRows: 5,
-  colourRows: 4,
+  detailRows: 8,
+  cutRows: 8,
   resultRows: 12,
 }
-
-/** The left details column prints both groups, so they share one allowance. */
-const MAX_LEFT_DETAIL_ROWS = 8
 
 const LIST_HEADINGS: Record<LargeRowList, string> = {
   detailRows: "Details",
   cutRows: "Shape & cut",
-  colourRows: "Colour",
   resultRows: "Results",
 }
 
@@ -148,10 +138,8 @@ export function CustomLargeReportBuilder({
 
   const patch = (next: Partial<CustomLargeReport>) => setData((prev) => ({ ...prev, ...next }))
 
-  const leftDetailRows = data.detailRows.length + data.cutRows.length
   const isFull = (list: LargeRowList) =>
-    data[list].length >= ROW_LIMITS[list] ||
-    ((list === "detailRows" || list === "cutRows") && leftDetailRows >= MAX_LEFT_DETAIL_ROWS)
+    data[list].length >= ROW_LIMITS[list]
 
   const addRow = (list: LargeRowList, label: string) => {
     if (isFull(list)) return
@@ -229,7 +217,7 @@ export function CustomLargeReportBuilder({
     { key: "showSignatureImage", label: "Authorized signature" },
   ]
 
-  const lists: LargeRowList[] = ["detailRows", "cutRows", "colourRows", "resultRows"]
+  const lists: LargeRowList[] = ["detailRows", "cutRows", "resultRows"]
 
   return (
     <div className='grid grid-cols-1 gap-6 xl:grid-cols-3'>
@@ -268,8 +256,8 @@ export function CustomLargeReportBuilder({
 
           <div className='mt-4 flex w-full flex-wrap items-center justify-end gap-2'>
             <span className='mr-auto text-[10px] text-slate-400'>
-              Click any label, value or heading to edit it. Tick a box to mark a grade or a
-              treatment; tick it again to clear it.
+              Click any label, value or heading to edit it. Click a clarity grade to mark it;
+              click it again to clear it.
             </span>
             {onClear && (
               <Button
@@ -344,7 +332,7 @@ export function CustomLargeReportBuilder({
                   ? "Unsaved changes. Save the report to make it this report's certificate — it is what the QR code and the reports list will show."
                   : onClear
                     ? "Saved on this report. The QR code and the reports list show this page."
-                    : "Not customised yet — this report still prints the standard A4. Save to change that."}
+                    : "Not customised yet — this report still prints the standard large report. Save to change that."}
               </p>
             )}
             {saveError && <p className='text-[10px] text-red-600'>{saveError}</p>}

@@ -196,6 +196,7 @@ export function ReportsPage() {
                 <SelectItem value='small'>Small</SelectItem>
                 <SelectItem value='medium'>Medium</SelectItem>
                 <SelectItem value='large'>Large</SelectItem>
+                <SelectItem value='premium'>Premium</SelectItem>
                 <SelectItem value='verbal'>Verbal</SelectItem>
               </SelectContent>
             </Select>

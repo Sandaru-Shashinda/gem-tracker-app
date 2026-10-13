@@ -8,11 +8,12 @@ import {
   type StoredCustomLargeReport,
 } from "@/lib/custom-report"
 import { DEFAULT_SIGNATORY_NAME } from "@/lib/report-signature"
-import { A4_H, A4_W, CustomLargeReportCard } from "./CustomLargeReportCard"
+import { CustomLargeReportCard } from "./CustomLargeReportCard"
+import { A4_H, A4_W } from "./CustomPremiumReportCard"
 import { useCardExport } from "./useCardExport"
 
 /**
- * A saved custom A4 report, as everyone else sees it.
+ * A saved custom large report, as everyone else sees it.
  *
  * This is what the verification page draws when a large report carries a customisation
  * — the same component the builder writes into, with nothing editable on it. A customer

@@ -1,7 +1,7 @@
 import defaultSignatureImg from "@/assets/default-signatory-signature.png"
 
 /**
- * The medium and large reports carry two signature fields. The right-hand one is the
+ * The medium, large and premium reports carry two signature fields. The right-hand one is the
  * scanned authorized signature and is fixed; the left-hand one is signed by hand, so
  * only the typed name printed beneath its rule is configurable — it is chosen from the
  * testers in the Report Configuration page and stored on the report as `signedBy`.

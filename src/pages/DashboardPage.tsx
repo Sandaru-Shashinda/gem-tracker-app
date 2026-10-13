@@ -78,6 +78,7 @@ const REPORT_SIZES = [
   { key: "small", label: "Small" },
   { key: "medium", label: "Medium" },
   { key: "large", label: "Large" },
+  { key: "premium", label: "Premium" },
 ] as const
 
 const bySize = (counts: DashboardStats["reportTypesDone"]) =>

@@ -20,6 +20,7 @@ import { reportsApi } from "@/lib/api/reports"
 import { usersApi } from "@/lib/api/users"
 import {
   type Gem,
+  type ReportType,
   type User,
   GEM_STATUSES,
   REPORT_MODES,
@@ -32,6 +33,7 @@ import {
   type ReportSignatory,
 } from "@/lib/report-signature"
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
+import { PremiumReportPreview } from "@/components/features/reports/PremiumReportPreview"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { SmallReportPreview } from "@/components/features/reports/SmallReportPreview"
 import { VerbalReportPreview } from "@/components/features/reports/VerbalReportPreview"
@@ -61,7 +63,7 @@ export function ReportConfigurationPage() {
   const [report, setReport] = useState<Report | null>(null)
   const [gem, setGem] = useState<Gem | null>(null)
 
-  const [size, setSize] = useState<"small" | "medium" | "large" | "verbal">("medium")
+  const [size, setSize] = useState<ReportType>("medium")
   const [includeLogo, setIncludeLogo] = useState(true)
   const [testers, setTesters] = useState<User[]>([])
   const [signedById, setSignedById] = useState("")
@@ -91,7 +93,7 @@ export function ReportConfigurationPage() {
         }
 
         setReport(reportData)
-        if (reportData?.reportType) setSize(reportData.reportType as "small" | "medium" | "large" | "verbal")
+        if (reportData?.reportType) setSize(reportData.reportType as ReportType)
         if (reportData?.isClientDataAdd !== undefined) setIncludeLogo(reportData.isClientDataAdd)
         // signedBy arrives populated from the API; older reports have none.
         const signatory = reportData?.signedBy
@@ -327,7 +329,7 @@ export function ReportConfigurationPage() {
    */
   const isCustomMode = currentGem?.reportMode === REPORT_MODES.CUSTOM
   /** The sizes a one-off can be written at. Only the verbal report has no custom editor. */
-  const customisableSize = size === "small" || size === "medium" || size === "large"
+  const customisableSize = size !== "verbal"
 
   if (isCustomMode && report?._id) {
     return <Navigate to={`/reports/${report._id}/custom`} replace />
@@ -381,7 +383,7 @@ export function ReportConfigurationPage() {
                   <Label>Paper Size</Label>
                   <RadioGroup
                     value={size}
-                    onValueChange={(val: "small" | "medium" | "large" | "verbal") => setSize(val)}
+                    onValueChange={(val: ReportType) => setSize(val)}
                     className='grid grid-cols-1 gap-3'
                   >
                     <div className='flex items-center space-x-2 border p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors'>
@@ -403,7 +405,14 @@ export function ReportConfigurationPage() {
                     <div className='flex items-center space-x-2 border p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors'>
                       <RadioGroupItem value='large' id='r-large' />
                       <Label htmlFor='r-large' className='flex-1 cursor-pointer'>
-                        <span className='font-semibold block'>Large (A4 Booklet)</span>
+                        <span className='font-semibold block'>Large (A4)</span>
+                        <span className='text-xs text-slate-500'>Full-page report</span>
+                      </Label>
+                    </div>
+                    <div className='flex items-center space-x-2 border p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors'>
+                      <RadioGroupItem value='premium' id='r-premium' />
+                      <Label htmlFor='r-premium' className='flex-1 cursor-pointer'>
+                        <span className='font-semibold block'>Premium (A4 Booklet)</span>
                         <span className='text-xs text-slate-500'>Detailed folded report</span>
                       </Label>
                     </div>
@@ -417,8 +426,8 @@ export function ReportConfigurationPage() {
                   </RadioGroup>
                 </div>
 
-                {/* Only the medium and large layouts print a typed signature field. */}
-                {(size === "medium" || size === "large") && (
+                {/* Only the medium and the two A4 layouts print a typed signature field. */}
+                {(size === "medium" || size === "large" || size === "premium") && (
                   <div className='space-y-3'>
                     <Label htmlFor='signed-by'>{SIGNATORY_ROLE}</Label>
                     <Select value={signedById || undefined} onValueChange={setSignedById}>
@@ -509,10 +518,17 @@ export function ReportConfigurationPage() {
                         origin-top transform transition-all p-8 flex justify-center
                         ${size === "small" ? "scale-90 w-full max-w-[800px] mx-auto my-4" : ""}
                         ${size === "medium" ? "w-full" : ""}
-                        ${size === "large" ? "w-full" : ""}
+                        ${size === "large" || size === "premium" ? "w-full" : ""}
                     `}
                 >
-                  {size === "large" ? (
+                  {size === "premium" ? (
+                    <PremiumReportPreview
+                      gem={currentGem}
+                      includeLogo={includeLogo}
+                      reportId={report?._id}
+                      signatureName={signatureName}
+                    />
+                  ) : size === "large" ? (
                     <LargeReportPreview
                       gem={currentGem}
                       includeLogo={includeLogo}

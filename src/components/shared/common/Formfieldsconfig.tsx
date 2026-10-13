@@ -320,7 +320,7 @@ export function getFormFieldsConfig({
       className: "",
     },
     // Tick-boxes rather than dropdowns: three steps is short enough to show in full,
-    // and it mirrors the ticked row the large report prints.
+    // and it mirrors the ticked row the premium report prints.
     tone: {
       name: "tone",
       label: "Tone",

@@ -69,25 +69,26 @@ export const REPORT_MODES = {
 export type ReportMode = (typeof REPORT_MODES)[keyof typeof REPORT_MODES]
 
 /**
- * The sizes a custom certificate can be written at — the two that have an editor.
+ * The sizes a custom certificate can be written at — every one that has an editor.
  *
  * Chosen at intake and stored in the gem's own reportTypes, so a custom job carries its
  * size the same way a standard one carries the sizes it asked for, and the report is
  * raised at that size without anybody having to configure it afterwards.
  */
-export const CUSTOM_REPORT_SIZES = ["small", "medium", "large"] as const
+export const CUSTOM_REPORT_SIZES = ["small", "medium", "large", "premium"] as const
 
 export type CustomReportSize = (typeof CUSTOM_REPORT_SIZES)[number]
 
 /**
  * What each custom size is called wherever a badge or a heading names it — the same
- * Small / Medium / Large a standard report goes by, so the two kinds read alike in
+ * Small / Medium / Large / Premium a standard report goes by, so the two kinds read alike in
  * every list and count. The paper each one is (card, A5, A4) is told in its hint.
  */
 export const CUSTOM_SIZE_LABELS: Record<CustomReportSize, string> = {
   small: "Small",
   medium: "Medium",
   large: "Large",
+  premium: "Premium",
 }
 
 /** The badge label for a custom job's size, read off its reportTypes or its report. */
@@ -123,7 +124,7 @@ export interface ObservationData {
   /** Per-treatment "Yes" | "No" checklist; "" / missing means not assessed. */
   treatments?: Partial<TreatmentValues>
   colour?: string
-  // Colour breakdown printed in the large report's DETAILS block. Tone and
+  // Colour breakdown printed in the premium report's DETAILS block. Tone and
   // saturation are graded Low | Medium | High and print as ticked boxes.
   hue?: string
   tone?: string
@@ -227,7 +228,7 @@ export interface Gem {
   }
 }
 
-export type ReportType = "small" | "medium" | "large" | "verbal"
+export type ReportType = "small" | "medium" | "large" | "premium" | "verbal"
 
 /** Lab-wide figures for the dashboard, aggregated by the API over every gem. */
 export interface DashboardStats {

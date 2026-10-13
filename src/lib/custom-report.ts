@@ -15,7 +15,7 @@
  */
 import type { Gem } from "./types"
 import { SIGNATORY_ROLE } from "./report-signature"
-import { normalizeTreatments, type TreatmentValues } from "./treatments"
+import { normalizeTreatments, treatmentStatement, type TreatmentValues } from "./treatments"
 
 export interface CustomReportRow {
   /** Stable across edits and reorders, so React keeps the right editor with the right row. */
@@ -113,7 +113,7 @@ export const MEDIUM_FONT_FIELDS: readonly FontField[] = [
   { key: "termsLine", label: "Footer line", size: 10 },
 ]
 
-export const LARGE_FONT_FIELDS: readonly FontField[] = [
+export const PREMIUM_FONT_FIELDS: readonly FontField[] = [
   { key: "title", label: "Title", size: 18 },
   { key: "reportNumberLine", label: "Report number", size: 12 },
   { key: "dateLine", label: "Date", size: 12 },
@@ -498,12 +498,12 @@ export function fromStoredCustomMediumReport(
   }
 }
 
-/* ────────────────────────────── LARGE (A4) ────────────────────────────── */
+/* ───────────────────────────── PREMIUM (A4) ───────────────────────────── */
 
 /**
- * The document a custom A4 report is drawn from.
+ * The document a custom premium A4 report is drawn from.
  *
- * The A4 is the lab's full certificate, and it carries structure the two smaller sheets
+ * The premium A4 is the lab's full certificate, and it carries structure the two smaller sheets
  * do not: a colour breakdown with graded boxes, a treatment checklist, a clarity chart
  * and a statement panel alongside the rows. The rows are free text as on the others.
  * The structured parts are not — their scales and the treatment list are the lab's
@@ -511,7 +511,7 @@ export function fromStoredCustomMediumReport(
  * them is the answer each one records: which grade box is ticked, which treatments are
  * Yes or No, which clarity grade is marked.
  */
-export interface CustomLargeReport extends CustomLayout {
+export interface CustomPremiumReport extends CustomLayout {
   // Header
   title: string
   reportNumberLine: string
@@ -578,7 +578,7 @@ export interface CustomLargeReport extends CustomLayout {
 export const COLOUR_GRADE_STEPS = ["Low", "Medium", "High"] as const
 
 /** Labels offered when adding a row to an A4 report. */
-export const CUSTOM_LARGE_FIELD_PRESETS = [
+export const CUSTOM_PREMIUM_FIELD_PRESETS = [
   "Item Description",
   "Weight",
   "Measurements",
@@ -598,14 +598,14 @@ export const CUSTOM_LARGE_FIELD_PRESETS = [
 ] as const
 
 /** The statement every standard A4 prints. */
-export const LARGE_STATEMENT_TEXT =
+export const PREMIUM_STATEMENT_TEXT =
   "The geographic origin and color description are an expert opinion based on a collection of observation and analytical data."
 
 /**
  * The top clarity grade was recorded as "Exc" before the scale was renamed FL
  * (Flawless). Records still hold that value, and it has to keep marking the same cell.
  */
-function normaliseLargeClarity(grade: string | undefined): string {
+function normaliseA4Clarity(grade: string | undefined): string {
   const raw = (grade || "").replace(/[\s()]/g, "").toUpperCase()
   return raw === "EXC" ? "FL" : raw
 }
@@ -613,16 +613,16 @@ function normaliseLargeClarity(grade: string | undefined): string {
 /**
  * The gem, laid out exactly as the standard A4 prints it.
  *
- * Kept deliberately in step with LargeReportPreview: its rows, its long-form US date,
+ * Kept deliberately in step with PremiumReportPreview: its rows, its long-form US date,
  * the "One loose stone" it prints for a blank description, and the heat line it shows
  * only for an unheated stone. A custom report that opened on anything else would make
  * every difference between the two look like an edit somebody made on purpose.
  */
-export function buildCustomLargeReport(
+export function buildCustomPremiumReport(
   gem: Gem,
   verificationUrl: string,
   signatoryName: string,
-): CustomLargeReport {
+): CustomPremiumReport {
   const finalData = gem.finalApproval || {}
   const obs = finalData.finalObservations || {}
 
@@ -682,10 +682,10 @@ export function buildCustomLargeReport(
     showSpecialNote: Boolean(obs.specialNote),
 
     clarityHeading: "CLARITY CHART",
-    clarityGrade: normaliseLargeClarity(obs.clarityGrade),
+    clarityGrade: normaliseA4Clarity(obs.clarityGrade),
     showClarityChart: true,
     statementHeading: "STATEMENT",
-    statement: LARGE_STATEMENT_TEXT,
+    statement: PREMIUM_STATEMENT_TEXT,
     showStatement: true,
 
     showGemImage: true,
@@ -707,10 +707,242 @@ export function buildCustomLargeReport(
 }
 
 /** The four row lists an A4 carries. */
-export type LargeRowList = "detailRows" | "cutRows" | "colourRows" | "resultRows"
-const LARGE_ROW_LISTS: LargeRowList[] = ["detailRows", "cutRows", "colourRows", "resultRows"]
+export type PremiumRowList = "detailRows" | "cutRows" | "colourRows" | "resultRows"
+const PREMIUM_ROW_LISTS: PremiumRowList[] = ["detailRows", "cutRows", "colourRows", "resultRows"]
 
 /** The A4 report as the API stores it: same document, rows stripped of their React keys. */
+export type StoredCustomPremiumReport = Omit<CustomPremiumReport, PremiumRowList> &
+  Record<PremiumRowList, StoredRow[]>
+
+export function toStoredCustomPremiumReport(data: CustomPremiumReport): StoredCustomPremiumReport {
+  const stored = { ...data } as unknown as StoredCustomPremiumReport
+  for (const list of PREMIUM_ROW_LISTS) {
+    stored[list] = data[list].map(toStoredRow)
+  }
+  return stored
+}
+
+export function fromStoredCustomPremiumReport(
+  stored: Partial<StoredCustomPremiumReport> | null | undefined,
+  fallback: CustomPremiumReport,
+): CustomPremiumReport {
+  if (!stored) return fallback
+
+  const present = Object.fromEntries(
+    Object.entries(stored).filter(
+      ([key, value]) =>
+        value !== undefined && value !== null && !PREMIUM_ROW_LISTS.includes(key as PremiumRowList),
+    ),
+  )
+  const revive = (list: Array<{ label?: string; value?: string }> | undefined) =>
+    Array.isArray(list) ? list.map(fromStoredRow) : null
+
+  const result = { ...fallback, ...present } as CustomPremiumReport
+  for (const list of PREMIUM_ROW_LISTS) {
+    result[list] = revive(stored[list]) ?? fallback[list]
+  }
+  // A stored checklist from before a treatment was added is missing that key; the
+  // normaliser fills it rather than letting it print as neither answer nor blank.
+  result.treatments = normalizeTreatments(stored.treatments ?? fallback.treatments)
+  return result
+}
+
+/* ────────────────────────────── LARGE (A4) ────────────────────────────── */
+
+/**
+ * The document a custom large report is drawn from.
+ *
+ * The large report is the premium A4 pared back: the same header, rows, clarity chart and
+ * signatures, without the colour breakdown, and with the treatment finding written as a
+ * sentence instead of answered on a checklist. So everything here is free text except the
+ * clarity chart, which — as on the other sheets — stores only which grade is marked.
+ */
+export interface CustomLargeReport extends CustomLayout {
+  // Header
+  title: string
+  reportNumberLine: string
+  dateLine: string
+  showLogo: boolean
+  showQr: boolean
+  qrValue: string
+
+  // Details: the stone and its size on the left, its shape and cut on the right.
+  detailsHeading: string
+  detailRows: CustomReportRow[]
+  cutRows: CustomReportRow[]
+
+  // Results and treatment
+  resultsHeading: string
+  resultRows: CustomReportRow[]
+  treatmentHeading: string
+  /** The finding, as prose. One sentence to a line. */
+  treatment: string
+  specialNoteHeading: string
+  specialNote: string
+  /** A switch of its own, so a note can be added to a stone the lab wrote none for. */
+  showSpecialNote: boolean
+
+  // Clarity chart and statement
+  clarityHeading: string
+  /** Key of the marked grade — FL, LC1, LC2, EC1, EC2, VI1, VI2, HI1, HI2. "" marks none. */
+  clarityGrade: string
+  showClarityChart: boolean
+  /** The whole paragraph, its "Statement:" lead-in included. */
+  statement: string
+  showStatement: boolean
+
+  // Gem image, name and signatures
+  showGemImage: boolean
+  imageCaption: string
+  heatLine: string
+  showHeatLine: boolean
+  gemName: string
+  weightLine: string
+  signatoryName: string
+  signatoryRole: string
+  signatoryCompany: string
+  showTypedSignature: boolean
+  showSignatureImage: boolean
+
+  // Page
+  termsLine: string
+  showWatermark: boolean
+}
+
+/** The large report's text elements and their template sizes. */
+export const LARGE_FONT_FIELDS: readonly FontField[] = [
+  { key: "title", label: "Title", size: 18 },
+  { key: "reportNumberLine", label: "Report number", size: 12 },
+  { key: "dateLine", label: "Date", size: 12 },
+  { key: "headings", label: "Section headings", size: 12 },
+  { key: "rows", label: "Row values", size: 11.5 },
+  { key: "treatments", label: "Treatment", size: 11.5 },
+  { key: "specialNote", label: "Special note", size: 11.5 },
+  { key: "statement", label: "Statement", size: 11.5 },
+  { key: "gemName", label: "Gem name", size: 22 },
+  { key: "weightLine", label: "Weight", size: 11 },
+  { key: "heatLine", label: "Heat line", size: 12 },
+  { key: "imageCaption", label: "Image caption", size: 9 },
+  { key: "termsLine", label: "Footer line", size: 8.5 },
+]
+
+/** Labels offered when adding a row to a large report. */
+export const CUSTOM_LARGE_FIELD_PRESETS = [
+  "Item Description",
+  "Weight",
+  "Measurements",
+  "Shape",
+  "Cutting Style: Crown",
+  "Cutting Style: Pavilion",
+  "Color",
+  "Clarity",
+  "Transparency",
+  "Species",
+  "Variety",
+  "Geographic Origin",
+  "Refractive Index",
+  "Hardness",
+  "Conclusion",
+] as const
+
+/** The statement every standard large report prints, after its "Statement:" lead-in. */
+export const LARGE_STATEMENT_TEXT =
+  "The geographic origin and color description are an expert opinion based on a collection of observations and analytical data."
+
+/**
+ * The gem, laid out exactly as the standard large report prints it.
+ *
+ * Kept deliberately in step with LargeReportPreview — its rows, its long-form US date,
+ * its treatment sentences and the heat line it shows only for an unheated stone — so a
+ * custom report opens on the real certificate and every edit is a deliberate departure.
+ */
+export function buildCustomLargeReport(
+  gem: Gem,
+  verificationUrl: string,
+  signatoryName: string,
+): CustomLargeReport {
+  const finalData = gem.finalApproval || {}
+  const obs = finalData.finalObservations || {}
+
+  const date = new Date(gem.updatedAt ?? Date.now()).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
+
+  const weight = gem.weight ? `${Number(gem.weight).toFixed(2)} ct` : ""
+  const measurements = obs.messurementX
+    ? `${Number(obs.messurementX).toFixed(2)} x ${Number(obs.messurementY).toFixed(2)} x ${Number(obs.messurementZ).toFixed(2)} mm`
+    : ""
+
+  const row = (label: string, value: unknown) =>
+    newCustomReportRow(label, value === undefined || value === null ? "" : String(value))
+
+  return {
+    ...defaultLayout(),
+    title: "Gemological Report of Ceylon",
+    reportNumberLine: `GRC Report Number – ${gem.gemId || "—"}`,
+    dateLine: date,
+    showLogo: true,
+    showQr: true,
+    qrValue: verificationUrl,
+
+    detailsHeading: "DETAILS",
+    detailRows: [
+      row("Item Description", finalData.itemDescription || obs.itemDescription || "One loose stone"),
+      row("Weight", weight),
+      row("Measurements", measurements),
+    ],
+    cutRows: [
+      row("Shape", obs.shape || obs.cuttingShape),
+      row("Cutting Style: Crown", obs.crownStyle),
+      row("Cutting Style: Pavilion", obs.pavilionStyle),
+    ],
+
+    resultsHeading: "RESULTS",
+    resultRows: [
+      row("Color", gem.color),
+      row("Clarity", obs.clarityGrade),
+      row("Transparency", obs.transparency),
+      row("Species", obs.species),
+      row("Variety", finalData.finalVariety || obs.variety),
+      row("Geographic Origin", obs.origin),
+    ],
+    treatmentHeading: "TREATMENT",
+    treatment: treatmentStatement(obs).join("\n"),
+    specialNoteHeading: "SPECIAL NOTE",
+    specialNote: obs.specialNote ?? "",
+    showSpecialNote: Boolean(obs.specialNote),
+
+    clarityHeading: "Clarity Chart",
+    clarityGrade: normaliseA4Clarity(obs.clarityGrade),
+    showClarityChart: true,
+    statement: `Statement: ${LARGE_STATEMENT_TEXT}`,
+    showStatement: true,
+
+    showGemImage: true,
+    imageCaption: "Image is approximate",
+    heatLine: "Un - Heated",
+    // The standard A4 calls out an unheated stone and leaves a heated one unsaid.
+    showHeatLine: Boolean(obs.showHeatInReport && !obs.isHeated),
+    gemName: finalData.finalVariety || obs.variety || "",
+    weightLine: weight,
+    signatoryName,
+    signatoryRole: SIGNATORY_ROLE,
+    signatoryCompany: "Gemological Report Of Ceylon (Pvt) Ltd",
+    showTypedSignature: true,
+    showSignatureImage: true,
+
+    termsLine: "For complete terms and updates, visit www.grc.lk",
+    showWatermark: true,
+  }
+}
+
+/** The three row lists a large report carries. */
+export type LargeRowList = "detailRows" | "cutRows" | "resultRows"
+const LARGE_ROW_LISTS: LargeRowList[] = ["detailRows", "cutRows", "resultRows"]
+
+/** The large report as the API stores it: same document, rows stripped of their React keys. */
 export type StoredCustomLargeReport = Omit<CustomLargeReport, LargeRowList> &
   Record<LargeRowList, StoredRow[]>
 
@@ -741,8 +973,5 @@ export function fromStoredCustomLargeReport(
   for (const list of LARGE_ROW_LISTS) {
     result[list] = revive(stored[list]) ?? fallback[list]
   }
-  // A stored checklist from before a treatment was added is missing that key; the
-  // normaliser fills it rather than letting it print as neither answer nor blank.
-  result.treatments = normalizeTreatments(stored.treatments ?? fallback.treatments)
   return result
 }

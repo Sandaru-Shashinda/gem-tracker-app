@@ -85,7 +85,7 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
               </div>
             </div>
 
-            {/* Colour breakdown — printed in the large report's DETAILS block */}
+            {/* Colour breakdown — printed in the premium report's DETAILS block */}
             <div>
               <h4 className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 border-b pb-2'>
                 Colour Profile
@@ -198,7 +198,7 @@ export function GemFinalAudit({ gem, onNavigateToReport }: GemFinalAuditProps) {
             </div>
           </div>
 
-          {/* The approved Yes/No checklist, in the same three categories the large
+          {/* The approved Yes/No checklist, in the same three categories the premium
               report prints. Unanswered treatments show a dash, not a "No". */}
           <TreatmentAudit treatments={gem.finalApproval.finalObservations?.treatments} />
         </div>

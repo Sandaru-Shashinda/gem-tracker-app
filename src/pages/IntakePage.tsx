@@ -78,11 +78,12 @@ const REPORT_STYLE_OPTIONS = [
   },
 ] as const
 
-/** The two sizes a custom certificate can be written at, and what each one is. */
+/** The sizes a custom certificate can be written at, and what each one is. */
 const CUSTOM_SIZE_OPTIONS = [
   { value: "small", title: "Small", hint: "Visa card size (85.60 x 53.98 mm)" },
   { value: "medium", title: "Medium", hint: "A5, half-page size" },
   { value: "large", title: "Large", hint: "A4, full page" },
+  { value: "premium", title: "Premium", hint: "A4, detailed report" },
 ] as const
 
 export function IntakePage() {
@@ -715,7 +716,7 @@ export function IntakePage() {
                           <RadioGroup
                             value={field.value?.[0] ?? ""}
                             onValueChange={(val) => field.onChange([val])}
-                            className='grid grid-cols-1 gap-3 sm:grid-cols-3'
+                            className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'
                           >
                             {CUSTOM_SIZE_OPTIONS.map((option) => (
                               <div
@@ -759,7 +760,7 @@ export function IntakePage() {
                       Report Types
                     </label>
                     <div className='flex flex-wrap gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100'>
-                      {["small", "medium", "large", "verbal"].map((type) => (
+                      {["small", "medium", "large", "premium", "verbal"].map((type) => (
                         <Controller
                           key={type}
                           name='reportTypes'

@@ -299,7 +299,7 @@ export function FormField({
 
       {/*
         A single-answer scale drawn as tick-boxes rather than a dropdown, so the whole
-        scale is readable at a glance and matches how the large report prints it. The
+        scale is readable at a glance and matches how the premium report prints it. The
         stored value is still one option — ticking a box replaces the current answer
         rather than adding to it.
       */}

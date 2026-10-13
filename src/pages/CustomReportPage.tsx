@@ -10,23 +10,29 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { CustomSmallReportBuilder } from "@/components/features/reports/custom/CustomSmallReportBuilder"
 import { CustomMediumReportBuilder } from "@/components/features/reports/custom/CustomMediumReportBuilder"
 import { CustomLargeReportBuilder } from "@/components/features/reports/custom/CustomLargeReportBuilder"
+import { CustomPremiumReportBuilder } from "@/components/features/reports/custom/CustomPremiumReportBuilder"
 import { ReportVideoLinkField } from "@/components/features/reports/ReportVideoLinkField"
 import { useGem } from "@/hooks/useGemStore"
 import { reportsApi } from "@/lib/api/reports"
 import {
   buildCustomLargeReport,
+  buildCustomPremiumReport,
   buildCustomMediumReport,
   buildCustomSmallReport,
   fromStoredCustomLargeReport,
+  fromStoredCustomPremiumReport,
   fromStoredCustomMediumReport,
   fromStoredCustomReport,
   toStoredCustomLargeReport,
+  toStoredCustomPremiumReport,
   toStoredCustomMediumReport,
   toStoredCustomReport,
   type CustomLargeReport,
+  type CustomPremiumReport,
   type CustomMediumReport,
   type CustomSmallReport,
   type StoredCustomLargeReport,
+  type StoredCustomPremiumReport,
   type StoredCustomMediumReport,
   type StoredCustomSmallReport,
 } from "@/lib/custom-report"
@@ -54,9 +60,10 @@ const SIZE_OPTIONS: Record<CustomReportSize, { title: string; hint: string; head
   small: { title: "Small", hint: "Card, 85.60 × 53.98 mm", heading: "Custom Small Report" },
   medium: { title: "Medium", hint: "A5, half page", heading: "Custom Medium Report" },
   large: { title: "Large", hint: "A4, full page", heading: "Custom Large Report" },
+  premium: { title: "Premium", hint: "A4, detailed report", heading: "Custom Premium Report" },
 }
 
-/** A report's size as this page reads it: any of the three, else the card. */
+/** A report's size as this page reads it: any that has an editor, else the card. */
 function toCustomSize(reportType: unknown): CustomReportSize {
   return (CUSTOM_REPORT_SIZES as readonly string[]).includes(reportType as string)
     ? (reportType as CustomReportSize)
@@ -75,6 +82,7 @@ export function CustomReportPage() {
   const [smallInitial, setSmallInitial] = useState<CustomSmallReport | null>(null)
   const [mediumInitial, setMediumInitial] = useState<CustomMediumReport | null>(null)
   const [largeInitial, setLargeInitial] = useState<CustomLargeReport | null>(null)
+  const [premiumInitial, setPremiumInitial] = useState<CustomPremiumReport | null>(null)
   // Which sizes already have wording saved against them, which is what decides whether
   // there is a customisation to remove. Tracked per size because each keeps its own.
   // Bumping the key alongside it remounts the builder on a clean document rather than
@@ -83,6 +91,7 @@ export function CustomReportPage() {
     small: false,
     medium: false,
     large: false,
+    premium: false,
   })
   const [builderKey, setBuilderKey] = useState(0)
   const [reportLabel, setReportLabel] = useState("")
@@ -127,7 +136,8 @@ export function CustomReportPage() {
         setSaved({
           small: Boolean(report?.customCard),
           medium: Boolean(report?.customMediumCard),
-          large: Boolean(report?.customLargeCard),
+          large: Boolean(report?.customStandardLargeCard),
+          premium: Boolean(report?.customLargeCard),
         })
         setSmallInitial(
           fromStoredCustomReport(
@@ -143,8 +153,14 @@ export function CustomReportPage() {
         )
         setLargeInitial(
           fromStoredCustomLargeReport(
-            report?.customLargeCard as Partial<StoredCustomLargeReport> | null,
+            report?.customStandardLargeCard as Partial<StoredCustomLargeReport> | null,
             buildCustomLargeReport(found, url, name),
+          ),
+        )
+        setPremiumInitial(
+          fromStoredCustomPremiumReport(
+            report?.customLargeCard as Partial<StoredCustomPremiumReport> | null,
+            buildCustomPremiumReport(found, url, name),
           ),
         )
       } catch (err) {
@@ -169,6 +185,8 @@ export function CustomReportPage() {
     saveAs("medium")(toStoredCustomMediumReport(data))
   const handleSaveLarge = (data: CustomLargeReport) =>
     saveAs("large")(toStoredCustomLargeReport(data))
+  const handleSavePremium = (data: CustomPremiumReport) =>
+    saveAs("premium")(toStoredCustomPremiumReport(data))
 
   /**
    * Moves the report to another size.
@@ -206,12 +224,13 @@ export function CustomReportPage() {
     setSaved((prev) => ({ ...prev, [size]: false }))
     const url = `${window.location.origin}/reports/${id}`
     if (size === "large") setLargeInitial(buildCustomLargeReport(gem, url, signature))
+    else if (size === "premium") setPremiumInitial(buildCustomPremiumReport(gem, url, signature))
     else if (size === "medium") setMediumInitial(buildCustomMediumReport(gem, url, signature))
     else setSmallInitial(buildCustomSmallReport(gem, url))
     setBuilderKey((key) => key + 1)
   }
 
-  const ready = gem && smallInitial && mediumInitial && largeInitial
+  const ready = gem && smallInitial && mediumInitial && largeInitial && premiumInitial
   const onClear = saved[size] ? handleClear : undefined
 
   return (
@@ -292,6 +311,16 @@ export function CustomReportPage() {
             signatureName={signature}
             initial={largeInitial}
             onSave={handleSaveLarge}
+            onClear={onClear}
+          />
+        ) : size === "premium" ? (
+          <CustomPremiumReportBuilder
+            key={`premium-${builderKey}`}
+            gem={gem}
+            reportId={id}
+            signatureName={signature}
+            initial={premiumInitial}
+            onSave={handleSavePremium}
             onClear={onClear}
           />
         ) : size === "medium" ? (

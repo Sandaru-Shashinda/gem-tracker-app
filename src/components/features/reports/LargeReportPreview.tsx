@@ -8,21 +8,37 @@ import type { RenderTarget } from "@/lib/real-size"
 import { downloadReportPdf } from "@/lib/report-pdf"
 import { layoutGemName } from "@/lib/gem-name"
 import { DEFAULT_SIGNATORY_NAME, SIGNATORY_ROLE } from "@/lib/report-signature"
-import {
-  TREATMENT_ANSWERS,
-  TREATMENT_SECTIONS,
-  normalizeTreatments,
-  type TreatmentAnswer,
-} from "@/lib/treatments"
+import { LARGE_STATEMENT_TEXT } from "@/lib/custom-report"
+import { treatmentStatement } from "@/lib/treatments"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
-import { HandSignature } from "./HandSignature"
 import grcMemoLogo from "@/assets/grc_memo_logo_trimmed.png"
+import {
+  A4_H,
+  A4_W,
+  ClarityChart,
+  DOWNLOAD_SCALE,
+  NAME_COL_W,
+  NAME_FONT_SIZE,
+  SIG_BOX_H,
+  SIG_BOX_W,
+  SIG_CROP_LEFT,
+  SIG_CROP_TOP,
+  SIG_IMG_H,
+  SIG_IMG_W,
+  Title,
+  TypedSignature,
+  TypewriterRow,
+} from "./PremiumReportPreview"
 
-// A4 at 96 dpi → 794 × 1123 px  (portrait)
-const A4_W = 794
-const A4_H = 1123
-const DOWNLOAD_SCALE = 3
+/**
+ * The lab's standard A4.
+ *
+ * The same sheet, header and signature block as the premium report, with the page pared
+ * back to what identifies the stone: no colour breakdown, and the treatment finding
+ * stated in a sentence rather than as the premium's full checklist. The shared pieces
+ * are imported from PremiumReportPreview so the two A4s cannot drift apart.
+ */
 
 interface LargeReportPreviewProps {
   gem: Gem
@@ -186,34 +202,10 @@ export function LargeReportPreview({
 // The actual A4 page – shared by preview and capture engine
 // ---------------------------------------------------------------------------
 
-/**
- * The scanned signature asset is 1800x1200 (3:2) and mostly whitespace: its ink measures
- * out to x 0.108-0.915, y 0.288-0.685 of the frame. It is rendered oversized inside a
- * window cropped to that ink band, and the typed field beside it is drawn to the same box
- * so the two signature fields line up. Same treatment as the medium report.
- */
-/** Fixed wording of the statement panel — the same on every large report. */
-const STATEMENT_TEXT =
-  "The geographic origin and color description are an expert opinion based on a collection of observation and analytical data."
 
-/*
- * Sized so the pair takes ~58% of the 682px content width, leaving 268px for the gem
- * name beside it — enough for a long variety ("Star Pink Sapphire") to stay on one line.
- * Widen these and NAME_COL_W below has to shrink to match, or the name wraps.
- */
-const SIG_IMG_W = 215
-const SIG_IMG_H = SIG_IMG_W / 1.5
-const SIG_CROP_TOP = SIG_IMG_H * 0.26
-const SIG_CROP_LEFT = SIG_IMG_W * 0.09
-const SIG_BOX_W = SIG_IMG_W * 0.85
-const SIG_BOX_H = SIG_IMG_H * 0.44
-/* Fraction of the box above the rule: blank on the typed block, ink on the image. */
-const SIG_RULE_OFFSET = 0.49
-
-/* 268 + 24 gap + the signature pair (2 × 182.75 + 24) fills the 682px content width. */
-const NAME_COL_W = 268
-/** Size the name is set at when it fits the column on one line, which it does up to ~18 characters. */
-const NAME_FONT_SIZE = 22
+const MONO = "'Nimbus Mono', 'Courier New', Courier, monospace"
+/** The gem name's own colour on this sheet; the title above it stays the lab's gold. */
+const NAME_COLOR = "#2f55a4"
 
 function ReportPage({
   gem,
@@ -248,18 +240,19 @@ function ReportPage({
       : new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
 
   const COURIER: React.CSSProperties = {
-    fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
+    fontFamily: MONO,
     color: "#1a1a1a",
   }
 
-  // The column fits "Star Pink Sapphire" on one line by design; anything longer breaks
-  // before the colour and species rather than wrapping into the signatures beside it.
+  // Set in caps on this sheet, so it is measured in caps; a name too long for the
+  // column breaks before the colour and species rather than wrapping into the signatures.
   const gemName = layoutGemName(finalData.finalVariety || obs.variety, {
     maxWidth: NAME_COL_W,
     fontSize: NAME_FONT_SIZE,
-    fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
+    fontFamily: MONO,
     fontWeight: 900,
     letterSpacing: 0.5,
+    uppercase: true,
   })
 
   const columnStyle: React.CSSProperties = {
@@ -271,11 +264,11 @@ function ReportPage({
     gap: "3px",
   }
 
-  const treatments = normalizeTreatments(obs.treatments)
-
   const measurements = obs.messurementX
     ? `${Number(obs.messurementX).toFixed(2)} x ${Number(obs.messurementY).toFixed(2)} x ${Number(obs.messurementZ).toFixed(2)} mm`
     : undefined
+
+  const treatmentLines = treatmentStatement(obs)
 
   return (
     <div
@@ -311,38 +304,33 @@ function ReportPage({
         />
       </div>
 
-      {/* ── HEADER: logo left, title centred, verification QR right ── */}
+      {/* ── HEADER: logo left, title beside it, verification QR right ── */}
       <div
         style={{
           display: "flex",
           alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: "16px",
+          gap: "28px",
           position: "relative",
           zIndex: 2,
         }}
       >
-        {/* The logo column is matched to the QR column so the title stays centred. */}
-        <div style={{ width: "150px", flexShrink: 0 }}>
-          {/* The asset is trimmed to the mark itself (1828x756), so filling the 150px
-              column renders it ~62px tall — the largest the header band allows. */}
-          <img
-            src={grcMemoLogo}
-            alt='GRC Logo'
-            style={{
-              width: "120px",
-              height: "auto",
-              objectFit: "contain",
-              display: "block",
-              filter: "brightness(0)",
-            }}
-          />
-        </div>
+        <img
+          src={grcMemoLogo}
+          alt='GRC Logo'
+          style={{
+            width: "150px",
+            height: "auto",
+            objectFit: "contain",
+            display: "block",
+            flexShrink: 0,
+            filter: "brightness(0)",
+          }}
+        />
 
-        <div style={{ flex: 1, textAlign: "end" }}>
+        <div style={{ flex: 1, paddingTop: "4px" }}>
           <h1
             style={{
-              fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
+              fontFamily: MONO,
               fontSize: "18px",
               fontWeight: 700,
               color: "#C5A259",
@@ -353,7 +341,7 @@ function ReportPage({
           >
             Gemological Report of Ceylon
           </h1>
-          <p style={{ ...COURIER, fontSize: "12px", margin: "0px 0 0", fontWeight: 500 }}>
+          <p style={{ ...COURIER, fontSize: "12px", margin: "2px 0 0", fontWeight: 500 }}>
             GRC Report Number – {gem.gemId || "—"}
           </p>
           <p style={{ ...COURIER, fontSize: "12px", margin: "2px 0 0" }}>
@@ -361,28 +349,16 @@ function ReportPage({
           </p>
         </div>
 
-        <div
-          style={{
-            width: "150px",
-            flexShrink: 0,
-            display: "flex",
-            justifyContent: "flex-end",
-            paddingTop: "4px",
-          }}
-        >
+        <div style={{ flexShrink: 0, paddingTop: "4px" }}>
           <QRCode value={verificationUrl} size={72} />
         </div>
       </div>
 
-      {/* Sections are separated by whitespace alone — the 15px keeps the rhythm the
-          rule used to carry (1px line + its 14px margin). */}
-      <div style={{ height: "15px" }} />
-
       {/* ── DETAILS ── */}
-      <div style={{ position: "relative", zIndex: 2 }}>
+      <div style={{ position: "relative", zIndex: 2, marginTop: "56px" }}>
         <Title>DETAILS</Title>
         <div style={{ display: "flex", gap: "40px", marginTop: "10px" }}>
-          {/* Left: identity, size and cut */}
+          {/* Left: identity and size */}
           <div style={{ ...columnStyle, flex: 1 }}>
             <TypewriterRow
               label='Item Description'
@@ -393,22 +369,16 @@ function ReportPage({
               value={gem.weight ? `${gem.weight.toFixed(2)} ct` : undefined}
             />
             <TypewriterRow label='Measurements' value={measurements} />
-            <div style={{ height: "8px" }} />
+          </div>
+
+          {/* Right: shape and cut */}
+          <div style={{ ...columnStyle, flex: 1 }}>
             <TypewriterRow label='Shape' value={obs.shape || obs.cuttingShape} />
             <TypewriterRow label='Cutting Style: Crown' value={obs.crownStyle} />
             <TypewriterRow label='Cutting Style: Pavilion' value={obs.pavilionStyle} />
           </div>
-
-          {/* Right: colour breakdown */}
-          <div style={{ ...columnStyle, flex: 1 }}>
-            <TypewriterRow label='Hue' value={obs.hue} />
-            <GradeRow label='Tone' value={obs.tone} />
-            <GradeRow label='Saturation' value={obs.saturation} />
-          </div>
         </div>
       </div>
-
-      <div style={{ height: "29px", marginTop: "35px", }} />
 
       {/* ── RESULTS + TREATMENT ── */}
       <div
@@ -416,9 +386,9 @@ function ReportPage({
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: "0 40px",
+          marginTop: "110px",
           position: "relative",
           zIndex: 2,
-          
         }}
       >
         <div>
@@ -435,47 +405,20 @@ function ReportPage({
 
         <div>
           <Title>TREATMENT</Title>
-
-
-          {/* The checklist sits directly under the treatment note it qualifies, and is
-              always printed: on a certificate an unticked row is itself a statement.
-              A stone assessed for nothing at all prints an empty grid, which reads as
-              "not examined" rather than as a clean bill. */}
-          <div style={{ marginTop: "9px" }}>
-            {TREATMENT_SECTIONS.map((section, i) => (
-              <div key={section.title} style={{ marginTop: i === 0 ? 0 : "5px" }}>
-                <p
-                  style={{
-                    ...COURIER,
-                    fontSize: "10px",
-                    fontWeight: 900,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.4px",
-                    lineHeight: 1.8,
-                    margin: "0 0 2px",
-                  }}
-                >
-                  {section.title}
-                </p>
-                {section.items.map((item) => (
-                  <TreatmentRow key={item.key} label={item.label} value={treatments[item.key]} />
-                ))}
-              </div>
+          <div style={{ marginTop: "10px" }}>
+            {treatmentLines.map((line) => (
+              <p
+                key={line}
+                style={{ ...COURIER, fontSize: "11.5px", margin: "0 0 3px", lineHeight: 1.5 }}
+              >
+                {line}
+              </p>
             ))}
           </div>
           {obs.specialNote && (
             <>
               <Title style={{ marginTop: "16px" }}>SPECIAL NOTE</Title>
-              <p
-                style={{
-                  ...COURIER,
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  margin: "8px 0 0",
-                  lineHeight: 1.55,
-                  textAlign: "justify",
-                }}
-              >
+              <p style={{ ...COURIER, fontSize: "11.5px", margin: "8px 0 0", lineHeight: 1.5 }}>
                 {obs.specialNote}
               </p>
             </>
@@ -489,30 +432,29 @@ function ReportPage({
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: "0 40px",
-          alignItems: "stretch",
-          marginTop: "20px",
+          alignItems: "start",
+          marginTop: "44px",
           position: "relative",
           zIndex: 2,
         }}
       >
-        <Panel title='CLARITY CHART'>
-          <ClarityChart grade={obs.clarityGrade} />
-        </Panel>
-
-        <Panel title='STATEMENT'>
+        <div>
           <p
             style={{
-              ...COURIER,
-              fontSize: "10.5px",
-              fontWeight: 600,
-              margin: 0,
-              lineHeight: 1.6,
-              textAlign: "justify",
+              fontFamily: "Arial, sans-serif",
+              fontSize: "7.5px",
+              color: "#111",
+              margin: "0 0 3px",
             }}
           >
-            {STATEMENT_TEXT}
+            Clarity Chart
           </p>
-        </Panel>
+          <ClarityChart grade={obs.clarityGrade} />
+        </div>
+
+        <p style={{ ...COURIER, fontSize: "11.5px", margin: 0, lineHeight: 1.6 }}>
+          Statement: {LARGE_STATEMENT_TEXT}
+        </p>
       </div>
 
       {/* ── GEM IMAGE + SIGNATURES ── */}
@@ -528,7 +470,7 @@ function ReportPage({
           zIndex: 2,
         }}
       >
-        {/* Left: the true-size gem image */}
+        {/* Left: the true-size gem image, named beneath */}
         <div
           style={{
             display: "flex",
@@ -593,9 +535,11 @@ function ReportPage({
               fontSize: `${gemName.fontSize}px`,
               fontWeight: 900,
               lineHeight: gemName.lines.length > 1 ? 1.15 : undefined,
-              color: "#C5A259",
+              color: NAME_COLOR,
               letterSpacing: "0.5px",
-              margin: "6px 0 0",
+              textTransform: "uppercase",
+              textAlign: "center",
+              margin: "12px 0 0",
             }}
           >
             {gemName.lines.length
@@ -607,15 +551,7 @@ function ReportPage({
               : "—"}
           </p>
           {gem.weight && (
-            <p
-              style={{
-                ...COURIER,
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "#444",
-                margin: "3px 0 0",
-              }}
-            >
+            <p style={{ ...COURIER, fontSize: "11px", color: "#444", margin: "3px 0 0" }}>
               {gem.weight.toFixed(2)} ct
             </p>
           )}
@@ -664,328 +600,6 @@ function ReportPage({
       >
         For complete terms and updates, visit www.grc.lk
       </p>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function Title({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <p
-      style={{
-        fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
-        fontSize: "12px",
-        fontWeight: 900,
-        color: "#1a1a1a",
-        textTransform: "uppercase",
-        letterSpacing: "1px",
-        margin: 0,
-        paddingBottom: "2px",
-        display: "inline-block",
-        ...style,
-      }}
-    >
-      {children}
-    </p>
-  )
-}
-
-function TypewriterRow({ label, value }: { label: string; value?: string | number }) {
-  return (
-    <div style={{ display: "flex", alignItems: "baseline", width: "100%" }}>
-      <span style={{ whiteSpace: "nowrap", paddingRight: "4px", flexShrink: 0 }}>{label}:</span>
-      <span
-        style={{
-          flex: 1,
-          borderBottom: "1.5px dotted #a3a3a3",
-          position: "relative",
-          top: "-3px",
-          minWidth: "12px",
-        }}
-      />
-      <span style={{ whiteSpace: "nowrap", paddingLeft: "6px", flexShrink: 0 }}>{value || ""}</span>
-    </div>
-  )
-}
-
-/**
- * Tone and saturation are graded on a three-step scale, so they print as a row of boxes
- * with the graded step ticked. An ungraded stone leaves every box empty.
- */
-function GradeRow({ label, value }: { label: string; value?: string }) {
-  const selected = (value || "").trim().toLowerCase()
-  return (
-    <div style={{ display: "flex", alignItems: "center", width: "100%", gap: "10px" }}>
-      <span style={{ whiteSpace: "nowrap", flexShrink: 0 }}>{label}:</span>
-      {/* Pushed to the right edge so the three steps line up under the typed values. */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "auto" }}>
-        {["Low", "Medium", "High"].map((option) => (
-          <span
-            key={option}
-            style={{ display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}
-          >
-            {option}
-            <CheckBox checked={option.toLowerCase() === selected} />
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/**
- * One treatment on the report's checklist. An unassessed treatment leaves both boxes
- * empty, so "no answer" stays visibly different from a certified "No".
- */
-function TreatmentRow({ label, value }: { label: string; value?: TreatmentAnswer }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "6px",
-        fontFamily: "'Nimbus Mono', 'Courier New', Courier, monospace",
-        color: "#1a1a1a",
-        fontSize: "10px",
-        fontWeight: 400,
-        lineHeight: 1.2,
-      }}
-    >
-      <span>{label}</span>
-      <span style={{ display: "flex", alignItems: "center", gap: "5px", marginLeft: "auto" }}>
-        {TREATMENT_ANSWERS.map((answer) => (
-          <span
-            key={answer}
-            style={{ display: "flex", alignItems: "center", gap: "2px", whiteSpace: "nowrap" }}
-          >
-            {answer}
-            <CheckBox checked={value === answer} size={8} />
-          </span>
-        ))}
-      </span>
-    </div>
-  )
-}
-
-/** The tick is drawn as SVG so it survives export and does not depend on a glyph font. */
-function CheckBox({ checked, size = 11 }: { checked: boolean; size?: number }) {
-  return (
-    <span
-      style={{
-        width: `${size}px`,
-        height: `${size}px`,
-        border: "1.2px solid #1a1a1a",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      {checked && (
-        <svg
-          width={size - 2}
-          height={size - 2}
-          viewBox='0 0 10 10'
-          style={{ display: "block" }}
-        >
-          <path
-            d='M1.3 5.2 L3.9 7.9 L8.7 1.9'
-            fill='none'
-            stroke='#1a1a1a'
-            strokeWidth='1.6'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-          />
-        </svg>
-      )}
-    </span>
-  )
-}
-
-/** Titled, outlined region – used for the clarity chart and the statement. */
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        border: "1px solid #cfcfcf",
-        borderRadius: "4px",
-        padding: "10px 12px 12px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-      }}
-    >
-      <Title style={{ fontSize: "11px", paddingBottom: 0 }}>{title}</Title>
-      {children}
-    </div>
-  )
-}
-
-/**
- * The graded clarity scale. The stone's grade is marked with a heavy border and a light
- * tint rather than reversed type: at this size white-on-black closes up as soon as ink
- * spreads, and it disappears altogether when a print dialog has background graphics
- * switched off. The 2px rule still reads as the marker even if the fill is dropped.
- */
-function ClarityChart({ grade }: { grade?: string }) {
-  const raw = (grade || "").replace(/[\s()]/g, "").toUpperCase()
-  // The top grade was recorded as "Exc" before the scale was renamed to FL (Flawless).
-  // Records still hold that value, so it has to keep marking the same cell.
-  const normalized = raw === "EXC" ? "FL" : raw
-
-  const tdStyle: React.CSSProperties = {
-    border: "1px solid #111",
-    padding: "2px 1px",
-    textAlign: "center",
-    fontSize: "6.5px",
-    lineHeight: 1.25,
-    fontFamily: "Arial, sans-serif",
-    color: "#111",
-    verticalAlign: "middle",
-  }
-
-  const activeTd: React.CSSProperties = {
-    ...tdStyle,
-    backgroundColor: "#c9cbdd",
-    color: "#000",
-    fontWeight: 700,
-    border: "2px solid #111",
-    WebkitPrintColorAdjust: "exact",
-    printColorAdjust: "exact",
-  }
-
-  const grades = [
-    { key: "FL", label: "FL" },
-    { key: "LC1", label: "LC 1" },
-    { key: "LC2", label: "LC 2" },
-    { key: "EC1", label: "EC 1" },
-    { key: "EC2", label: "EC 2" },
-    { key: "VI1", label: "VI 1" },
-    { key: "VI2", label: "VI 2" },
-    { key: "HI1", label: "HI 1" },
-    { key: "HI2", label: "HI 2" },
-  ]
-
-  return (
-    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-      <tbody>
-        <tr>
-          <td rowSpan={2} style={tdStyle}>
-            Flawless
-          </td>
-          <td colSpan={2} style={tdStyle}>
-            Loupe Clean
-          </td>
-          <td colSpan={2} style={tdStyle}>
-            Eye Clean
-          </td>
-          <td colSpan={2} style={tdStyle}>
-            Visible Inclusions
-          </td>
-          <td colSpan={2} style={tdStyle}>
-            Highly Included
-          </td>
-        </tr>
-        <tr>
-          {(["LC", "EC", "VI", "HI"] as const).flatMap((cat) => [
-            <td key={`${cat}-minor`} style={tdStyle}>
-              Minor Inclusions
-            </td>,
-            <td key={`${cat}-highly`} style={tdStyle}>
-              Highly Included
-            </td>,
-          ])}
-        </tr>
-        <tr>
-          {grades.map(({ key, label }) => (
-            <td
-              key={key}
-              style={{ ...(key === normalized ? activeTd : tdStyle), fontSize: "7.5px" }}
-            >
-              {label}
-            </td>
-          ))}
-        </tr>
-      </tbody>
-    </table>
-  )
-}
-
-/**
- * The unsigned counterpart to the scanned signature asset: same box, same rule position,
- * so the pair reads as two matching fields with room to sign the left one by hand.
- */
-function TypedSignature({
-  name,
-  role,
-  signatureImage,
-}: {
-  name: string
-  role: string
-  signatureImage?: string
-}) {
-  return (
-    <div
-      style={{
-        width: `${SIG_BOX_W}px`,
-        height: `${SIG_BOX_H}px`,
-        display: "flex",
-        flexDirection: "column",
-        flexShrink: 0,
-        fontFamily: "Arial, Helvetica, sans-serif",
-      }}
-    >
-      {/* Left blank for the handwritten signature — or, on the digital copy, carrying
-          the signatory's own. */}
-      <div
-        style={{ height: `${SIG_BOX_H * SIG_RULE_OFFSET}px`, flexShrink: 0, position: "relative" }}
-      >
-        {signatureImage && (
-          <HandSignature
-            src={signatureImage}
-            space={SIG_BOX_H * SIG_RULE_OFFSET}
-            maxWidth={SIG_BOX_W * 0.7}
-          />
-        )}
-      </div>
-      <div style={{ borderTop: "1.5px dotted #333", width: "70%" }}></div>
-      <div
-        style={{
-          fontSize: "10px",
-          fontWeight: 700,
-          color: "#1a1a1a",
-          lineHeight: "12px",
-          whiteSpace: "nowrap",
-          marginTop: "2px",
-        }}
-      >
-        {name?.trim() || "____________________"}
-      </div>
-      <div
-        style={{
-          fontSize: "8px",
-          color: "#8d8b8b",
-          fontWeight: 750,
-          lineHeight: "8px",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {role}
-      </div>
-      <div
-        style={{
-          fontSize: "8px",
-          color: "#8d8b8b",
-          fontWeight: 750,
-          lineHeight: "10px",
-          whiteSpace: "nowrap",
-        }}
-      >
-        Gemological Report Of Ceylon (Pvt) Ltd
-      </div>
     </div>
   )
 }
