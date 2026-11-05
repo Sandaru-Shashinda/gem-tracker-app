@@ -1,5 +1,6 @@
 import { type FieldConfig, type SelectOption } from "@/components/shared/common/FormField"
 import { type FieldHistory } from "@/lib/api/references"
+import { CLARITY_ENHANCEMENT_GRADES, EMERALD_CLARITY_GRADES, isEmeraldStone } from "@/lib/clarity"
 
 export const GRADE_OPTIONS = [
   { value: "Ex", label: "Excellent" },
@@ -29,13 +30,10 @@ export const CLARITY_OTHER_OPTIONS = [
   { value: "HI 2", label: "HI 2" },
 ]
 
-export const CLARITY_EMERALD_OPTIONS = [
-  { value: "FL", label: "FL (Flawless)" },
-  { value: "LC", label: "LC (Loop Clean)" },
-  { value: "EC", label: "EC (Eye Clean)" },
-  { value: "MI", label: "MI (Moderately Included)" },
-  { value: "HI", label: "HI (Highly Included)" },
-]
+export const CLARITY_EMERALD_OPTIONS = EMERALD_CLARITY_GRADES.map(({ label, name }) => ({
+  value: label,
+  label: `${label} (${name})`,
+}))
 
 export const TRANSPARENCY_OPTIONS = [
   { value: "Transparent", label: "Transparent" },
@@ -49,13 +47,10 @@ export const TONE_SATURATION_OPTIONS = [
   { value: "High", label: "High" },
 ]
 
-export const CLARITY_ENHANCEMENT_OPTIONS = [
-  { value: "None", label: "None (No Significant Clarity Enhancement)" },
-  { value: "E 1", label: "E 1 (Minor Clarity Enhancement)" },
-  { value: "E 2", label: "E 2 (Moderate Clarity Enhancement)" },
-  { value: "E 3", label: "E 3 (Significant Clarity Enhancement)" },
-  { value: "HPNT", label: "HPNT (High Pressure No Temperature)" },
-]
+export const CLARITY_ENHANCEMENT_OPTIONS = CLARITY_ENHANCEMENT_GRADES.map(({ label, name }) => ({
+  value: label,
+  label: `${label} (${name})`,
+}))
 
 export const CUTTING_STYLE_OPTIONS = [
   { value: "Brilliant cut", label: "Brilliant cut" },
@@ -157,6 +152,7 @@ interface FormFieldsConfigParams {
   ) => void
   watchedSpecies?: string
   watchedVariety?: string
+  watchedIsEmerald?: boolean
   // Combobox states for Crown Style
   crownStyleSearch: string
   setCrownStyleSearch: (value: string) => void
@@ -194,6 +190,7 @@ export function getFormFieldsConfig({
   setValue,
   watchedSpecies,
   watchedVariety,
+  watchedIsEmerald,
   crownStyleSearch,
   setCrownStyleSearch,
   showCrownStyleList,
@@ -226,15 +223,15 @@ export function getFormFieldsConfig({
   const allCrownStyleOptions = mergeCustom(CUTTING_STYLE_OPTIONS, history.crownStyle)
   const allPavilionStyleOptions = mergeCustom(CUTTING_STYLE_OPTIONS, history.pavilionStyle)
   let colorOptions = OTHER_COLORS
-  let clarityOptions = CLARITY_OTHER_OPTIONS
-
-  // Apply species-based defaults if any (like Emerald clarity)
-  if (watchedSpecies) {
-    const lowerSpecies = watchedSpecies.toLowerCase()
-    if (lowerSpecies.includes("emerald")) {
-      clarityOptions = CLARITY_EMERALD_OPTIONS
-    }
-  }
+  // Emeralds are graded on their own clarity scale — the same test the reports use to
+  // decide which clarity chart to print.
+  const clarityOptions = isEmeraldStone({
+    isEmerald: watchedIsEmerald,
+    species: watchedSpecies,
+    variety: watchedVariety,
+  })
+    ? CLARITY_EMERALD_OPTIONS
+    : CLARITY_OTHER_OPTIONS
 
   // Override options based on Variety (Priority)
   if (watchedVariety) {
@@ -243,7 +240,6 @@ export function getFormFieldsConfig({
       colorOptions = RUBY_COLORS
     } else if (lowerVariety.includes("emerald")) {
       colorOptions = EMERALD_COLORS
-      clarityOptions = CLARITY_EMERALD_OPTIONS // Emerald variety always uses emerald clarity
     } else if (lowerVariety.includes("sapphire") && lowerVariety.includes("blue")) {
       colorOptions = SAPPHIRE_COLORS
     }

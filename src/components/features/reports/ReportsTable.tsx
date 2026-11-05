@@ -2,7 +2,7 @@ import { useMemo } from "react"
 import { createColumnHelper, type PaginationState } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import DataTable from "@/components/shared/data-table/DataTable"
-import { RefreshCw, SlidersHorizontal } from "lucide-react"
+import { Eye, RefreshCw, SlidersHorizontal } from "lucide-react"
 import { REPORT_MODES, customSizeLabel } from "@/lib/types"
 import { StatusBadge } from "@/components/shared/common/StatusBadge"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +42,8 @@ interface ReportsTableProps {
   isLoading?: boolean
   /** Opens the one page this report is edited on, whichever that turns out to be. */
   onOpenReport: (reportId: string, isCustom: boolean) => void
+  /** For someone who may only read reports: the row offers View rather than an edit. */
+  readOnly?: boolean
 }
 
 const columnHelper = createColumnHelper<Report>()
@@ -53,6 +55,7 @@ export function ReportsTable({
   totalRecords,
   isLoading,
   onOpenReport,
+  readOnly,
 }: ReportsTableProps) {
   const columns = useMemo(
     () => [
@@ -146,6 +149,19 @@ export function ReportsTable({
           // intake, so offering both left whoever opened this list to work out which
           // of them applied to the row in front of them.
           const isCustom = report.gemId?.reportMode === REPORT_MODES.CUSTOM
+          if (readOnly) {
+            return (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => onOpenReport(report._id, isCustom)}
+                className='text-slate-600'
+              >
+                <Eye className='w-4 h-4 mr-1' />
+                View
+              </Button>
+            )
+          }
           return (
             <Button
               variant='outline'
@@ -164,7 +180,7 @@ export function ReportsTable({
         },
       }),
     ],
-    [onOpenReport],
+    [onOpenReport, readOnly],
   )
 
   return (

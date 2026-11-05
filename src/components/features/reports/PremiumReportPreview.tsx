@@ -17,6 +17,8 @@ import {
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import { HandSignature } from "./HandSignature"
+import { EmeraldClarityChart } from "./EmeraldClarityChart"
+import { clarityKey, isEmeraldStone } from "@/lib/clarity"
 import grcMemoLogo from "@/assets/grc_memo_logo_trimmed.png"
 
 // A4 at 96 dpi → 794 × 1123 px  (portrait)
@@ -496,7 +498,11 @@ function ReportPage({
         }}
       >
         <Panel title='CLARITY CHART'>
-          <ClarityChart grade={obs.clarityGrade} />
+          <ClarityChart
+            grade={obs.clarityGrade}
+            enhancement={obs.clarityEnhancement}
+            emerald={isEmeraldStone({ ...obs, variety: finalData.finalVariety || obs.variety })}
+          />
         </Panel>
 
         <Panel title='STATEMENT'>
@@ -829,9 +835,19 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
  * tint rather than reversed type: at this size white-on-black closes up as soon as ink
  * spreads, and it disappears altogether when a print dialog has background graphics
  * switched off. The 2px rule still reads as the marker even if the fill is dropped.
+ *
+ * An emerald prints the emerald scales instead, with its clarity enhancement grade.
  */
-export function ClarityChart({ grade }: { grade?: string }) {
-  const raw = (grade || "").replace(/[\s()]/g, "").toUpperCase()
+export function ClarityChart({
+  grade,
+  enhancement,
+  emerald = false,
+}: {
+  grade?: string
+  enhancement?: string
+  emerald?: boolean
+}) {
+  const raw = clarityKey(grade)
   // The top grade was recorded as "Exc" before the scale was renamed to FL (Flawless).
   // Records still hold that value, so it has to keep marking the same cell.
   const normalized = raw === "EXC" ? "FL" : raw
@@ -869,8 +885,27 @@ export function ClarityChart({ grade }: { grade?: string }) {
     { key: "HI2", label: "HI 2" },
   ]
 
+  const tableStyle: React.CSSProperties = {
+    width: "100%",
+    borderCollapse: "collapse",
+    tableLayout: "fixed",
+  }
+
+  if (emerald) {
+    return (
+      <EmeraldClarityChart
+        grade={grade}
+        enhancement={enhancement}
+        cellStyle={tdStyle}
+        activeCellStyle={activeTd}
+        tableStyle={tableStyle}
+        gradeFontSize='7.5px'
+      />
+    )
+  }
+
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+    <table style={tableStyle}>
       <tbody>
         <tr>
           <td rowSpan={2} style={tdStyle}>

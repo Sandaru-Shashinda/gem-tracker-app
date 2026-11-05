@@ -209,6 +209,7 @@ export function CustomMediumReportBuilder({
     { key: "showGemImage", label: "Gem image & caption" },
     { key: "showHeatLine", label: "Heat treatment line" },
     { key: "showClarityTable", label: "Clarity scale" },
+    { key: "emeraldClarity", label: "Emerald clarity scales" },
     { key: "showQr", label: "QR code" },
     { key: "showTypedSignature", label: "Typed signature field" },
     { key: "showSignatureImage", label: "Authorized signature" },

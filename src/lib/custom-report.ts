@@ -15,6 +15,7 @@
  */
 import type { Gem } from "./types"
 import { SIGNATORY_ROLE } from "./report-signature"
+import { clarityKey, isEmeraldStone } from "./clarity"
 import { normalizeTreatments, treatmentStatement, type TreatmentValues } from "./treatments"
 
 export interface CustomReportRow {
@@ -346,8 +347,15 @@ export interface CustomMediumReport extends CustomLayout {
   resultRows: CustomReportRow[]
   commentsLabel: string
   comments: string
-  /** Key of the marked grade — EXC, LC1, LC2, EC1, EC2, VI1, VI2, HI1, HI2. "" marks none. */
+  /**
+   * Key of the marked grade — EXC, LC1, LC2, EC1, EC2, VI1, VI2, HI1, HI2, or on the
+   * emerald scale LC, EC, SI, MI, HI. "" marks none.
+   */
   clarityGrade: string
+  /** Prints the emerald clarity and clarity enhancement scales in place of the standard one. */
+  emeraldClarity: boolean
+  /** Key of the marked enhancement grade — NONE, E1, E2, E3. "" marks none. */
+  clarityEnhancement: string
   showClarityTable: boolean
   qrValue: string
   showQr: boolean
@@ -447,7 +455,9 @@ export function buildCustomMediumReport(
     ],
     commentsLabel: "Comments",
     comments: obs.comments ?? "",
-    clarityGrade: (obs.clarityGrade || "").replace(/[\s()]/g, "").toUpperCase(),
+    clarityGrade: clarityKey(obs.clarityGrade),
+    emeraldClarity: isEmeraldStone({ ...obs, variety: finalData.finalVariety || obs.variety }),
+    clarityEnhancement: clarityKey(obs.clarityEnhancement),
     showClarityTable: true,
     qrValue: verificationUrl,
     showQr: true,
@@ -556,8 +566,15 @@ export interface CustomPremiumReport extends CustomLayout {
 
   // Panels
   clarityHeading: string
-  /** Key of the marked grade — FL, LC1, LC2, EC1, EC2, VI1, VI2, HI1, HI2. "" marks none. */
+  /**
+   * Key of the marked grade — FL, LC1, LC2, EC1, EC2, VI1, VI2, HI1, HI2, or on the
+   * emerald scale LC, EC, SI, MI, HI. "" marks none.
+   */
   clarityGrade: string
+  /** Prints the emerald clarity and clarity enhancement scales in place of the standard one. */
+  emeraldClarity: boolean
+  /** Key of the marked enhancement grade — NONE, E1, E2, E3. "" marks none. */
+  clarityEnhancement: string
   showClarityChart: boolean
   statementHeading: string
   statement: string
@@ -613,7 +630,7 @@ export const PREMIUM_STATEMENT_TEXT =
  * (Flawless). Records still hold that value, and it has to keep marking the same cell.
  */
 function normaliseA4Clarity(grade: string | undefined): string {
-  const raw = (grade || "").replace(/[\s()]/g, "").toUpperCase()
+  const raw = clarityKey(grade)
   return raw === "EXC" ? "FL" : raw
 }
 
@@ -690,6 +707,8 @@ export function buildCustomPremiumReport(
 
     clarityHeading: "CLARITY CHART",
     clarityGrade: normaliseA4Clarity(obs.clarityGrade),
+    emeraldClarity: isEmeraldStone({ ...obs, variety: finalData.finalVariety || obs.variety }),
+    clarityEnhancement: clarityKey(obs.clarityEnhancement),
     showClarityChart: true,
     statementHeading: "STATEMENT",
     statement: PREMIUM_STATEMENT_TEXT,
@@ -791,8 +810,15 @@ export interface CustomLargeReport extends CustomLayout {
 
   // Clarity chart and statement
   clarityHeading: string
-  /** Key of the marked grade — FL, LC1, LC2, EC1, EC2, VI1, VI2, HI1, HI2. "" marks none. */
+  /**
+   * Key of the marked grade — FL, LC1, LC2, EC1, EC2, VI1, VI2, HI1, HI2, or on the
+   * emerald scale LC, EC, SI, MI, HI. "" marks none.
+   */
   clarityGrade: string
+  /** Prints the emerald clarity and clarity enhancement scales in place of the standard one. */
+  emeraldClarity: boolean
+  /** Key of the marked enhancement grade — NONE, E1, E2, E3. "" marks none. */
+  clarityEnhancement: string
   showClarityChart: boolean
   /** The whole paragraph, its "Statement:" lead-in included. */
   statement: string
@@ -923,6 +949,8 @@ export function buildCustomLargeReport(
 
     clarityHeading: "Clarity Chart",
     clarityGrade: normaliseA4Clarity(obs.clarityGrade),
+    emeraldClarity: isEmeraldStone({ ...obs, variety: finalData.finalVariety || obs.variety }),
+    clarityEnhancement: clarityKey(obs.clarityEnhancement),
     showClarityChart: true,
     statement: `Statement: ${LARGE_STATEMENT_TEXT}`,
     showStatement: true,

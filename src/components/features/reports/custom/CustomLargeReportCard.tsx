@@ -389,6 +389,9 @@ export function CustomLargeReportCard({
                 grade={data.clarityGrade}
                 editable={editable}
                 onChange={(clarityGrade) => onChange({ clarityGrade })}
+                emerald={data.emeraldClarity}
+                enhancement={data.clarityEnhancement}
+                onEnhancementChange={(clarityEnhancement) => onChange({ clarityEnhancement })}
               />
             </>
           )}

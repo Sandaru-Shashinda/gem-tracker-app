@@ -90,16 +90,8 @@ export default function App() {
             )
           }
         />
-        <Route
-          path='/reports'
-          element={
-            user?.role === UserRole.ADMIN || user?.role === "HELPER" ? (
-              <ReportsPage />
-            ) : (
-              <Navigate to='/dashboard' replace />
-            )
-          }
-        />
+        {/* Testers get this list read-only: the custom and configure pages below stay closed. */}
+        <Route path='/reports' element={user ? <ReportsPage /> : <Navigate to='/' replace />} />
         <Route path='/reports/:id' element={<ReportPreviewPage />} />
         <Route
           path='/reports/:id/custom'

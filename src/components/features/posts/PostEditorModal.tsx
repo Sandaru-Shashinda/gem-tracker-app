@@ -62,6 +62,10 @@ export function PostEditorModal({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isAdmin = userRole === UserRole.ADMIN
+  const isTester = userRole === UserRole.TESTER
+  const categories = isTester
+    ? [POST_CATEGORIES.BLOG, POST_CATEGORIES.GRC_NEWS]
+    : Object.values(POST_CATEGORIES)
   const isEditing = !!post
   // Only an admin may edit a post that is already live on grc.lk.
   const isLocked = isEditing && post.status !== POST_STATUSES.DRAFT && !isAdmin
@@ -173,21 +177,21 @@ export function PostEditorModal({
               <Label htmlFor='post-category'>Category</Label>
               <Select
                 value={values.category}
-                disabled={isLocked || !isAdmin}
+                disabled={isLocked || !(isAdmin || isTester)}
                 onValueChange={(value) => update("category", value)}
               >
                 <SelectTrigger id='post-category'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.values(POST_CATEGORIES).map((category) => (
+                  {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {POST_CATEGORY_LABELS[category]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {!isAdmin && (
+              {!isAdmin && !isTester && (
                 <p className='text-[10px] text-slate-400'>
                   GRC News is filed by administrators.
                 </p>

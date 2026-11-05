@@ -4,6 +4,7 @@ import type { User, Gem, GemStatus, ReportMode } from "@/lib/types"
 import { GEM_STATUSES } from "@/lib/types"
 import { gemsApi } from "@/lib/api/gems"
 import { usersApi } from "@/lib/api/users"
+import { SESSION_ENDED_EVENT, getTokenExpiry } from "@/lib/api/config"
 import { referencesApi, EMPTY_HISTORY, type FieldHistory } from "@/lib/api/references"
 import { uploadImage } from "@/lib/api/images"
 import { compressImage } from "@/lib/image-utils"
@@ -78,6 +79,27 @@ export function GemProvider({ children }: { children: ReactNode }) {
     if (!u) usersApi.logout()
     setUserState(u)
   }
+
+  // Sign out when the token lapses, or as soon as the API turns it away, rather than leaving
+  // someone on a page whose saves all fail.
+  useEffect(() => {
+    if (!user) return
+    const signOut = () => {
+      usersApi.logout()
+      setUserState(null)
+    }
+    window.addEventListener(SESSION_ENDED_EVENT, signOut)
+
+    // setTimeout overflows past ~24.8 days and would fire at once; a later expiry is left to the 401.
+    const expiry = getTokenExpiry()
+    const delay = expiry === null ? null : expiry - Date.now()
+    const timer = delay !== null && delay < 2 ** 31 - 1 ? window.setTimeout(signOut, Math.max(0, delay)) : undefined
+
+    return () => {
+      window.removeEventListener(SESSION_ENDED_EVENT, signOut)
+      window.clearTimeout(timer)
+    }
+  }, [user])
 
   const refreshGems = useCallback(async () => {
     if (!user) return

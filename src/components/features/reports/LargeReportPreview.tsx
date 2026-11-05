@@ -10,6 +10,7 @@ import { layoutGemName } from "@/lib/gem-name"
 import { DEFAULT_SIGNATORY_NAME, SIGNATORY_ROLE } from "@/lib/report-signature"
 import { LARGE_STATEMENT_TEXT } from "@/lib/custom-report"
 import { treatmentStatement } from "@/lib/treatments"
+import { isEmeraldStone } from "@/lib/clarity"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo_trimmed.png"
@@ -449,7 +450,11 @@ function ReportPage({
           >
             Clarity Chart
           </p>
-          <ClarityChart grade={obs.clarityGrade} />
+          <ClarityChart
+            grade={obs.clarityGrade}
+            enhancement={obs.clarityEnhancement}
+            emerald={isEmeraldStone({ ...obs, variety: finalData.finalVariety || obs.variety })}
+          />
         </div>
 
         <p style={{ ...COURIER, fontSize: "11.5px", margin: 0, lineHeight: 1.6 }}>

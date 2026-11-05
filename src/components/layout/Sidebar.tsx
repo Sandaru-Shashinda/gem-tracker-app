@@ -81,10 +81,12 @@ export function Sidebar() {
         <NavButton icon={LayoutDashboard} label='Dashboard' to='/dashboard' collapsed={collapsed} />
         <NavButton icon={ClipboardCheck} label='My Queue' to='/queue' collapsed={collapsed} />
         {(user.role === UserRole.ADMIN || user.role === UserRole.HELPER) && (
-          <>
-            <NavButton icon={Plus} label='Intake Gem' to='/intake' collapsed={collapsed} />
-            <NavButton icon={FileText} label='Reports' to='/reports' collapsed={collapsed} />
-          </>
+          <NavButton icon={Plus} label='Intake Gem' to='/intake' collapsed={collapsed} />
+        )}
+        <NavButton icon={FileText} label='Reports' to='/reports' collapsed={collapsed} />
+        {/* Admins and helpers reach Posts from the Admin section below. */}
+        {user.role === UserRole.TESTER && (
+          <NavButton icon={Newspaper} label='Posts' to='/posts' collapsed={collapsed} />
         )}
         {(user.role === UserRole.ADMIN || user.role === UserRole.HELPER) && (
           <>

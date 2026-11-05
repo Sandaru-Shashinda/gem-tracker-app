@@ -12,6 +12,8 @@ import { textWidth, wrapText } from "@/lib/text-layout"
 import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import { HandSignature } from "./HandSignature"
+import { EmeraldClarityChart } from "./EmeraldClarityChart"
+import { clarityKey, isEmeraldStone } from "@/lib/clarity"
 
 interface MediumReportPreviewProps {
   gem: Gem
@@ -485,7 +487,7 @@ function DetailView({
 
         {/* Clarity Scale Table */}
         {(() => {
-          const clarityGrade = (obs.clarityGrade || "").replace(/[\s()]/g, "").toUpperCase()
+          const clarityGrade = clarityKey(obs.clarityGrade)
           const isActive = (key: string) => key.toUpperCase() === clarityGrade
 
           /**
@@ -518,6 +520,12 @@ function DetailView({
             { key: "HI2", label: "HI 2" },
           ]
 
+          const tableStyle: React.CSSProperties = {
+            width: "90%",
+            borderCollapse: "collapse",
+            textAlign: "center",
+          }
+
           return (
             <div
               style={{
@@ -530,44 +538,55 @@ function DetailView({
                 marginTop: "15px",
               }}
             >
-              <table style={{ width: "90%", borderCollapse: "collapse", textAlign: "center" }}>
-                <tbody>
-                  <tr>
-                    <td rowSpan={2} style={tdStyle}>
-                      Excellent
-                    </td>
-                    <td colSpan={2} style={tdStyle}>
-                      Loup Clean
-                    </td>
-                    <td colSpan={2} style={tdStyle}>
-                      Eye Clean
-                    </td>
-                    <td colSpan={2} style={tdStyle}>
-                      Visible Inclusions
-                    </td>
-                    <td colSpan={2} style={tdStyle}>
-                      Highly Included
-                    </td>
-                  </tr>
-                  <tr>
-                    {(["LC", "EC", "VI", "HI"] as const).flatMap((cat) => [
-                      <td key={`${cat}-minor`} style={tdStyle}>
-                        Minor Inclusions
-                      </td>,
-                      <td key={`${cat}-highly`} style={tdStyle}>
-                        Highly Included
-                      </td>,
-                    ])}
-                  </tr>
-                  <tr>
-                    {grades.map(({ key, label }) => (
-                      <td key={key} style={isActive(key) ? activeTd : tdStyle}>
-                        {label}
+              {isEmeraldStone({ ...obs, variety: finalData.finalVariety || obs.variety }) ? (
+                <EmeraldClarityChart
+                  grade={obs.clarityGrade}
+                  enhancement={obs.clarityEnhancement}
+                  cellStyle={tdStyle}
+                  activeCellStyle={activeTd}
+                  tableStyle={tableStyle}
+                  compact
+                />
+              ) : (
+                <table style={tableStyle}>
+                  <tbody>
+                    <tr>
+                      <td rowSpan={2} style={tdStyle}>
+                        Excellent
                       </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
+                      <td colSpan={2} style={tdStyle}>
+                        Loup Clean
+                      </td>
+                      <td colSpan={2} style={tdStyle}>
+                        Eye Clean
+                      </td>
+                      <td colSpan={2} style={tdStyle}>
+                        Visible Inclusions
+                      </td>
+                      <td colSpan={2} style={tdStyle}>
+                        Highly Included
+                      </td>
+                    </tr>
+                    <tr>
+                      {(["LC", "EC", "VI", "HI"] as const).flatMap((cat) => [
+                        <td key={`${cat}-minor`} style={tdStyle}>
+                          Minor Inclusions
+                        </td>,
+                        <td key={`${cat}-highly`} style={tdStyle}>
+                          Highly Included
+                        </td>,
+                      ])}
+                    </tr>
+                    <tr>
+                      {grades.map(({ key, label }) => (
+                        <td key={key} style={isActive(key) ? activeTd : tdStyle}>
+                          {label}
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              )}
             </div>
           )
         })()}

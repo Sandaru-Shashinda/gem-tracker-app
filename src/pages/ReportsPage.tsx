@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { ReportsTable } from "@/components/features/reports/ReportsTable"
 import { reportsApi } from "@/lib/api/reports"
+import { useGem } from "@/hooks/useGemStore"
 import {
   Select,
   SelectContent,
@@ -13,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { RefreshCcw, X } from "lucide-react"
-import { GEM_STATUSES, REPORT_MODES } from "@/lib/types"
+import { GEM_STATUSES, REPORT_MODES, UserRole } from "@/lib/types"
 import type { PaginationState } from "@tanstack/react-table"
 
 /** Local midnight of a yyyy-mm-dd day, `offsetDays` later, as the ISO instant the API takes. */
@@ -24,6 +25,9 @@ const dayStart = (day: string, offsetDays = 0) => {
 }
 
 export function ReportsPage() {
+  const { user } = useGem()
+  const isReadOnly = user?.role === UserRole.TESTER
+
   const [reports, setReports] = useState<any[]>([])
   const [totalRecords, setTotalRecords] = useState(0)
   const [pagination, setPagination] = useState<PaginationState>({
@@ -120,8 +124,13 @@ export function ReportsPage() {
 
   // A custom report is written on its own page and has no paper-size settings to
   // configure; a standard one is the other way round. Neither has anything to offer
-  // on the other's page, so the row sends you to the one that applies.
+  // on the other's page, so the row sends you to the one that applies. A tester edits
+  // neither, and goes to the finished certificate instead.
   const handleOpenReport = (reportId: string, isCustom: boolean) => {
+    if (isReadOnly) {
+      navigate(`/reports/${reportId}`)
+      return
+    }
     navigate(`/reports/${reportId}/${isCustom ? "custom" : "configure"}`)
   }
 
@@ -253,6 +262,7 @@ export function ReportsPage() {
           totalRecords={totalRecords}
           isLoading={isLoading}
           onOpenReport={handleOpenReport}
+          readOnly={isReadOnly}
         />
       </div>
     </MainLayout>

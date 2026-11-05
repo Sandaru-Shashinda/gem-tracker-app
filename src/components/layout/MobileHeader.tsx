@@ -1,6 +1,14 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Menu, X, LayoutDashboard, ClipboardCheck, UserCircle } from "lucide-react"
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  ClipboardCheck,
+  FileText,
+  Newspaper,
+  UserCircle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useGem } from "@/hooks/useGemStore"
 import grcLogo from "@/assets/grc-logo.png"
@@ -48,6 +56,30 @@ export function MobileHeader() {
           >
             <ClipboardCheck size={18} className='mr-3' />
             Queue
+          </Link>
+          <Link
+            to='/reports'
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium ${
+              location.pathname === "/reports"
+                ? "bg-[#dca54a] text-slate-900"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <FileText size={18} className='mr-3' />
+            Reports
+          </Link>
+          <Link
+            to='/posts'
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium ${
+              location.pathname === "/posts"
+                ? "bg-[#dca54a] text-slate-900"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Newspaper size={18} className='mr-3' />
+            Posts
           </Link>
           <Link
             to='/profile'

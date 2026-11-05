@@ -161,6 +161,7 @@ export function GemDetailPage() {
   const watchedHardness = watch("hardness")
   const watchedSpecies = watch("species")
   const watchedVariety = watch("selectedVariety")
+  const watchedIsEmerald = watch("isEmerald")
 
   const searchSetters: SearchSetters = {
     setSpeciesSearch,
@@ -187,6 +188,7 @@ export function GemDetailPage() {
       setValue,
       watchedSpecies,
       watchedVariety,
+      watchedIsEmerald,
       crownStyleSearch,
       setCrownStyleSearch,
       showCrownStyleList,

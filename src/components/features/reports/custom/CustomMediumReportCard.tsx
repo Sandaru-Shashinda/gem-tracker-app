@@ -16,6 +16,7 @@ import turtlesLogo from "@/assets/Turtles.png"
 import signatureImg from "@/assets/signature1.png"
 import { EditableOverlay, EditableText, EditableWrapText } from "./EditableField"
 import { HandSignature } from "../HandSignature"
+import { EmeraldClarityChart } from "../EmeraldClarityChart"
 import { transformFor, WRAPPING_VALUE_STYLE } from "./fieldStyles"
 
 /**
@@ -131,6 +132,12 @@ const activeTdStyle: CSSProperties = {
   border: "2px solid #111",
   WebkitPrintColorAdjust: "exact",
   printColorAdjust: "exact",
+}
+
+const CLARITY_TABLE: CSSProperties = {
+  width: "90%",
+  borderCollapse: "collapse",
+  textAlign: "center",
 }
 
 /** Which of the two row blocks an edit belongs to. */
@@ -552,59 +559,73 @@ export function CustomMediumReportCard({
               marginTop: "15px",
             }}
           >
-            <table style={{ width: "90%", borderCollapse: "collapse", textAlign: "center" }}>
-              <tbody>
-                <tr>
-                  <td rowSpan={2} style={tdStyle}>
-                    Excellent
-                  </td>
-                  <td colSpan={2} style={tdStyle}>
-                    Loup Clean
-                  </td>
-                  <td colSpan={2} style={tdStyle}>
-                    Eye Clean
-                  </td>
-                  <td colSpan={2} style={tdStyle}>
-                    Visible Inclusions
-                  </td>
-                  <td colSpan={2} style={tdStyle}>
-                    Highly Included
-                  </td>
-                </tr>
-                <tr>
-                  {(["LC", "EC", "VI", "HI"] as const).flatMap((cat) => [
-                    <td key={`${cat}-minor`} style={tdStyle}>
-                      Minor Inclusions
-                    </td>,
-                    <td key={`${cat}-highly`} style={tdStyle}>
+            {data.emeraldClarity ? (
+              <EmeraldClarityChart
+                grade={data.clarityGrade}
+                enhancement={data.clarityEnhancement}
+                cellStyle={tdStyle}
+                activeCellStyle={activeTdStyle}
+                tableStyle={CLARITY_TABLE}
+                compact
+                editable={editable}
+                onGradeChange={(clarityGrade) => onChange({ clarityGrade })}
+                onEnhancementChange={(clarityEnhancement) => onChange({ clarityEnhancement })}
+              />
+            ) : (
+              <table style={CLARITY_TABLE}>
+                <tbody>
+                  <tr>
+                    <td rowSpan={2} style={tdStyle}>
+                      Excellent
+                    </td>
+                    <td colSpan={2} style={tdStyle}>
+                      Loup Clean
+                    </td>
+                    <td colSpan={2} style={tdStyle}>
+                      Eye Clean
+                    </td>
+                    <td colSpan={2} style={tdStyle}>
+                      Visible Inclusions
+                    </td>
+                    <td colSpan={2} style={tdStyle}>
                       Highly Included
-                    </td>,
-                  ])}
-                </tr>
-                <tr>
-                  {CLARITY_GRADES.map(({ key, label }) => {
-                    const active = key === data.clarityGrade
-                    return (
-                      <td
-                        key={key}
-                        style={{
-                          ...(active ? activeTdStyle : tdStyle),
-                          cursor: editable ? "pointer" : undefined,
-                        }}
-                        title={editable ? "Click to mark this grade" : undefined}
-                        onClick={
-                          editable
-                            ? () => onChange({ clarityGrade: active ? "" : key })
-                            : undefined
-                        }
-                      >
-                        {label}
-                      </td>
-                    )
-                  })}
-                </tr>
-              </tbody>
-            </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    {(["LC", "EC", "VI", "HI"] as const).flatMap((cat) => [
+                      <td key={`${cat}-minor`} style={tdStyle}>
+                        Minor Inclusions
+                      </td>,
+                      <td key={`${cat}-highly`} style={tdStyle}>
+                        Highly Included
+                      </td>,
+                    ])}
+                  </tr>
+                  <tr>
+                    {CLARITY_GRADES.map(({ key, label }) => {
+                      const active = key === data.clarityGrade
+                      return (
+                        <td
+                          key={key}
+                          style={{
+                            ...(active ? activeTdStyle : tdStyle),
+                            cursor: editable ? "pointer" : undefined,
+                          }}
+                          title={editable ? "Click to mark this grade" : undefined}
+                          onClick={
+                            editable
+                              ? () => onChange({ clarityGrade: active ? "" : key })
+                              : undefined
+                          }
+                        >
+                          {label}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 

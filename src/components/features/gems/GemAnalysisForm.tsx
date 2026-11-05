@@ -4,6 +4,7 @@ import { FormField, type FieldConfig } from "@/components/shared/common/FormFiel
 import { TreatmentChecklist } from "@/components/features/gems/TreatmentChecklist"
 import { type GemFormFields } from "@/components/shared/common/Formfieldsconfig"
 import { type TestFormValues } from "@/lib/validations/test"
+import { isEmeraldStone } from "@/lib/clarity"
 
 interface GemAnalysisFormProps {
   form: UseFormReturn<TestFormValues>
@@ -67,8 +68,15 @@ export function GemAnalysisForm({ form, fields, disabled }: GemAnalysisFormProps
     register,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = form
+
+  const emerald = isEmeraldStone({
+    isEmerald: watch("isEmerald"),
+    species: watch("species"),
+    variety: watch("selectedVariety"),
+  })
 
   // A plain function, not a component: returning the element keeps FormField in the same
   // position in the tree across renders, so text inputs don't lose focus mid-keystroke.
@@ -149,12 +157,14 @@ export function GemAnalysisForm({ form, fields, disabled }: GemAnalysisFormProps
           per-GRC photos land here when they are built. */}
       <Section title='Spectrum'>{field(fields.spectroscopy)}</Section>
 
-      {/* 12–13. Transparency and clarity */}
+      {/* 12–13. Transparency and clarity. "Is Emerald" sits above the grade because it
+          switches the scale; the enhancement grade is emerald-only, but stays on screen
+          for any stone that already has one so it is never hidden from the tester. */}
       <Section title='Transparency & Clarity' tone='amber'>
         {field(fields.transparency)}
-        {field(fields.clarityGrade)}
-        {field(fields.clarityEnhancement)}
         {field(fields.isEmerald)}
+        {field(fields.clarityGrade)}
+        {(emerald || watch("clarityEnhancement")) && field(fields.clarityEnhancement)}
       </Section>
 
       {/* 14–16. Identification */}

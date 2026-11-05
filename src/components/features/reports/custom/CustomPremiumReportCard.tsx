@@ -25,6 +25,7 @@ import signatureImg from "@/assets/signature1.png"
 import grcMemoLogo from "@/assets/grc_memo_logo_trimmed.png"
 import { EditableOverlay, EditableText, EditableWrapText } from "./EditableField"
 import { HandSignature } from "../HandSignature"
+import { EmeraldClarityChart } from "../EmeraldClarityChart"
 import { transformFor, WRAPPING_VALUE_STYLE } from "./fieldStyles"
 import { CENTRED_EDITOR, COLUMN_STYLE, COURIER, COURIER_FAMILY, NAME_COL_W } from "./a4Styles"
 
@@ -429,12 +430,45 @@ interface ClarityChartProps {
   grade: string
   editable: boolean
   onChange: (next: string) => void
+  /** Prints the emerald scales, with the enhancement grade, in place of the standard one. */
+  emerald: boolean
+  enhancement: string
+  onEnhancementChange: (next: string) => void
+}
+
+const CLARITY_TABLE: CSSProperties = {
+  width: "100%",
+  borderCollapse: "collapse",
+  tableLayout: "fixed",
 }
 
 /** The graded clarity scale. Click a grade to mark it, click it again to leave it unmarked. */
-export function ClarityChart({ grade, editable, onChange }: ClarityChartProps) {
+export function ClarityChart({
+  grade,
+  editable,
+  onChange,
+  emerald,
+  enhancement,
+  onEnhancementChange,
+}: ClarityChartProps) {
+  if (emerald) {
+    return (
+      <EmeraldClarityChart
+        grade={grade}
+        enhancement={enhancement}
+        cellStyle={CLARITY_TD}
+        activeCellStyle={CLARITY_TD_ACTIVE}
+        tableStyle={CLARITY_TABLE}
+        gradeFontSize='7.5px'
+        editable={editable}
+        onGradeChange={onChange}
+        onEnhancementChange={onEnhancementChange}
+      />
+    )
+  }
+
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+    <table style={CLARITY_TABLE}>
       <tbody>
         <tr>
           <td rowSpan={2} style={CLARITY_TD}>
@@ -982,6 +1016,9 @@ export function CustomPremiumReportCard({
               grade={data.clarityGrade}
               editable={editable}
               onChange={(clarityGrade) => onChange({ clarityGrade })}
+              emerald={data.emeraldClarity}
+              enhancement={data.clarityEnhancement}
+              onEnhancementChange={(clarityEnhancement) => onChange({ clarityEnhancement })}
             />
           </Panel>
         )}

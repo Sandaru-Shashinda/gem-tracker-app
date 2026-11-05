@@ -210,6 +210,7 @@ export function CustomLargeReportBuilder({
     { key: "showWatermark", label: "Watermark" },
     { key: "showSpecialNote", label: "Special note" },
     { key: "showClarityChart", label: "Clarity chart" },
+    { key: "emeraldClarity", label: "Emerald clarity scales" },
     { key: "showStatement", label: "Statement" },
     { key: "showGemImage", label: "Gem image & caption" },
     { key: "showHeatLine", label: "Heat treatment line" },

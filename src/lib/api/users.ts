@@ -1,5 +1,5 @@
 import type { User } from "../types"
-import { API_BASE_URL, describeFailure, fetchWithAuth } from "./config"
+import { API_BASE_URL, describeFailure, fetchWithAuth, getTokenExpiry } from "./config"
 
 const toUser = (data: any): User => ({
   id: data._id,
@@ -64,6 +64,9 @@ export const usersApi = {
   },
 
   getCurrentUser: (): User | null => {
+    // A cached user whose token has lapsed would only open pages whose every request fails.
+    const expiry = getTokenExpiry()
+    if (expiry !== null && expiry <= Date.now()) return null
     const user = localStorage.getItem("user")
     return user ? JSON.parse(user) : null
   },
