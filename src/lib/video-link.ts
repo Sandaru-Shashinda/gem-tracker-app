@@ -37,3 +37,22 @@ export function videoEmbedUrl(value?: string | null): string | null {
   const id = driveFileId(value)
   return id ? `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview` : null
 }
+
+/**
+ * The address of the video file itself, for a <video> element on our own page, or null
+ * when the link is not a Drive file. Drive's /preview player is a page of Drive's — on a
+ * phone a tap in it can carry the visitor off to Drive — so the file is played natively
+ * where possible and /preview is only the fallback.
+ *
+ * With VITE_GOOGLE_API_KEY set the file comes through the Drive API, which is the
+ * supported route; without it, through Drive's public download address.
+ */
+export function videoStreamUrl(value?: string | null): string | null {
+  if (!value || !isHttpUrl(value)) return null
+  const id = driveFileId(value)
+  if (!id) return null
+  const key = import.meta.env.VITE_GOOGLE_API_KEY
+  return key
+    ? `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&key=${encodeURIComponent(key)}`
+    : `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`
+}

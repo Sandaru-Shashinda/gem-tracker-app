@@ -4,7 +4,7 @@ import { useGem } from "@/hooks/useGemStore"
 import { reportsApi } from "@/lib/api/reports"
 import { Loader2, AlertCircle, ExternalLink, PlayCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { isHttpUrl, videoEmbedUrl } from "@/lib/video-link"
+import { isHttpUrl, videoEmbedUrl, videoStreamUrl } from "@/lib/video-link"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
 import { PremiumReportPreview } from "@/components/features/reports/PremiumReportPreview"
@@ -57,6 +57,9 @@ export function ReportPreviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [videoOpen, setVideoOpen] = useState(false)
+  // Set once our own player cannot load the file (download blocked by the owner, Drive
+  // quota, unsupported codec); the dialog then falls back to Drive's player.
+  const [nativeVideoFailed, setNativeVideoFailed] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -169,6 +172,7 @@ export function ReportPreviewPage() {
   // tab. Either way the visitor chooses to watch — nothing plays on arrival.
   const videoUrl = report?.videoUrl && isHttpUrl(report.videoUrl) ? report.videoUrl : null
   const videoEmbed = videoEmbedUrl(videoUrl)
+  const videoStream = nativeVideoFailed ? null : videoStreamUrl(videoUrl)
   const videoButtonClass =
     "mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-slate-700 print:hidden"
 
@@ -276,13 +280,26 @@ export function ReportPreviewPage() {
             </DialogHeader>
             {/* Mounted only while open, so closing the dialog stops playback. */}
             <div className='aspect-video w-full overflow-hidden rounded-md bg-black'>
-              <iframe
-                src={videoEmbed}
-                title={`Video of gem ${gem.gemId}`}
-                className='h-full w-full'
-                allow='autoplay; fullscreen'
-                allowFullScreen
-              />
+              {videoStream ? (
+                <video
+                  src={videoStream}
+                  title={`Video of gem ${gem.gemId}`}
+                  className='h-full w-full'
+                  controls
+                  autoPlay
+                  playsInline
+                  preload='metadata'
+                  onError={() => setNativeVideoFailed(true)}
+                />
+              ) : (
+                <iframe
+                  src={videoEmbed}
+                  title={`Video of gem ${gem.gemId}`}
+                  className='h-full w-full'
+                  allow='autoplay; fullscreen'
+                  allowFullScreen
+                />
+              )}
             </div>
             <a
               href={videoUrl}
