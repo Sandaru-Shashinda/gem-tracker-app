@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { useGem } from "@/hooks/useGemStore"
 import { reportsApi } from "@/lib/api/reports"
-import { Loader2, AlertCircle, ExternalLink, PlayCircle } from "lucide-react"
+import { Loader2, AlertCircle, PlayCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { isHttpUrl, videoEmbedUrl, videoStreamUrl } from "@/lib/video-link"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
@@ -58,7 +58,7 @@ export function ReportPreviewPage() {
   const [error, setError] = useState<string | null>(null)
   const [videoOpen, setVideoOpen] = useState(false)
   // Set once our own player cannot load the file (download blocked by the owner, Drive
-  // quota, unsupported codec); the dialog then falls back to Drive's player.
+  // quota, unsupported codec); the dialog then falls back to a locked-down Drive player.
   const [nativeVideoFailed, setNativeVideoFailed] = useState(false)
 
   useEffect(() => {
@@ -168,13 +168,12 @@ export function ReportPreviewPage() {
   const customLargeCard = reportType === "large" ? report?.customStandardLargeCard : null
   const customPremiumCard = reportType === "premium" ? report?.customLargeCard : null
   const includeLogo = report?.isClientDataAdd ?? true
-  // A Drive link plays here in a dialog; any other link can only be opened in its own
-  // tab. Either way the visitor chooses to watch — nothing plays on arrival.
+  // The video only ever plays here, in a dialog — the visitor is never sent off to Drive
+  // or anywhere else. A Drive link plays from the file itself; any other link is taken to
+  // point straight at a video file. Nothing plays on arrival.
   const videoUrl = report?.videoUrl && isHttpUrl(report.videoUrl) ? report.videoUrl : null
   const videoEmbed = videoEmbedUrl(videoUrl)
-  const videoStream = nativeVideoFailed ? null : videoStreamUrl(videoUrl)
-  const videoButtonClass =
-    "mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-slate-700 print:hidden"
+  const videoStream = videoStreamUrl(videoUrl) ?? videoUrl
 
   const previewProps = {
     gem,
@@ -200,18 +199,16 @@ export function ReportPreviewPage() {
           <p className='text-slate-500 text-xs sm:text-sm mt-1'>
             Gemological Report of Ceylon Digital Verification
           </p>
-          {videoUrl &&
-            (videoEmbed ? (
-              <button type='button' onClick={() => setVideoOpen(true)} className={videoButtonClass}>
-                <PlayCircle className='h-5 w-5' />
-                Watch Gem Video
-              </button>
-            ) : (
-              <a href={videoUrl} target='_blank' rel='noopener noreferrer' className={videoButtonClass}>
-                <PlayCircle className='h-5 w-5' />
-                Watch Gem Video
-              </a>
-            ))}
+          {videoUrl && (
+            <button
+              type='button'
+              onClick={() => setVideoOpen(true)}
+              className='mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-slate-700 print:hidden'
+            >
+              <PlayCircle className='h-5 w-5' />
+              Watch Gem Video
+            </button>
+          )}
         </div>
         {/* Reuse the configured report components — each scales itself to the
             width we give it and centres itself, so this stays a plain block. A
@@ -272,44 +269,52 @@ export function ReportPreviewPage() {
         </div>
       </div>
 
-      {videoUrl && videoEmbed && (
+      {videoUrl && videoStream && (
         <Dialog open={videoOpen} onOpenChange={setVideoOpen}>
-          <DialogContent className='max-w-3xl w-[calc(100%-1.5rem)] rounded-lg p-4 sm:p-6'>
-            <DialogHeader>
-              <DialogTitle>Gem Video — {gem.gemId}</DialogTitle>
+          <DialogContent className='w-[calc(100%-1.5rem)] max-w-3xl max-h-[92dvh] min-w-0 grid-cols-1 gap-3 rounded-lg p-3 sm:p-6'>
+            <DialogHeader className='min-w-0 pr-8 text-left'>
+              <DialogTitle className='truncate text-base sm:text-lg'>
+                Gem Video — {gem.gemId}
+              </DialogTitle>
             </DialogHeader>
             {/* Mounted only while open, so closing the dialog stops playback. */}
-            <div className='aspect-video w-full overflow-hidden rounded-md bg-black'>
-              {videoStream ? (
+            {!nativeVideoFailed ? (
+              // No fixed aspect box: a stone filmed upright on a phone keeps its own
+              // shape and is capped by the screen height instead of shrunk into 16:9.
+              <div className='flex min-w-0 justify-center overflow-hidden rounded-md bg-black'>
                 <video
                   src={videoStream}
                   title={`Video of gem ${gem.gemId}`}
-                  className='h-full w-full'
+                  className='block h-auto max-h-[75dvh] w-full object-contain'
                   controls
+                  controlsList='nodownload'
                   autoPlay
                   playsInline
                   preload='metadata'
                   onError={() => setNativeVideoFailed(true)}
                 />
-              ) : (
+              </div>
+            ) : videoEmbed ? (
+              // Drive's own player, only when the file will not play in ours. The sandbox
+              // leaves out popups and top navigation, so nothing in it can open Drive, and
+              // the shield covers its pop-out button.
+              <div className='relative aspect-video max-h-[75dvh] w-full min-w-0 overflow-hidden rounded-md bg-black'>
                 <iframe
                   src={videoEmbed}
                   title={`Video of gem ${gem.gemId}`}
                   className='h-full w-full'
+                  sandbox='allow-scripts allow-same-origin allow-presentation'
                   allow='autoplay; fullscreen'
                   allowFullScreen
                 />
-              )}
-            </div>
-            <a
-              href={videoUrl}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800'
-            >
-              <ExternalLink className='h-3.5 w-3.5' />
-              Video not playing? Open it in a new tab
-            </a>
+                <div className='absolute right-0 top-0 h-16 w-16' aria-hidden='true' />
+              </div>
+            ) : (
+              <div className='flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-md bg-slate-900 px-4 text-center text-sm text-slate-300'>
+                <AlertCircle className='h-6 w-6 text-slate-400' />
+                This video cannot be played right now. Please try again later.
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       )}

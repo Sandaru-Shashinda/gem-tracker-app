@@ -93,8 +93,8 @@ export function ReportVideoLinkField({ reportId, initialUrl, requested }: Report
         <p className='text-xs text-red-500 font-medium'>{error}</p>
       ) : trimmed && !videoEmbedUrl(trimmed) ? (
         <p className='text-xs text-amber-600'>
-          Not a Google Drive file link — it will open in a new tab instead of playing on the
-          page.
+          Not a Google Drive file link — it will only play if it points straight at a video
+          file (e.g. an .mp4).
         </p>
       ) : (
         <p className='text-xs text-slate-500'>
