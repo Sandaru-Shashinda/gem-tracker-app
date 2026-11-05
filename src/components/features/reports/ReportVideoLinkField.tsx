@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { reportsApi } from "@/lib/api/reports"
-import { isHttpUrl, videoEmbedUrl } from "@/lib/video-link"
+import { isDriveFileLink, isHttpUrl } from "@/lib/video-link"
 
 interface ReportVideoLinkFieldProps {
   reportId?: string
@@ -91,15 +91,16 @@ export function ReportVideoLinkField({ reportId, initialUrl, requested }: Report
         <p className='text-xs text-red-500 font-medium'>Enter a full link starting with https://</p>
       ) : error ? (
         <p className='text-xs text-red-500 font-medium'>{error}</p>
-      ) : trimmed && !videoEmbedUrl(trimmed) ? (
+      ) : trimmed && !isDriveFileLink(trimmed) ? (
         <p className='text-xs text-amber-600'>
           Not a Google Drive file link — it will only play if it points straight at a video
           file (e.g. an .mp4).
         </p>
       ) : (
         <p className='text-xs text-slate-500'>
-          Paste the Google Drive share link. Set its sharing to "Anyone with the link" so the
-          person scanning the QR code can watch it. Leave empty and save to remove the video.
+          Paste the Google Drive share link. Set its sharing to "Anyone with the link" and
+          leave downloading allowed, so the person scanning the QR code can watch it. Leave
+          empty and save to remove the video.
         </p>
       )}
     </div>

@@ -1,7 +1,9 @@
+import { API_BASE_URL } from "@/lib/api/config"
+
 /**
  * The video a report's QR page offers is stored as the link the lab pasted — normally a
  * Google Drive share link. These helpers decide whether a link is safe to show and
- * whether it can be played in place.
+ * where the page's own player loads it from.
  */
 
 /** True for a well-formed http(s) link; anything else must never reach an href. */
@@ -28,31 +30,22 @@ function driveFileId(value: string): string | null {
   return fromPath || url.searchParams.get("id")
 }
 
-/**
- * The address that plays a video inside the page, or null when the link can only be
- * opened in a tab of its own. Drive plays a file in place through its /preview address.
- */
-export function videoEmbedUrl(value?: string | null): string | null {
-  if (!value || !isHttpUrl(value)) return null
-  const id = driveFileId(value)
-  return id ? `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview` : null
+/** True when the link is a Google Drive file, which the QR page can always play. */
+export function isDriveFileLink(value?: string | null): boolean {
+  return !!value && isHttpUrl(value) && driveFileId(value) !== null
 }
 
 /**
- * The address of the video file itself, for a <video> element on our own page, or null
- * when the link is not a Drive file. Drive's /preview player is a page of Drive's — on a
- * phone a tap in it can carry the visitor off to Drive — so the file is played natively
- * where possible and /preview is only the fallback.
+ * The address the QR page's <video> loads a report's video from, or null when there is
+ * none to play.
  *
- * With VITE_GOOGLE_API_KEY set the file comes through the Drive API, which is the
- * supported route; without it, through Drive's public download address.
+ * Drive refuses a video requested from inside another site, so a Drive file comes
+ * through our API, which fetches it server to server. Any other link is taken to point
+ * straight at a video file.
  */
-export function videoStreamUrl(value?: string | null): string | null {
+export function videoPlaybackUrl(reportId: string, value?: string | null): string | null {
   if (!value || !isHttpUrl(value)) return null
-  const id = driveFileId(value)
-  if (!id) return null
-  const key = import.meta.env.VITE_GOOGLE_API_KEY
-  return key
-    ? `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&key=${encodeURIComponent(key)}`
-    : `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`
+  return isDriveFileLink(value)
+    ? `${API_BASE_URL}/reports/${encodeURIComponent(reportId)}/video/stream`
+    : value
 }

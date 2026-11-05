@@ -4,7 +4,7 @@ import { useGem } from "@/hooks/useGemStore"
 import { reportsApi } from "@/lib/api/reports"
 import { Loader2, AlertCircle, PlayCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { isHttpUrl, videoEmbedUrl, videoStreamUrl } from "@/lib/video-link"
+import { isHttpUrl, videoPlaybackUrl } from "@/lib/video-link"
 import { MediumReportPreview } from "@/components/features/reports/MediumReportPreview"
 import { LargeReportPreview } from "@/components/features/reports/LargeReportPreview"
 import { PremiumReportPreview } from "@/components/features/reports/PremiumReportPreview"
@@ -57,9 +57,9 @@ export function ReportPreviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [videoOpen, setVideoOpen] = useState(false)
-  // Set once our own player cannot load the file (download blocked by the owner, Drive
-  // quota, unsupported codec); the dialog then falls back to a locked-down Drive player.
-  const [nativeVideoFailed, setNativeVideoFailed] = useState(false)
+  // Set once the player cannot load the file (not shared publicly, downloads disabled by
+  // the owner, Drive quota, unsupported codec); the dialog then says so.
+  const [videoFailed, setVideoFailed] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -169,11 +169,9 @@ export function ReportPreviewPage() {
   const customPremiumCard = reportType === "premium" ? report?.customLargeCard : null
   const includeLogo = report?.isClientDataAdd ?? true
   // The video only ever plays here, in a dialog — the visitor is never sent off to Drive
-  // or anywhere else. A Drive link plays from the file itself; any other link is taken to
-  // point straight at a video file. Nothing plays on arrival.
+  // or anywhere else. Nothing plays on arrival.
   const videoUrl = report?.videoUrl && isHttpUrl(report.videoUrl) ? report.videoUrl : null
-  const videoEmbed = videoEmbedUrl(videoUrl)
-  const videoStream = videoStreamUrl(videoUrl) ?? videoUrl
+  const videoStream = report ? videoPlaybackUrl(report._id, videoUrl) : null
 
   const previewProps = {
     gem,
@@ -278,7 +276,7 @@ export function ReportPreviewPage() {
               </DialogTitle>
             </DialogHeader>
             {/* Mounted only while open, so closing the dialog stops playback. */}
-            {!nativeVideoFailed ? (
+            {!videoFailed ? (
               // No fixed aspect box: a stone filmed upright on a phone keeps its own
               // shape and is capped by the screen height instead of shrunk into 16:9.
               <div className='flex min-w-0 justify-center overflow-hidden rounded-md bg-black'>
@@ -291,23 +289,8 @@ export function ReportPreviewPage() {
                   autoPlay
                   playsInline
                   preload='metadata'
-                  onError={() => setNativeVideoFailed(true)}
+                  onError={() => setVideoFailed(true)}
                 />
-              </div>
-            ) : videoEmbed ? (
-              // Drive's own player, only when the file will not play in ours. The sandbox
-              // leaves out popups and top navigation, so nothing in it can open Drive, and
-              // the shield covers its pop-out button.
-              <div className='relative aspect-video max-h-[75dvh] w-full min-w-0 overflow-hidden rounded-md bg-black'>
-                <iframe
-                  src={videoEmbed}
-                  title={`Video of gem ${gem.gemId}`}
-                  className='h-full w-full'
-                  sandbox='allow-scripts allow-same-origin allow-presentation'
-                  allow='autoplay; fullscreen'
-                  allowFullScreen
-                />
-                <div className='absolute right-0 top-0 h-16 w-16' aria-hidden='true' />
               </div>
             ) : (
               <div className='flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-md bg-slate-900 px-4 text-center text-sm text-slate-300'>
