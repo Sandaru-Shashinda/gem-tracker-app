@@ -1,5 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react"
-import { ExternalLink, FolderOpen, ImageIcon, Loader2, Play, Trash2, Upload, Video } from "lucide-react"
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  FolderOpen,
+  ImageIcon,
+  Loader2,
+  Play,
+  Trash2,
+  Upload,
+  Video,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -128,6 +139,25 @@ export function GemMediaPanel({ gemId, canDelete }: GemMediaPanelProps) {
   }
 
   const files = listing?.files ?? []
+  const viewingIndex = viewing ? files.findIndex((f) => f.id === viewing.id) : -1
+  const hasPrevious = viewingIndex > 0
+  const hasNext = viewingIndex >= 0 && viewingIndex < files.length - 1
+
+  const showAt = (index: number) => {
+    if (index >= 0 && index < files.length) setViewing(files[index])
+  }
+
+  const handleViewerKeyDown = (e: KeyboardEvent) => {
+    // Leave arrow keys to a focused video, where they seek.
+    if (e.target instanceof HTMLVideoElement) return
+    if (e.key === "ArrowLeft" && hasPrevious) {
+      e.preventDefault()
+      showAt(viewingIndex - 1)
+    } else if (e.key === "ArrowRight" && hasNext) {
+      e.preventDefault()
+      showAt(viewingIndex + 1)
+    }
+  }
 
   return (
     <Card className='p-6 bg-white shadow-sm border-slate-100'>
@@ -243,27 +273,57 @@ export function GemMediaPanel({ gemId, canDelete }: GemMediaPanelProps) {
       )}
 
       <Dialog open={!!viewing} onOpenChange={(open) => !open && setViewing(null)}>
-        <DialogContent className='max-w-4xl'>
-          <DialogTitle className='truncate pr-8 text-sm'>{viewing?.name}</DialogTitle>
-          {viewing?.kind === "video" ? (
-            <video
-              key={viewing.id}
-              src={mediaApi.streamUrl(gemId, viewing)}
-              controls
-              autoPlay
-              className='w-full max-h-[70vh] rounded-lg bg-black'
-            />
-          ) : viewing?.hasThumbnail ? (
-            <img
-              src={mediaApi.thumbnailUrl(gemId, viewing, 1600)}
-              alt={viewing.name}
-              className='w-full max-h-[70vh] object-contain rounded-lg bg-slate-50'
-            />
-          ) : (
-            <p className='text-sm text-slate-500'>
-              Drive is still preparing a preview of this file. Try again shortly, or open the folder in Drive.
-            </p>
-          )}
+        <DialogContent className='max-w-4xl' onKeyDown={handleViewerKeyDown}>
+          <DialogTitle className='flex items-center gap-2 pr-8 text-sm'>
+            <span className='truncate'>{viewing?.name}</span>
+            {files.length > 1 && viewingIndex >= 0 && (
+              <span className='shrink-0 font-normal text-slate-400'>
+                {viewingIndex + 1} / {files.length}
+              </span>
+            )}
+          </DialogTitle>
+          <div className='relative'>
+            {viewing?.kind === "video" ? (
+              <video
+                key={viewing.id}
+                src={mediaApi.streamUrl(gemId, viewing)}
+                controls
+                autoPlay
+                className='w-full max-h-[70vh] rounded-lg bg-black'
+              />
+            ) : viewing?.hasThumbnail ? (
+              <img
+                key={viewing.id}
+                src={mediaApi.thumbnailUrl(gemId, viewing, 1600)}
+                alt={viewing.name}
+                className='w-full max-h-[70vh] object-contain rounded-lg bg-slate-50'
+              />
+            ) : (
+              <p className='text-sm text-slate-500 py-10 px-12 text-center'>
+                Drive is still preparing a preview of this file. Try again shortly, or open the folder in Drive.
+              </p>
+            )}
+            {hasPrevious && (
+              <button
+                type='button'
+                onClick={() => showAt(viewingIndex - 1)}
+                className='absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-slate-700 shadow-md transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400'
+                aria-label='Previous file'
+              >
+                <ChevronLeft className='h-5 w-5' />
+              </button>
+            )}
+            {hasNext && (
+              <button
+                type='button'
+                onClick={() => showAt(viewingIndex + 1)}
+                className='absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-slate-700 shadow-md transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400'
+                aria-label='Next file'
+              >
+                <ChevronRight className='h-5 w-5' />
+              </button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
