@@ -28,6 +28,7 @@ import { GemDetailHeader } from "@/components/features/gems/GemDetailHeader"
 import { GemWorkflowStatus } from "@/components/features/gems/GemWorkflowStatus"
 import { GemAnalysisForm } from "@/components/features/gems/GemAnalysisForm"
 import { GemWeightEditor } from "@/components/features/gems/GemWeightEditor"
+import { GemMediaPanel } from "@/components/features/gems/GemMediaPanel"
 import { ApproverCorrectionBanner } from "@/components/features/gems/ApproverCorrectionBanner"
 import {
   StageAccessBanner,
@@ -516,6 +517,8 @@ export function GemDetailPage() {
             )}
           </div>
         </div>
+
+        <GemMediaPanel gemId={gem._id} canDelete={isAdmin || isHelper} />
       </div>
 
       <GemCropDialog

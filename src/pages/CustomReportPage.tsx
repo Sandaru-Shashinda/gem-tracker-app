@@ -287,6 +287,7 @@ export function CustomReportPage() {
               <ReportVideoLinkField
                 key={id}
                 reportId={id}
+                gemId={gem._id}
                 initialUrl={videoUrl}
                 requested={gem.videoPreview}
               />

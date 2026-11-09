@@ -481,6 +481,7 @@ export function ReportConfigurationPage() {
               <ReportVideoLinkField
                 key={report?._id}
                 reportId={report?._id}
+                gemId={currentGem._id}
                 initialUrl={report?.videoUrl}
                 requested={currentGem.videoPreview}
               />
