@@ -197,7 +197,7 @@ export const CUSTOM_REPORT_FIELD_PRESETS = [
   "Weight",
   "Color",
   "Shape & Cut",
-  "Dimension",
+  "Dimensions",
   "Species",
   "Variety",
   "Origin",
@@ -287,7 +287,7 @@ export function buildCustomSmallReport(gem: Gem, verificationUrl: string): Custo
   const obs = finalData.finalObservations || {}
 
   const shapeAndCut = obs.isMixCut
-    ? `${obs.cuttingShape || ""} mix cut`.trim()
+    ? `${obs.cuttingShape || ""} Mix Cut`.trim()
     : obs.cuttingShape || ""
 
   const dimension = obs.messurementX
@@ -300,7 +300,7 @@ export function buildCustomSmallReport(gem: Gem, verificationUrl: string): Custo
     ["Weight", formatWeight(gem.weight)],
     ["Color", gem.color],
     ["Shape & Cut", shapeAndCut],
-    ["Dimension", dimension],
+    ["Dimensions", dimension],
     ["Species", obs.species],
     ["Variety", obs.variety],
   ].map(([label, value]) => newCustomReportRow(label as string, (value as string) ?? ""))

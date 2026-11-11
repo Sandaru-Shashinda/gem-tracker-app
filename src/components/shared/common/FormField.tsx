@@ -28,6 +28,8 @@ export interface FieldConfig {
   name: keyof TestFormValues
   label: string
   type: FieldType
+  /** Marks the label with an asterisk. The schema in lib/validations/test.ts enforces it. */
+  required?: boolean
   placeholder?: string
   step?: string
   /** Number fields only: round to this many decimals on blur, so 5.3 is stored as "5.30". */
@@ -81,6 +83,7 @@ export function FormField({
     name,
     label,
     type,
+    required,
     placeholder,
     step,
     decimals,
@@ -108,7 +111,12 @@ export function FormField({
 
   return (
     <div className={`space-y-1.5 ${type === "custom-search" || type === "combobox" ? "relative" : ""} ${className || ""}`}>
-      {type !== "checkbox" && <label className='text-xs font-bold text-slate-500 uppercase'>{label}</label>}
+      {type !== "checkbox" && (
+        <label className='text-xs font-bold text-slate-500 uppercase'>
+          {label}
+          {required && <span className='ml-0.5 text-red-500'>*</span>}
+        </label>
+      )}
 
       {type === "text" && <Input placeholder={placeholder} disabled={disabled} {...register(name)} />}
 

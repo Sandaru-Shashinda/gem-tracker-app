@@ -78,6 +78,22 @@ const REPORT_STYLE_OPTIONS = [
   },
 ] as const
 
+/**
+ * Weight can be typed in carats or grams, but it is always stored in carats — every
+ * stage, report and stat reads `weight` as ct. Grams are converted on the way in.
+ */
+type WeightUnit = "ct" | "g"
+const CARATS_PER_GRAM = 5
+
+/** Rounds to 3 decimals so 2.87 g does not save as 14.350000000000001 ct. */
+const round3 = (n: number) => Math.round(n * 1000) / 1000
+
+const toCarats = (value: number, unit: WeightUnit) =>
+  round3(unit === "g" ? value * CARATS_PER_GRAM : value)
+
+const fromCarats = (carats: number, unit: WeightUnit) =>
+  round3(unit === "g" ? carats / CARATS_PER_GRAM : carats)
+
 /** The sizes a custom certificate can be written at, and what each one is. */
 const CUSTOM_SIZE_OPTIONS = [
   { value: "small", title: "Small", hint: "Visa card size (85.60 x 53.98 mm)" },
@@ -105,6 +121,10 @@ export function IntakePage() {
   const [testers, setTesters] = useState<User[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [suggestedGrc, setSuggestedGrc] = useState<string | null>(null)
+  // What is typed in the weight box, in `weightUnit`. The form's own `weight` is
+  // always carats; this is only the text the user sees.
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>("ct")
+  const [weightDraft, setWeightDraft] = useState("")
 
   const {
     register,
@@ -203,6 +223,8 @@ export function IntakePage() {
             skipTesting: gem.skipTesting ?? false,
             videoPreview: gem.videoPreview ?? false,
           })
+          setWeightUnit("ct")
+          setWeightDraft(gem.weight ? String(gem.weight) : "")
 
           const gemImageIds = gem.images && gem.images.length > 0 ? gem.images : []
           setExistingImageIds(gemImageIds)
@@ -445,15 +467,58 @@ export function IntakePage() {
 
                   <div className='space-y-2'>
                     <label className='text-[11px] font-black uppercase text-slate-400 tracking-wider'>
-                      Weight
+                      Weight <span className='normal-case font-medium'>(optional)</span>
                     </label>
-                    <Input
-                      type='number'
-                      step='0.001'
-                      placeholder='14.36'
-                      className='bg-slate-50 border-slate-200 h-11 focus:bg-white transition-colors'
-                      {...register("weight")}
-                    />
+                    <div className='flex items-center gap-2'>
+                      <Input
+                        type='number'
+                        step='0.001'
+                        min='0'
+                        placeholder={weightUnit === "g" ? "2.872" : "14.36"}
+                        className='flex-1 bg-slate-50 border-slate-200 h-11 focus:bg-white transition-colors'
+                        value={weightDraft}
+                        onChange={(e) => {
+                          const text = e.target.value
+                          setWeightDraft(text)
+                          const parsed = Number(text)
+                          setValue(
+                            "weight",
+                            text.trim() && Number.isFinite(parsed) ? toCarats(parsed, weightUnit) : 0,
+                            { shouldValidate: true, shouldDirty: true },
+                          )
+                        }}
+                      />
+                      <div className='flex h-11 rounded-md border border-slate-200 bg-slate-50 p-1'>
+                        {(["ct", "g"] as const).map((unit) => (
+                          <button
+                            key={unit}
+                            type='button'
+                            onClick={() => {
+                              if (unit === weightUnit) return
+                              // Keep the same stone weight, just shown in the other unit.
+                              const carats = getValues("weight")
+                              setWeightUnit(unit)
+                              if (weightDraft.trim() && carats > 0) {
+                                setWeightDraft(String(fromCarats(carats, unit)))
+                              }
+                            }}
+                            className={`min-w-10 rounded px-3 text-xs font-bold transition-colors ${
+                              weightUnit === unit
+                                ? "bg-white text-blue-600 shadow-sm"
+                                : "text-slate-400 hover:text-slate-600"
+                            }`}
+                          >
+                            {unit}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {weightUnit === "g" && Number(weightDraft) > 0 && (
+                      <p className='text-xs text-slate-500'>
+                        = <span className='font-mono font-bold text-slate-700'>{watch("weight")}</span>{" "}
+                        ct <span className='text-slate-400'>(saved in carats, 1 g = 5 ct)</span>
+                      </p>
+                    )}
                     {errors.weight && (
                       <p className='text-xs text-red-500 font-medium'>{errors.weight.message}</p>
                     )}

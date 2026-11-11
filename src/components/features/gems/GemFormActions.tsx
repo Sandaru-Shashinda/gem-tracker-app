@@ -29,7 +29,8 @@ export function GemFormActions({
       )}
       {!isValid && !busy && (
         <p className='rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700'>
-          Fill in R.I. Min, Species and Variety to enable submitting.
+          Fill in every field marked * (Weight, Colour, Shape, Crown &amp; Pavilion Style, Dimensions L ×
+          W × H, R.I. Min, Species and Variety) to enable submitting.
         </p>
       )}
       <div className='flex justify-end gap-4'>

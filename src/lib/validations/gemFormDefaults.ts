@@ -37,6 +37,7 @@ export const makeFormDefaults = (): TestFormValues => ({
   spectroscopy: "",
   comments: "",
   specialNote: "",
+  myNote: "",
   treatment: "",
   treatments: emptyTreatments(),
   clarityEnhancement: "",

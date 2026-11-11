@@ -180,6 +180,8 @@ export function GemAnalysisForm({ form, fields, disabled }: GemAnalysisFormProps
       <Section title='Comments'>
         {field(fields.comments)}
         {field(fields.specialNote)}
+        {/* The owner's private note to self: saved with the stage, never printed. */}
+        {field(fields.myNote)}
       </Section>
 
       {/* 18. Treatments — the written note, the heat flags it summarises, and the

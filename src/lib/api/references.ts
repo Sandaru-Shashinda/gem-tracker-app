@@ -1,5 +1,5 @@
 import type { GemReference } from "../types"
-import { API_BASE_URL, fetchWithAuth } from "./config"
+import { API_BASE_URL, describeFailure, fetchWithAuth } from "./config"
 
 /**
  * The names the identification fields offer. Both are free text on the form — a stone
@@ -36,6 +36,17 @@ export const EMPTY_HISTORY: FieldHistory = {
   pavilionStyle: [],
 }
 
+/** A dropdown whose suggestions can be deleted: the two name lists or one of the history lists. */
+export type SuggestionField = "species" | "varieties" | keyof FieldHistory
+
+/** A suggestion taken off its dropdown. The gem records it came from keep the value. */
+export interface HiddenSuggestion {
+  _id: string
+  field: SuggestionField
+  value: string
+  createdAt: string
+}
+
 export const referencesApi = {
   searchReferences: async (
     riMin?: string,
@@ -60,5 +71,27 @@ export const referencesApi = {
     const response = await fetchWithAuth(`${API_BASE_URL}/references/identifications`)
     if (!response.ok) throw new Error("Failed to fetch identification options")
     return response.json()
+  },
+
+  getHiddenSuggestions: async (): Promise<HiddenSuggestion[]> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/references/suggestions/hidden`)
+    if (!response.ok) throw new Error(await describeFailure(response, "Failed to load deleted suggestions"))
+    return response.json()
+  },
+
+  hideSuggestion: async (field: SuggestionField, value: string): Promise<HiddenSuggestion> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/references/suggestions/hidden`, {
+      method: "POST",
+      body: JSON.stringify({ field, value }),
+    })
+    if (!response.ok) throw new Error(await describeFailure(response, "Failed to delete suggestion"))
+    return response.json()
+  },
+
+  restoreSuggestion: async (id: string): Promise<void> => {
+    const response = await fetchWithAuth(`${API_BASE_URL}/references/suggestions/hidden/${id}`, {
+      method: "DELETE",
+    })
+    if (!response.ok) throw new Error(await describeFailure(response, "Failed to restore suggestion"))
   },
 }

@@ -120,6 +120,8 @@ export interface ObservationData {
   comments?: string
   itemDescription?: string
   specialNote?: string
+  /** The stage owner's private working note — never printed on a report. */
+  myNote?: string
   treatment?: string
   /** Per-treatment "Yes" | "No" checklist; "" / missing means not assessed. */
   treatments?: Partial<TreatmentValues>
@@ -167,8 +169,8 @@ export interface Gem {
   }
 
   test1?: null | {
-    riMin?: number
-    riMax?: number
+    riMin?: RiReading
+    riMax?: RiReading
     /** Written before R.I. became a range again; read as a fallback for both ends. */
     ri?: number
     sg?: number
@@ -187,8 +189,8 @@ export interface Gem {
   }
 
   test2?: null | {
-    riMin?: number
-    riMax?: number
+    riMin?: RiReading
+    riMax?: RiReading
     /** Written before R.I. became a range again; read as a fallback for both ends. */
     ri?: number
     sg?: number
@@ -207,8 +209,8 @@ export interface Gem {
   }
 
   finalApproval?: null | {
-    riMin?: number
-    riMax?: number
+    riMin?: RiReading
+    riMax?: RiReading
     /** Written before R.I. became a range again; read as a fallback for both ends. */
     ri?: number
     sg?: number
@@ -341,3 +343,12 @@ export interface Post {
   createdAt: string
   updatedAt?: string
 }
+
+/**
+ * What a tester enters for an R.I. the refractometer could not give — a negative reading.
+ * Saved as-is in riMin / riMax in place of a number, and shown as-is.
+ */
+export const RI_NOT_READ = "-"
+
+/** One end of an R.I. range: a reading, or RI_NOT_READ. */
+export type RiReading = number | typeof RI_NOT_READ

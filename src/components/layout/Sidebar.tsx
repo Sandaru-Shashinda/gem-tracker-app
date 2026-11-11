@@ -11,6 +11,7 @@ import {
   FileText,
   Inbox,
   Newspaper,
+  BookMarked,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -84,6 +85,7 @@ export function Sidebar() {
           <NavButton icon={Plus} label='Intake Gem' to='/intake' collapsed={collapsed} />
         )}
         <NavButton icon={FileText} label='Reports' to='/reports' collapsed={collapsed} />
+        <NavButton icon={BookMarked} label='References' to='/references' collapsed={collapsed} />
         {/* Admins and helpers reach Posts from the Admin section below. */}
         {user.role === UserRole.TESTER && (
           <NavButton icon={Newspaper} label='Posts' to='/posts' collapsed={collapsed} />

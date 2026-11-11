@@ -186,7 +186,7 @@ function VerbalContent({ gem, target = "print" }: { gem: Gem; target?: RenderTar
   // Shape and cut read as one field, matching SmallReportPreview: the shape carries
   // the cut, and a mix cut is a suffix rather than a separate style value.
   const shapeValue = obs.shape || obs.cuttingShape || ""
-  const shapeAndCut = obs.isMixCut ? `${shapeValue} mix cut`.trim() : shapeValue
+  const shapeAndCut = obs.isMixCut ? `${shapeValue} Mix Cut`.trim() : shapeValue
 
   // X/Y/Z are Length/Width/Height — always presented in that order and spelled out.
   const dimensions = obs.messurementX

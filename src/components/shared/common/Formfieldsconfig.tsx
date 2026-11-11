@@ -132,6 +132,9 @@ const OTHER_COLORS = [
   { value: "Dark", label: "Dark" },
 ]
 
+/** Every colour the form offers from code, whatever the stone — see the References page. */
+export const STANDARD_COLOUR_OPTIONS = [...RUBY_COLORS, ...EMERALD_COLORS, ...SAPPHIRE_COLORS, ...OTHER_COLORS]
+
 interface FormFieldsConfigParams {
   speciesSearch: string
   setSpeciesSearch: (value: string) => void
@@ -278,6 +281,7 @@ export function getFormFieldsConfig({
     //    that far, and the reports round to 2 themselves.
     weight: {
       name: "weight",
+      required: true,
       label: "Weight (ct)",
       type: "number",
       step: "0.001",
@@ -288,6 +292,7 @@ export function getFormFieldsConfig({
     // 3. Colour
     colour: {
       name: "colour",
+      required: true,
       label: "Colour",
       type: "combobox",
       placeholder: "Select or type colour...",
@@ -335,6 +340,7 @@ export function getFormFieldsConfig({
     // 4. Shape
     cuttingShape: {
       name: "cuttingShape",
+      required: true,
       label: "Shape",
       type: "combobox",
       placeholder: "e.g. Round",
@@ -361,6 +367,7 @@ export function getFormFieldsConfig({
     // 5. Cutting Style
     crownStyle: {
       name: "crownStyle",
+      required: true,
       label: "Crown Style",
       type: "combobox",
       placeholder: "e.g. Brilliant cut",
@@ -377,6 +384,7 @@ export function getFormFieldsConfig({
     },
     pavilionStyle: {
       name: "pavilionStyle",
+      required: true,
       label: "Pavilion Style",
       type: "combobox",
       placeholder: "e.g. Step cut",
@@ -423,6 +431,7 @@ export function getFormFieldsConfig({
     // 6. Dimensions (mm) — length, width, height, always to 2 decimals.
     messurementX: {
       name: "messurementX",
+      required: true,
       label: "Length (mm)",
       type: "number",
       step: "0.01",
@@ -432,6 +441,7 @@ export function getFormFieldsConfig({
     },
     messurementY: {
       name: "messurementY",
+      required: true,
       label: "Width (mm)",
       type: "number",
       step: "0.01",
@@ -441,6 +451,7 @@ export function getFormFieldsConfig({
     },
     messurementZ: {
       name: "messurementZ",
+      required: true,
       label: "Height (mm)",
       type: "number",
       step: "0.01",
@@ -449,21 +460,22 @@ export function getFormFieldsConfig({
       className: "",
     },
 
-    // 7. R.I. — a range, because a doubly refractive stone gives two readings.
+    // 7. R.I. — a range, because a doubly refractive stone gives two readings. Text, not
+    //    number, boxes: a reading the refractometer cannot give is entered as "-", which a
+    //    number input throws away. The schema checks it is a number or "-".
     riMin: {
       name: "riMin",
+      required: true,
       label: "R.I. Min",
-      type: "number",
-      step: "0.001",
-      placeholder: "e.g. 1.762",
+      type: "text",
+      placeholder: "e.g. 1.762 or -",
       className: "",
     },
     riMax: {
       name: "riMax",
       label: "R.I. Max",
-      type: "number",
-      step: "0.001",
-      placeholder: "e.g. 1.770",
+      type: "text",
+      placeholder: "e.g. 1.770 or -",
       className: "",
     },
 
@@ -536,6 +548,7 @@ export function getFormFieldsConfig({
     //        in filteredSpecies / filteredVarieties.
     species: {
       name: "species",
+      required: true,
       label: "Species",
       type: "custom-search",
       placeholder: "Type to search species...",
@@ -558,6 +571,7 @@ export function getFormFieldsConfig({
 
     selectedVariety: {
       name: "selectedVariety",
+      required: true,
       label: "Variety",
       type: "custom-search",
       placeholder: "Type to search variety...",
@@ -603,6 +617,14 @@ export function getFormFieldsConfig({
       placeholder: "Special internal notes...",
       rows: 4,
       suggestions: history.specialNote,
+    },
+    // The stage owner's own note to self — saved with their stage, never printed.
+    myNote: {
+      name: "myNote",
+      label: "My Note",
+      type: "textarea",
+      placeholder: "Anything you want to remember about this stone (not printed on the report)...",
+      rows: 3,
     },
 
     // 18. Treatments — this note qualifies the per-treatment checklist that

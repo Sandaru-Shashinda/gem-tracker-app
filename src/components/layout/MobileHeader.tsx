@@ -8,6 +8,7 @@ import {
   FileText,
   Newspaper,
   UserCircle,
+  BookMarked,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useGem } from "@/hooks/useGemStore"
@@ -68,6 +69,18 @@ export function MobileHeader() {
           >
             <FileText size={18} className='mr-3' />
             Reports
+          </Link>
+          <Link
+            to='/references'
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium ${
+              location.pathname === "/references"
+                ? "bg-[#dca54a] text-slate-900"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <BookMarked size={18} className='mr-3' />
+            References
           </Link>
           <Link
             to='/posts'

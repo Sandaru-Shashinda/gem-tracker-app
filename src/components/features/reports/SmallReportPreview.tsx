@@ -165,11 +165,11 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
     {
       label: "Shape & Cut",
       value: obs.isMixCut
-        ? `${obs.cuttingShape || ""} mix cut`.trim() || undefined
+        ? `${obs.cuttingShape || ""} Mix Cut`.trim() || undefined
         : obs.cuttingShape || undefined,
     },
     {
-      label: "Dimension",
+      label: "Dimensions",
       value: obs.messurementX
         ? `${Number(obs.messurementX).toFixed(2)} x ${Number(obs.messurementY).toFixed(2)} x ${Number(obs.messurementZ).toFixed(2)} mm`
         : undefined,

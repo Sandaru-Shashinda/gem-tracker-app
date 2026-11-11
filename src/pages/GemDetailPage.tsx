@@ -152,6 +152,7 @@ export function GemDetailPage() {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { isSubmitting, isValid },
   } = form
@@ -386,12 +387,14 @@ export function GemDetailPage() {
 
   // "Copy from Tester 1 / Tester 2" at the approval stage: the tester's own colour and
   // weight come across with the rest of their findings, falling back to the gem's latest
-  // for records written before the split.
+  // for records written before the split. "My Note" is the one thing that stays: it is
+  // the approver's own note, not a finding, so a tester's note never lands in it.
   const copyValues = (source: any) => {
     const values = mapSourceToFormValues(source, {
       colour: gemDetail?.color,
       weight: gemDetail?.weight,
     })
+    values.myNote = getValues("myNote") || ""
     reset(values)
     syncSearchStates(values, searchSetters)
   }

@@ -5,7 +5,9 @@ import { CUSTOM_REPORT_SIZES, REPORT_MODES } from "@/lib/types"
 export const intakeSchema = z
   .object({
     gemId: z.string().min(1, "GRC Number is required"),
-    weight: z.coerce.number().positive("Weight must be a positive number"),
+    // Optional at intake: the stone can be weighed later, and each test stage records
+    // its own weight anyway (required there). 0 is the form's "not weighed" value.
+    weight: z.coerce.number().nonnegative("Weight can't be negative"),
     color: z.string().min(1, "Color is required"),
     itemDescription: z.string().optional(),
     customerId: z.string().optional(),

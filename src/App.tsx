@@ -17,6 +17,7 @@ import { SpectrometerPage } from "./pages/SpectrometerPage"
 import { MessagesPage } from "./pages/MessagesPage"
 import { PostsPage } from "./pages/PostsPage"
 import { ProfilePage } from "./pages/ProfilePage"
+import { ReferencesPage } from "./pages/ReferencesPage"
 
 export default function App() {
   const { user } = useGem()
@@ -90,6 +91,7 @@ export default function App() {
             )
           }
         />
+        <Route path='/references' element={user ? <ReferencesPage /> : <Navigate to='/' replace />} />
         {/* Testers get this list read-only: the custom and configure pages below stay closed. */}
         <Route path='/reports' element={user ? <ReportsPage /> : <Navigate to='/' replace />} />
         <Route path='/reports/:id' element={<ReportPreviewPage />} />

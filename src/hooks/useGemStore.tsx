@@ -9,6 +9,7 @@ import { referencesApi, EMPTY_HISTORY, type FieldHistory } from "@/lib/api/refer
 import { uploadImage } from "@/lib/api/images"
 import { compressImage } from "@/lib/image-utils"
 import { getCropMeta } from "@/lib/gem-crop"
+import { parseRi } from "@/lib/gemFormUtils"
 
 interface GemContextType {
   user: User | null
@@ -226,8 +227,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, stage: "test1" | "test2", data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        riMin: data.riMin ? parseFloat(data.riMin) : undefined,
-        riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+        riMin: parseRi(data.riMin),
+        riMax: parseRi(data.riMax),
         sg: data.sg ? parseFloat(data.sg) : undefined,
         hardness: data.hardness ? parseFloat(data.hardness) : undefined,
         selectedVariety: data.selectedVariety,
@@ -251,6 +252,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
           comments: data.comments,
           itemDescription: data.itemDescription,
           specialNote: data.specialNote,
+          myNote: data.myNote,
           treatment: data.treatment,
           treatments: data.treatments,
           colourGrade: data.colourGrade,
@@ -284,8 +286,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
     async (gemId: string, data: any, status?: GemStatus) => {
       if (!user) return
       const update = {
-        riMin: data.riMin ? parseFloat(data.riMin) : undefined,
-        riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+        riMin: parseRi(data.riMin),
+        riMax: parseRi(data.riMax),
         sg: data.sg ? parseFloat(data.sg) : undefined,
         hardness: data.hardness ? parseFloat(data.hardness) : undefined,
         finalVariety: data.selectedVariety,
@@ -310,6 +312,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
           comments: data.comments,
           itemDescription: data.itemDescription,
           specialNote: data.specialNote,
+          myNote: data.myNote,
           treatment: data.treatment,
           treatments: data.treatments,
           colourGrade: data.colourGrade,
@@ -348,8 +351,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
       let update: any = {}
       if (stage === "finalApproval") {
         update = {
-          riMin: data.riMin ? parseFloat(data.riMin) : undefined,
-          riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+          riMin: parseRi(data.riMin),
+          riMax: parseRi(data.riMax),
           sg: data.sg ? parseFloat(data.sg) : undefined,
           hardness: data.hardness ? parseFloat(data.hardness) : undefined,
           finalVariety: data.selectedVariety,
@@ -372,6 +375,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
             comments: data.comments,
             itemDescription: data.itemDescription,
             specialNote: data.specialNote,
+            myNote: data.myNote,
             treatment: data.treatment,
             treatments: data.treatments,
             colourGrade: data.colourGrade,
@@ -392,8 +396,8 @@ export function GemProvider({ children }: { children: ReactNode }) {
         }
       } else {
         update = {
-          riMin: data.riMin ? parseFloat(data.riMin) : undefined,
-          riMax: data.riMax ? parseFloat(data.riMax) : undefined,
+          riMin: parseRi(data.riMin),
+          riMax: parseRi(data.riMax),
           sg: data.sg ? parseFloat(data.sg) : undefined,
           hardness: data.hardness ? parseFloat(data.hardness) : undefined,
           selectedVariety: data.selectedVariety,
@@ -415,6 +419,7 @@ export function GemProvider({ children }: { children: ReactNode }) {
             comments: data.comments,
             itemDescription: data.itemDescription,
             specialNote: data.specialNote,
+            myNote: data.myNote,
             treatment: data.treatment,
             treatments: data.treatments,
             colourGrade: data.colourGrade,

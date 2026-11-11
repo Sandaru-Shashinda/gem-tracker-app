@@ -1,5 +1,5 @@
 import { type TestFormValues } from "@/lib/validations/test"
-import { type GemStatus, GEM_STATUSES, UserRole } from "@/lib/types"
+import { type GemStatus, type RiReading, GEM_STATUSES, RI_NOT_READ, UserRole } from "@/lib/types"
 import { normalizeTreatments } from "@/lib/treatments"
 
 export type SearchSetters = {
@@ -13,14 +13,29 @@ export type SearchSetters = {
 
 /** The scientific readings on a stage, in either the current or a legacy field shape. */
 export type StageReadings = {
-  riMin?: number | null
-  riMax?: number | null
+  riMin?: RiReading | null
+  riMax?: RiReading | null
   /** Written while R.I. was a single value; read as a fallback for both ends. */
   ri?: number | null
   hardness?: number | null
   /** Written while hardness was a pair; read as a fallback for the single reading. */
   hardnessMin?: number | null
   hardnessMax?: number | null
+}
+
+/** True for what an R.I. box may hold: a reading, or "-" for one the refractometer could not give. */
+export function isRiInput(value: string): boolean {
+  const v = value.trim()
+  return v === RI_NOT_READ || (v !== "" && Number.isFinite(Number(v)))
+}
+
+/** The form's R.I. text as the API takes it: a number, "-", or nothing when left blank. */
+export function parseRi(value: string | undefined): RiReading | undefined {
+  const v = value?.trim()
+  if (!v) return undefined
+  if (v === RI_NOT_READ) return RI_NOT_READ
+  const n = parseFloat(v)
+  return Number.isFinite(n) ? n : undefined
 }
 
 /** A stage's R.I., shown as a range only when the two readings actually differ. */
@@ -108,6 +123,7 @@ export function mapSourceToFormValues(source: any, seed: StageSeed = {}): TestFo
     spectroscopy: obs.spectroscopy || "",
     comments: obs.comments || "",
     specialNote: obs.specialNote || "",
+    myNote: obs.myNote || "",
     treatment: obs.treatment || "",
     treatments: normalizeTreatments(obs.treatments),
     clarityEnhancement: obs.clarityEnhancement || "",
