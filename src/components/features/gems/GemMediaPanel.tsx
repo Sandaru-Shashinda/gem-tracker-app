@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/useToast"
 import {
   DriveNotConfiguredError,
   mediaApi,
+  announceGemMedia,
   type GemMediaFile,
   type GemMediaListing,
 } from "@/lib/api/media"
@@ -71,7 +72,9 @@ export function GemMediaPanel({ gemId, canDelete }: GemMediaPanelProps) {
   const load = useCallback(async () => {
     setLoadError(null)
     try {
-      setListing(await mediaApi.list(gemId))
+      const next = await mediaApi.list(gemId)
+      setListing(next)
+      announceGemMedia(gemId, next.files)
     } catch (error) {
       if (error instanceof DriveNotConfiguredError) setNotConfigured(true)
       else setLoadError("Could not load this gem's Drive files.")
@@ -124,9 +127,9 @@ export function GemMediaPanel({ gemId, canDelete }: GemMediaPanelProps) {
     setIsDeleting(true)
     try {
       await mediaApi.remove(gemId, deleting.id)
-      setListing((current) =>
-        current ? { ...current, files: current.files.filter((f) => f.id !== deleting.id) } : current,
-      )
+      const remaining = files.filter((f) => f.id !== deleting.id)
+      setListing((current) => (current ? { ...current, files: remaining } : current))
+      announceGemMedia(gemId, remaining)
       if (viewing?.id === deleting.id) setViewing(null)
       setDeleting(null)
       toast({ title: "Moved to the Drive trash", variant: "success" })

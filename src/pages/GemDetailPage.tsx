@@ -314,7 +314,8 @@ export function GemDetailPage() {
     }
     try {
       setIsActionLoading(true)
-      const data = watch()
+      // getValues, not watch(): watch() with no names subscribes the page to every keystroke.
+      const data = getValues()
       // The draft goes to the stage this user owns. Deriving it from the gem's status
       // instead sent a tester's draft to the admin-only approval endpoint, and could
       // write Test 1's work into the Test 2 record.
@@ -468,7 +469,7 @@ export function GemDetailPage() {
             suggestions={suggestions}
             watchedHardness={watchedHardness as string}
             onReset={reset}
-            onWatch={watch}
+            onWatch={getValues}
             onSetSpeciesSearch={setSpeciesSearch}
             onSetVarietySearch={setVarietySearch}
             onImageUpdate={handleImageUpdate}
@@ -483,8 +484,6 @@ export function GemDetailPage() {
                   gemId={gem._id}
                   form={form}
                   intakePhotoCount={intakeGem.images?.length ?? 0}
-                  readOnly={!canWrite}
-                  onApplied={() => syncSearchStates(getValues(), searchSetters)}
                 />
               )
             }

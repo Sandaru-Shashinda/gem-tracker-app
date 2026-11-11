@@ -1,6 +1,7 @@
 import { API_BASE_URL, describeFailure, fetchWithAuth } from "./config"
 import { type TestFormValues } from "@/lib/validations/test"
 import { type TreatmentKey } from "@/lib/treatments"
+import { type GemMediaFile } from "./media"
 
 /**
  * AI insights for a gem: what its photos and the readings entered so far suggest for
@@ -77,8 +78,24 @@ export interface AiInsight {
   /** True when answered from a previous identical request rather than a new AI call. */
   cached: boolean
   readings: AiReadings
+  /** Photos the AI could read. */
   imageCount: number
+  /** Photos it was given; null on results saved before this was recorded. */
+  imageSourceCount: number | null
   result: AiInsightResult
+}
+
+// The same limits as listImageSources in the API, so the panel counts what the AI will see.
+const MAX_INTAKE_IMAGES = 2
+const MAX_DRIVE_IMAGES = 3
+const MAX_DRIVE_IMAGE_BYTES = 20 * 1024 * 1024
+
+/** How many photos the AI will be given: the first intake photos, then Drive photos. */
+export function photosForAi(intakeCount: number, driveFiles: GemMediaFile[]): number {
+  const drive = driveFiles.filter(
+    (f) => f.mimeType.startsWith("image/") && (f.size ?? 0) <= MAX_DRIVE_IMAGE_BYTES,
+  ).length
+  return Math.min(intakeCount, MAX_INTAKE_IMAGES) + Math.min(drive, MAX_DRIVE_IMAGES)
 }
 
 /** An error carrying the API's code, so the panel can explain setup and quota problems. */

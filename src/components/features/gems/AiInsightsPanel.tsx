@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { type UseFormReturn } from "react-hook-form"
+import { type UseFormReturn, useWatch } from "react-hook-form"
 import {
   AlertTriangle,
   Check,
@@ -9,7 +9,6 @@ import {
   RefreshCw,
   Scale,
   Sparkles,
-  Wand2,
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -21,9 +20,11 @@ import {
   type AiInsight,
   AiInsightError,
   aiInsightsApi,
+  photosForAi,
   readingsFromForm,
   sameReadings,
 } from "@/lib/api/aiInsights"
+import { GEM_MEDIA_CHANGED, type GemMediaChangedDetail, type GemMediaFile, mediaApi } from "@/lib/api/media"
 
 const FIELD_LABELS: Record<AiFieldKey, string> = {
   colour: "Colour",
@@ -39,8 +40,18 @@ const FIELD_LABELS: Record<AiFieldKey, string> = {
   clarityEnhancement: "Clarity enhancement",
 }
 
-/** "Fill empty fields" only takes suggestions at least this sure of themselves. */
-const FILL_THRESHOLD = 60
+/** The form fields readingsFromForm reads. */
+const READING_FIELDS = [
+  "riMin",
+  "riMax",
+  "sg",
+  "hardness",
+  "weight",
+  "messurementX",
+  "messurementY",
+  "messurementZ",
+  "spectroscopy",
+] as const satisfies readonly (keyof TestFormValues)[]
 
 /** The readings the AI uses, in the order adding them narrows the answer most. */
 const READING_STEPS = [
@@ -71,21 +82,16 @@ const timeAgo = (iso: string) => {
 interface AiInsightsPanelProps {
   gemId: string
   form: UseFormReturn<TestFormValues>
-  /** Intake photos on the gem; Drive photos are counted by the server once it has run. */
+  /** Intake photos on the gem; its Drive photos are listed here. */
   intakePhotoCount: number
-  /** True when the analysis form is locked: suggestions are shown but cannot be applied. */
-  readOnly?: boolean
-  /** Called after values are written into the form, so the combobox search texts follow. */
-  onApplied: () => void
 }
 
 /**
- * AI suggestions for the analysis form, from the gem's photos and the readings entered
- * so far. Nothing reaches the form until someone presses Apply or Use, and
- * "Fill empty fields" never overwrites what a tester has already typed.
+ * AI analysis of the gem, from its photos and the readings entered so far. Display only:
+ * the form is read for the readings, but nothing is ever written back into it.
  */
-export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApplied }: AiInsightsPanelProps) {
-  const { watch, setValue, getValues } = form
+export function AiInsightsPanel({ gemId, form, intakePhotoCount }: AiInsightsPanelProps) {
+  const { control, getValues } = form
   const [insight, setInsight] = useState<AiInsight | null>(null)
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<AiInsightError | null>(null)
@@ -104,9 +110,38 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
     }
   }, [gemId])
 
-  const values = watch()
-  const current = readingsFromForm(values)
-  const stale = !!insight && !sameReadings(current, insight.readings)
+  // The gem's Drive photos: loaded here, then kept current by the media panel's uploads and deletes.
+  const [driveFiles, setDriveFiles] = useState<GemMediaFile[] | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    setDriveFiles(null)
+    mediaApi
+      .list(gemId)
+      .then((listing) => !cancelled && setDriveFiles(listing.files))
+      .catch(() => !cancelled && setDriveFiles([])) // Drive not set up, or unreachable: count none.
+    const onChange = (event: Event) => {
+      const { detail } = event as CustomEvent<GemMediaChangedDetail>
+      if (detail.gemId === gemId) setDriveFiles(detail.files)
+    }
+    window.addEventListener(GEM_MEDIA_CHANGED, onChange)
+    return () => {
+      cancelled = true
+      window.removeEventListener(GEM_MEDIA_CHANGED, onChange)
+    }
+  }, [gemId])
+
+  // Only the reading fields, and with useWatch: watch() with no names would re-render the
+  // whole page that owns the form on every keystroke in any field.
+  const readingValues = useWatch({ control, name: READING_FIELDS })
+  const current = readingsFromForm(
+    Object.fromEntries(READING_FIELDS.map((name, i) => [name, readingValues[i]])) as Partial<TestFormValues>,
+  )
+  /** Photos the next run will be given; null until the Drive listing is in. */
+  const photosNow = driveFiles ? photosForAi(intakePhotoCount, driveFiles) : null
+  const photosUsed = insight ? (insight.imageSourceCount ?? insight.imageCount) : null
+  const readingsChanged = !!insight && !sameReadings(current, insight.readings)
+  const photosChanged = photosNow !== null && photosUsed !== null && photosNow !== photosUsed
+  const stale = readingsChanged || photosChanged
 
   const have: Record<(typeof READING_STEPS)[number]["key"], boolean> = {
     ri: current.riMin !== null || current.riMax !== null,
@@ -117,7 +152,10 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
     spectrum: current.spectroscopy !== null,
   }
   const nextReading = READING_STEPS.find((step) => !have[step.key])
-  const photoCount = insight?.imageCount ?? intakePhotoCount
+  // What the next run will see; the last run's count only until the Drive listing loads.
+  const photoCount = photosNow ?? photosUsed ?? Math.min(intakePhotoCount, 2)
+  const unreadablePhotos =
+    insight && !photosChanged && insight.imageSourceCount ? insight.imageSourceCount - insight.imageCount : 0
 
   const run = async () => {
     setRunning(true)
@@ -132,36 +170,16 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
     }
   }
 
-  const write = (name: keyof TestFormValues, value: string) =>
-    setValue(name, value as never, { shouldDirty: true, shouldValidate: true })
-
-  const applyField = (key: AiFieldKey, value: string) => {
-    write(key, value)
-    onApplied()
-  }
-
   const result = insight?.result
-  const suggestedFields = result
-    ? AI_FIELD_ORDER.filter((key) => result.fields[key]).map((key) => ({ key, ...result.fields[key]! }))
-    : []
-  const fillable = suggestedFields.filter(
-    (f) => f.confidence >= FILL_THRESHOLD && !String(values[f.key] ?? "").trim(),
-  )
-
-  const fillEmpty = () => {
-    fillable.forEach((f) => write(f.key, f.value))
-    onApplied()
-  }
-
-  const applyCandidate = (species: string, variety: string) => {
-    write("species", species)
-    write("selectedVariety", variety)
-    onApplied()
-  }
+  // Results saved before the model kept empty objects have no `fields` when there were no photos.
+  const resultFields = result?.fields ?? {}
+  const suggestedFields = AI_FIELD_ORDER.filter((key) => resultFields[key]).map((key) => ({
+    key,
+    ...resultFields[key]!,
+  }))
 
   const candidates = result?.candidates ?? []
   const shownCandidates = showAllCandidates ? candidates : candidates.slice(0, 2)
-  const currentVariety = (values.selectedVariety || "").trim().toLowerCase()
 
   return (
     <Card className='p-5 border-violet-100 bg-gradient-to-b from-violet-50/70 to-white shadow-md space-y-4'>
@@ -206,6 +224,12 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
             <InputChip key={step.key} done={have[step.key]} label={step.label} />
           ))}
         </div>
+        {unreadablePhotos > 0 && (
+          <p className='text-[10px] text-amber-700'>
+            {unreadablePhotos} of {insight!.imageSourceCount} photos couldn't be read (unsupported format?), so
+            the AI didn't see {unreadablePhotos === 1 ? "it" : "them"}.
+          </p>
+        )}
         {nextReading && (
           <p className='text-[10px] text-violet-600'>
             Tip: add <span className='font-semibold'>{nextReading.label}</span> to narrow the result further.
@@ -266,7 +290,12 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
           className='w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-[11px] text-amber-800 flex items-center gap-2 hover:bg-amber-100'
         >
           <RefreshCw className='h-3.5 w-3.5 shrink-0' />
-          Readings changed since this analysis — <span className='font-semibold underline'>update it</span>
+          {readingsChanged && photosChanged
+            ? "Readings and photos"
+            : photosChanged
+              ? "Photos"
+              : "Readings"}{" "}
+          changed since this analysis — <span className='font-semibold underline'>update it</span>
         </button>
       )}
 
@@ -288,35 +317,16 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
               </SectionTitle>
               {shownCandidates.map((c, i) => {
                 const tone = toneFor(c.confidence)
-                const isCurrent = currentVariety && currentVariety === c.variety.toLowerCase()
                 return (
                   <div
                     key={`${c.species}-${c.variety}`}
                     className={`rounded-xl border bg-white p-3 ${i === 0 ? "border-violet-200 shadow-sm" : "border-slate-100"}`}
                   >
-                    <div className='flex items-start justify-between gap-2'>
-                      <div className='min-w-0'>
-                        <p className={`font-serif font-black text-slate-800 ${i === 0 ? "text-sm" : "text-xs"}`}>
-                          {c.variety}
-                        </p>
-                        <p className='text-[10px] italic text-slate-500'>{c.species}</p>
-                      </div>
-                      {!readOnly &&
-                        (isCurrent ? (
-                          <span className='flex items-center gap-1 text-[10px] font-semibold text-emerald-600'>
-                            <Check className='h-3 w-3' /> In form
-                          </span>
-                        ) : (
-                          <Button
-                            type='button'
-                            size='sm'
-                            variant='outline'
-                            className='h-7 text-[11px] border-violet-200 text-violet-700 hover:bg-violet-50'
-                            onClick={() => applyCandidate(c.species, c.variety)}
-                          >
-                            Use
-                          </Button>
-                        ))}
+                    <div className='min-w-0'>
+                      <p className={`font-serif font-black text-slate-800 ${i === 0 ? "text-sm" : "text-xs"}`}>
+                        {c.variety}
+                      </p>
+                      <p className='text-[10px] italic text-slate-500'>{c.species}</p>
                     </div>
                     <div className='mt-2 flex items-center gap-2'>
                       <div className='h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden'>
@@ -352,26 +362,10 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
           {/* Report fields */}
           {suggestedFields.length > 0 && (
             <section className='space-y-2'>
-              <div className='flex items-center justify-between gap-2'>
-                <SectionTitle>Report fields</SectionTitle>
-                {!readOnly && fillable.length > 0 && (
-                  <Button
-                    type='button'
-                    size='sm'
-                    className='h-7 text-[11px] bg-violet-600 hover:bg-violet-700 text-white'
-                    onClick={fillEmpty}
-                    title={`Fills empty fields with suggestions at ${FILL_THRESHOLD}%+ confidence. Never overwrites what you've entered.`}
-                  >
-                    <Wand2 className='size-3.5' />
-                    Fill {fillable.length} empty field{fillable.length === 1 ? "" : "s"}
-                  </Button>
-                )}
-              </div>
+              <SectionTitle>Report fields</SectionTitle>
               <div className='rounded-xl border border-slate-100 bg-white divide-y divide-slate-50'>
                 {suggestedFields.map((f) => {
                   const tone = toneFor(f.confidence)
-                  const inForm = String(values[f.key] ?? "").trim()
-                  const matches = inForm.toLowerCase() === f.value.toLowerCase()
                   return (
                     <div key={f.key} className='flex items-start gap-2 px-3 py-2'>
                       <div className='min-w-0 flex-1'>
@@ -387,23 +381,6 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
                       >
                         {f.confidence}%
                       </span>
-                      {!readOnly &&
-                        (matches ? (
-                          <span className='mt-0.5 flex w-14 shrink-0 items-center justify-end gap-1 text-[10px] font-semibold text-emerald-600'>
-                            <Check className='h-3 w-3' /> Set
-                          </span>
-                        ) : (
-                          <Button
-                            type='button'
-                            size='sm'
-                            variant='ghost'
-                            className='h-6 w-14 shrink-0 px-0 text-[11px] text-violet-700 hover:bg-violet-50'
-                            onClick={() => applyField(f.key, f.value)}
-                            title={inForm ? `Replaces "${inForm}"` : undefined}
-                          >
-                            {inForm ? "Replace" : "Apply"}
-                          </Button>
-                        ))}
                     </div>
                   )
                 })}
@@ -414,28 +391,7 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
           {/* Item description */}
           {result.itemDescription && (
             <section className='space-y-1.5'>
-              <div className='flex items-center justify-between'>
-                <SectionTitle>Item description draft</SectionTitle>
-                {!readOnly &&
-                  (String(values.itemDescription ?? "").trim() === result.itemDescription ? (
-                    <span className='flex items-center gap-1 text-[10px] font-semibold text-emerald-600'>
-                      <Check className='h-3 w-3' /> Set
-                    </span>
-                  ) : (
-                    <Button
-                      type='button'
-                      size='sm'
-                      variant='ghost'
-                      className='h-6 px-2 text-[11px] text-violet-700 hover:bg-violet-50'
-                      onClick={() => {
-                        write("itemDescription", result.itemDescription)
-                        onApplied()
-                      }}
-                    >
-                      {String(values.itemDescription ?? "").trim() ? "Replace" : "Use"}
-                    </Button>
-                  ))}
-              </div>
+              <SectionTitle>Item description</SectionTitle>
               <p className='rounded-lg border border-slate-100 bg-white p-2 text-[11px] text-slate-700 italic'>
                 {result.itemDescription}
               </p>
@@ -495,7 +451,7 @@ export function AiInsightsPanel({ gemId, form, intakePhotoCount, readOnly, onApp
 
           <p className='border-t border-violet-100 pt-2 text-[9px] text-slate-400'>
             {timeAgo(insight.createdAt)} · {insight.model}
-            {insight.cached ? " · saved result" : ""} · AI suggestions — confirm before submitting.
+            {insight.cached ? " · saved result" : ""} · AI suggestions for reference only.
           </p>
         </div>
       )}

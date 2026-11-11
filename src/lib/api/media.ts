@@ -20,6 +20,19 @@ export interface GemMediaListing {
   files: GemMediaFile[]
 }
 
+/** Window event fired with a gem's current Drive files whenever the media panel loads or changes them. */
+export const GEM_MEDIA_CHANGED = "gem-media-changed"
+
+export interface GemMediaChangedDetail {
+  gemId: string
+  files: GemMediaFile[]
+}
+
+export const announceGemMedia = (gemId: string, files: GemMediaFile[]) =>
+  window.dispatchEvent(
+    new CustomEvent<GemMediaChangedDetail>(GEM_MEDIA_CHANGED, { detail: { gemId, files } }),
+  )
+
 /** Thrown when the API has no Drive credentials, so the panel can say so instead of failing. */
 export class DriveNotConfiguredError extends Error {}
 
