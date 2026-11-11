@@ -29,6 +29,7 @@ import { GemWorkflowStatus } from "@/components/features/gems/GemWorkflowStatus"
 import { GemAnalysisForm } from "@/components/features/gems/GemAnalysisForm"
 import { GemWeightEditor } from "@/components/features/gems/GemWeightEditor"
 import { GemMediaPanel } from "@/components/features/gems/GemMediaPanel"
+import { AiInsightsPanel } from "@/components/features/gems/AiInsightsPanel"
 import { ApproverCorrectionBanner } from "@/components/features/gems/ApproverCorrectionBanner"
 import {
   StageAccessBanner,
@@ -475,6 +476,18 @@ export function GemDetailPage() {
             onHandleRequestCorrection={handleRequestCorrection}
             isApproval={isApproval}
             canWrite={canWrite}
+            aiPanel={
+              // Offered to whoever fills the analysis form in: testers and admins.
+              (isTester || isAdmin) && (
+                <AiInsightsPanel
+                  gemId={gem._id}
+                  form={form}
+                  intakePhotoCount={intakeGem.images?.length ?? 0}
+                  readOnly={!canWrite}
+                  onApplied={() => syncSearchStates(getValues(), searchSetters)}
+                />
+              )
+            }
           />
 
           {/* Main Column */}

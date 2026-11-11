@@ -54,6 +54,8 @@ interface GemIntakeAndHistoryProps {
   isApproval: boolean
   /** False when the analysis form is locked — see resolveActiveStage. */
   canWrite: boolean
+  /** Shown under the Scientific Suggestions — the AI insights panel. */
+  aiPanel?: React.ReactNode
 }
 
 import { GemImage } from "./GemImage"
@@ -75,6 +77,7 @@ export function GemIntakeAndHistory({
   onHandleRequestCorrection,
   isApproval,
   canWrite,
+  aiPanel,
 }: GemIntakeAndHistoryProps) {
   const toast = useToast()
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false)
@@ -316,6 +319,8 @@ export function GemIntakeAndHistory({
           readOnly={!canWrite}
         />
       )}
+
+      {aiPanel}
 
       {/* Historical Blocks */}
       {(hasRi(gem.test1) || hasRi(gem.test2)) &&
