@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Notebook, Plus, ArrowLeft, Loader2, X, Eye } from "lucide-react"
+import { Notebook, Plus, ArrowLeft, Loader2, X, Eye, Save } from "lucide-react"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -35,6 +35,7 @@ import { gemsApi } from "@/lib/api/gems"
 import {
   type User,
   type Customer,
+  type GemStatus,
   GEM_STATUSES,
   REPORT_MODES,
   UserRole,
@@ -125,6 +126,14 @@ export function IntakePage() {
   // always carats; this is only the text the user sees.
   const [weightUnit, setWeightUnit] = useState<WeightUnit>("ct")
   const [weightDraft, setWeightDraft] = useState("")
+  // Where the gem being edited stood when it was opened. A draft intake is still being
+  // filled in, but a gem already in the workflow keeps its place: correcting its GRC
+  // number or colour must not send it back to Test 1.
+  const [original, setOriginal] = useState<{ status: GemStatus; skipTesting: boolean } | null>(
+    null,
+  )
+  const [formError, setFormError] = useState<string | null>(null)
+  const isInWorkflow = !!original && original.status !== GEM_STATUSES.DRAFT_INTAKE
 
   const {
     register,
@@ -135,6 +144,7 @@ export function IntakePage() {
     formState: { errors, isValid },
     reset,
     getValues,
+    setError,
   } = useForm<IntakeFormValues>({
     resolver: zodResolver(intakeSchema) as any,
     defaultValues: {
@@ -223,6 +233,7 @@ export function IntakePage() {
             skipTesting: gem.skipTesting ?? false,
             videoPreview: gem.videoPreview ?? false,
           })
+          setOriginal({ status: gem.status, skipTesting: gem.skipTesting ?? false })
           setWeightUnit("ct")
           setWeightDraft(gem.weight ? String(gem.weight) : "")
 
@@ -337,9 +348,58 @@ export function IntakePage() {
   }
 
   // Handle form submission
+  /** Puts a failed save where the user will see it: on the GRC box if that was the cause. */
+  const showSaveError = (error: unknown) => {
+    const message = error instanceof Error ? error.message : "Failed to save gem"
+    if (/GRC Number/i.test(message)) {
+      setError("gemId", { type: "server", message: message.replace(/^[^:]*:s*/, "") })
+    } else {
+      setFormError(message)
+    }
+  }
+
+  /**
+   * The status a gem already in the workflow is saved with. It stays where it is unless
+   * the edit changed which stages it goes through: skipping testing moves a gem still
+   * waiting on a tester to approval, and un-skipping sends one that has not been
+   * approved yet back to Test 1.
+   */
+  const workflowStatus = (data: IntakeFormValues, current: GemStatus): GemStatus => {
+    const awaitingTester = [
+      GEM_STATUSES.READY_FOR_T1,
+      GEM_STATUSES.DRAFT_TEST_1,
+      GEM_STATUSES.READY_FOR_T2,
+      GEM_STATUSES.DRAFT_TEST_2,
+    ] as GemStatus[]
+    if (data.skipTesting && awaitingTester.includes(current)) return GEM_STATUSES.READY_FOR_APPROVAL
+    if (
+      !data.skipTesting &&
+      original?.skipTesting &&
+      current === GEM_STATUSES.READY_FOR_APPROVAL
+    ) {
+      return GEM_STATUSES.READY_FOR_T1
+    }
+    return current
+  }
+
   const onSubmit = async (data: IntakeFormValues) => {
     setIsSubmitting(true)
+    setFormError(null)
     try {
+      if (isInWorkflow && original) {
+        const status = workflowStatus(data, original.status)
+        await handleIntake(
+          data.skipTesting || data.reportMode === REPORT_MODES.CUSTOM
+            ? { ...data, testerId1: "", testerId2: "", status }
+            : { ...data, status },
+          images,
+          id,
+          existingImageIds,
+        )
+        navigate(`/gems/${id}`)
+        return
+      }
+
       // A custom job has no stage to wait in: its certificate is written by hand, so
       // there is nothing to test and nothing to approve. The API raises its report on
       // the way through, which is the thing the lab actually opens next.
@@ -372,6 +432,7 @@ export function IntakePage() {
       navigate("/queue")
     } catch (error) {
       console.error("Failed to intake gem:", error)
+      showSaveError(error)
     } finally {
       setIsSubmitting(false)
     }
@@ -391,6 +452,7 @@ export function IntakePage() {
     }
 
     setIsSubmitting(true)
+    setFormError(null)
     try {
       await handleIntake(
         {
@@ -404,6 +466,7 @@ export function IntakePage() {
       navigate("/queue")
     } catch (error) {
       console.error("Failed to draft gem:", error)
+      showSaveError(error)
     } finally {
       setIsSubmitting(false)
     }
@@ -449,7 +512,6 @@ export function IntakePage() {
                       type='text'
                       placeholder='e.g. GRC-2026-04-00001'
                       className='bg-slate-50 border-slate-200 h-11 focus:bg-white transition-colors font-mono'
-                      readOnly={!!id}
                       {...register("gemId")}
                     />
                     {errors.gemId && (
@@ -732,6 +794,9 @@ export function IntakePage() {
                         <RadioGroup
                           value={field.value}
                           onValueChange={field.onChange}
+                          // A live gem's stages were laid out by this choice, so it is
+                          // only open while the intake is new or still a draft.
+                          disabled={isInWorkflow}
                           className='grid grid-cols-1 gap-3 sm:grid-cols-2'
                         >
                           {REPORT_STYLE_OPTIONS.map((option) => (
@@ -1018,7 +1083,14 @@ export function IntakePage() {
                 </div>
               </div>
 
-              <div className='pt-8 border-t border-slate-100 grid grid-cols-2 gap-6'>
+              {formError && (
+                <p className='text-sm text-red-600 font-medium text-center'>{formError}</p>
+              )}
+
+              <div
+                className={`pt-8 border-t border-slate-100 grid gap-6 ${isInWorkflow ? "grid-cols-1" : "grid-cols-2"}`}
+              >
+                {!isInWorkflow && (
                 <Button
                   type='button'
                   variant='outline'
@@ -1035,6 +1107,7 @@ export function IntakePage() {
                     <span className='flex items-center gap-2'>Save as Draft</span>
                   )}
                 </Button>
+                )}
                 <Button
                   type='submit'
                   className='h-12 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100 font-bold transition-all rounded-xl'
@@ -1047,8 +1120,8 @@ export function IntakePage() {
                     </span>
                   ) : (
                     <span className='flex items-center gap-2'>
-                      <Plus size={20} />
-                      Add to Workflow
+                      {isInWorkflow ? <Save size={20} /> : <Plus size={20} />}
+                      {isInWorkflow ? "Save Changes" : "Add to Workflow"}
                     </span>
                   )}
                 </Button>

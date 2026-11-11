@@ -1,11 +1,14 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
+import { Pencil, Trash2 } from "lucide-react"
 import { createColumnHelper, type PaginationState } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { type Gem, GEM_STATUSES, REPORT_MODES, customSizeLabel } from "@/lib/types"
+import { type Gem, GEM_STATUSES, REPORT_MODES, UserRole, customSizeLabel } from "@/lib/types"
 import DataTable from "@/components/shared/data-table/DataTable"
 import { useNavigate } from "react-router-dom"
 import { StatusBadge } from "@/components/shared/common/StatusBadge"
 import { Badge } from "@/components/ui/badge"
+import { useGem } from "@/hooks/useGemStore"
+import { DeleteGemDialog } from "./DeleteGemDialog"
 
 interface GemTableProps {
   data: Gem[]
@@ -15,6 +18,8 @@ interface GemTableProps {
   ) => void
   totalRecords: number
   isLoading?: boolean
+  /** Called after a gem is deleted from a row, so the page can reload its list. */
+  onGemDeleted?: () => void
 }
 
 const columnHelper = createColumnHelper<Gem>()
@@ -25,8 +30,14 @@ export function GemTable({
   onPaginationChange,
   totalRecords,
   isLoading,
+  onGemDeleted,
 }: GemTableProps) {
   const navigate = useNavigate()
+  const { user, refreshGems } = useGem()
+  const [gemToDelete, setGemToDelete] = useState<Gem | null>(null)
+  // Same split as the API: intake is written by helpers and admins, deleting is admin only.
+  const canEditIntake = user?.role === UserRole.ADMIN || user?.role === UserRole.HELPER
+  const canDelete = user?.role === UserRole.ADMIN
 
   const columns = useMemo(
     () => [
@@ -117,7 +128,7 @@ export function GemTable({
           const isDraft = gem.status === GEM_STATUSES.DRAFT_INTAKE
 
           return (
-            <div className='flex justify-end'>
+            <div className='flex justify-end items-center gap-1'>
               <Button
                 variant='ghost'
                 onClick={() => navigate(isDraft ? `/intake/${gem._id}` : `/gems/${gem._id}`)}
@@ -129,22 +140,54 @@ export function GemTable({
               >
                 {isDraft ? "Edit" : "View"}
               </Button>
+              {canEditIntake && !isDraft && (
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  title={`Edit intake for ${gem.gemId}`}
+                  onClick={() => navigate(`/intake/${gem._id}`)}
+                  className='text-slate-500 hover:text-slate-900'
+                >
+                  <Pencil className='h-4 w-4' />
+                </Button>
+              )}
+              {canDelete && (
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  title={`Delete ${gem.gemId}`}
+                  onClick={() => setGemToDelete(gem)}
+                  className='text-red-500 hover:text-red-700 hover:bg-red-50'
+                >
+                  <Trash2 className='h-4 w-4' />
+                </Button>
+              )}
             </div>
           )
         },
       }),
     ],
-    [navigate],
+    [navigate, canEditIntake, canDelete],
   )
 
   return (
-    <DataTable
-      data={data}
-      columns={columns}
-      pagination={pagination}
-      onPaginationChange={onPaginationChange}
-      totalRecords={totalRecords}
-      isLoading={isLoading}
-    />
+    <>
+      <DataTable
+        data={data}
+        columns={columns}
+        pagination={pagination}
+        onPaginationChange={onPaginationChange}
+        totalRecords={totalRecords}
+        isLoading={isLoading}
+      />
+      <DeleteGemDialog
+        gem={gemToDelete}
+        onOpenChange={(open) => !open && setGemToDelete(null)}
+        onDeleted={() => {
+          onGemDeleted?.()
+          refreshGems()
+        }}
+      />
+    </>
   )
 }

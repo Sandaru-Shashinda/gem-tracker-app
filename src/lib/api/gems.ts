@@ -36,7 +36,7 @@ export const gemsApi = {
       method: "POST",
       body: JSON.stringify(gemData),
     })
-    if (!response.ok) throw new Error("Failed to create gem")
+    if (!response.ok) throw new Error(await describeFailure(response, "Failed to create gem"))
     return response.json()
   },
 
@@ -139,7 +139,7 @@ export const gemsApi = {
     const response = await fetchWithAuth(`${API_BASE_URL}/gems/${id}`, {
       method: "DELETE",
     })
-    if (!response.ok) throw new Error("Failed to delete gem")
+    if (!response.ok) throw new Error(await describeFailure(response, "Failed to delete gem"))
   },
 
   getLastGrc: async (): Promise<{ gemId: string | null }> => {

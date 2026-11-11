@@ -197,6 +197,7 @@ export function QueuePage() {
           onPaginationChange={setPagination}
           totalRecords={totalRecords}
           isLoading={isLoading}
+          onGemDeleted={loadGems}
         />
       </div>
     </MainLayout>
