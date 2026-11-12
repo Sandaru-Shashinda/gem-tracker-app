@@ -465,9 +465,31 @@ export function SmallReportPreview({ gem, reportId }: SmallReportPreviewProps) {
           </p>
         </div>
 
-        {/* QR code */}
-        <div style={{ marginTop: "-10px", marginBottom: "4px" }}>
+        {/* QR code, with the terms note under it. The note hangs below the QR in the
+            card's bottom padding rather than taking room in the column, so it never
+            pushes the QR up or squeezes the gem name. Held to one line (about 153px at
+            7px Arial) so the card, the PNG and the PDF all show it the same way. */}
+        <div style={{ marginTop: "-10px", marginBottom: "4px", position: "relative" }}>
           <QRCode value={verificationUrl} size={60} />
+          <p
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: `${NAME_COL_W}px`,
+              marginTop: "3px",
+              marginBottom: 0,
+              fontSize: "7px",
+              fontFamily: "Arial, Helvetica, sans-serif",
+              color: "#555",
+              textAlign: "center",
+              lineHeight: 1.25,
+              whiteSpace: "nowrap",
+            }}
+          >
+            For complete terms and updates, visit www.grc.lk
+          </p>
         </div>
       </div>
     </div>

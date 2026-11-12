@@ -560,10 +560,32 @@ export function CustomSmallReportCard({
           </p>
         </div>
 
-        {/* QR code. Never blank: an empty string is not a QR code the encoder accepts. */}
+        {/* QR code. Never blank: an empty string is not a QR code the encoder accepts.
+            The terms note under it matches the standard card's: it hangs below the QR in
+            the card's bottom padding, outside the column usePageOverflow measures, so it
+            never pushes the QR up or reads as overflow. */}
         {data.showQr && (
-          <div style={{ marginTop: "-10px", marginBottom: "4px" }}>
+          <div style={{ marginTop: "-10px", marginBottom: "4px", position: "relative" }}>
             <QRCode value={data.qrValue || " "} size={60} />
+            <p
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: `${NAME_COL_W}px`,
+                marginTop: "3px",
+                marginBottom: 0,
+                fontSize: "7px",
+                fontFamily: ROW_FONT_FAMILY,
+                color: "#555",
+                textAlign: "center",
+                lineHeight: 1.25,
+                whiteSpace: "nowrap",
+              }}
+            >
+              For complete terms and updates, visit www.grc.lk
+            </p>
           </div>
         )}
       </div>
